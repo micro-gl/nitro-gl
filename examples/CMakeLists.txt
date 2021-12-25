@@ -16,10 +16,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(OpenGL)
-find_package(GLFW3)
-
-if(DEFINED GLFW3_FOUND AND OPENGL_FOUND)
-    set(libs ${GLFW3_LIBRARY} ${OPENGL_LIBRARY} micro-opengl)
+#find_package(GLFW3)
+find_package(SDL2)
+message(tomer ${OPENGL_INCLUDE_DIR})
+if(DEFINED SDL2_FOUND AND OPENGL_FOUND)
+    set(libs  ${OPENGL_LIBRARY} ${SDL2_LIBRARY} micro-opengl)
     set(SOURCES
           ex_1.cpp)
 

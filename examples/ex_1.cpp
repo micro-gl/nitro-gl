@@ -2,9 +2,16 @@
 #include "src/example.h"
 #include <OpenGL/gl3.h>
 #include <OpenGL/gl3ext.h>
-#include <GLFW/glfw3.h>
 
+struct CC {
+    int width() { return 600; }
+    int height() { return 600; }
+};
 int main() {
+    const auto render = [](void *, void *, void *) {
+        std::cout << "hello\n";
+    };
 
+    example_run(nullptr, render);
 }
 
