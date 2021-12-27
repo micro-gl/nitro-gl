@@ -2,7 +2,10 @@
 
 #include <iostream>
 #include <chrono>
-#include <SDL2/SDL.h>
+//#include <glad/glad.h>
+#include <OpenGL/gl3.h>
+#include <OpenGL/gl3ext.h>
+#include <SDL.h>
 
 template<class canvas> int __get_width(canvas c) { return c.width(); }
 template<class canvas> int __get_height(canvas c) { return c.height(); }
@@ -14,17 +17,17 @@ void example_run(canvas_type canvas, const render_callback &render) {
     SDL_Window * window;
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "failure: SDL_Init(SDL_INIT_VIDEO)\n";
+        std::cout << "SDL could not be initialized: " << SDL_GetError();
         exit(1);
     }
 
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE | SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     int w = __get_width(canvas);
     int h = __get_height(canvas);
@@ -50,6 +53,17 @@ void example_run(canvas_type canvas, const render_callback &render) {
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
     SDL_Surface *  surface = SDL_GetWindowSurface(window);
+
+//     Setup our function pointers
+//    gladLoadGLLoader(SDL_GL_GetProcAddress);
+
+    int maj=0, min=0;
+//    glGetIntegerv(GL_MAJOR_VERSION, &maj);
+//    glGetIntegerv(GL_MINOR_VERSION, &min);
+    const unsigned char * a = glGetString(GL_VERSION);
+
+    std::cout << maj << "," << min << " hello\n";
+    std::cout << GL_VERSION_3_3 << " hello\n";
 
     bool quit = false;
     SDL_Event event;
