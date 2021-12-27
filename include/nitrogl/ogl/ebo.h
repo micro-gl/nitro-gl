@@ -14,8 +14,8 @@ namespace nitrogl {
 
     class ebo {
     public:
-        ebo() : _id(0), _size_bytes(0) {};
-        ~ebo() { del(); }
+        ebo() : _id(0), _size_bytes(0) { generate(); bind(); };
+        ~ebo() { del(); unbind(); }
 
         void uploadData(GLuint * array, GLsizeiptr array_size_bytes) {
             if(_id==0) return;
@@ -24,9 +24,9 @@ namespace nitrogl {
             _size_bytes = array_size_bytes;
         }
         void generate() { if(_id==0) glGenBuffers(1, &_id); bind(); }
-        void del() { if(_id) { glDeleteBuffers(1, &_id); _id=0; } }
+        void del() { if(_id) { glDeleteBuffers(1, &_id); _size_bytes=_id=0; } }
         void bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id); }
-        void unbind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
+        static void unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
         GLsizeiptr size() const { return _size_bytes / GLsizeiptr(sizeof(GLuint)); }
         GLsizeiptr size_bytes() const { return _size_bytes; }
 

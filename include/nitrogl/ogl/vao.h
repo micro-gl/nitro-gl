@@ -14,30 +14,15 @@ namespace nitrogl {
 
     class vao {
     public:
-        vao() : _id(0), _size_bytes(0) {};
-        ~vao() { del(); }
-
-        void uploadData(GLuint * array, GLsizeiptr array_size_bytes) {
-            if(_id==0) return;
-            bind();
-            glBufferData(GL_ARRAY_BUFFER, array_size_bytes, array, GL_STATIC_DRAW);
-            _size_bytes = array_size_bytes;
-        }
-        void uploadSubData(GLintptr offset, const void *array, GLuint size_bytes) {
-            if(_id==0) return;
-            bind();
-            glBufferSubData(GL_ARRAY_BUFFER, offset, size_bytes, array);
-        }
+        vao() : _id(0) { generate(); bind(); };
+        ~vao() { del(); unbind(); }
         void generate() { if(_id==0) glGenVertexArrays(1, &_id); bind(); }
         void del() { if(_id) { glDeleteVertexArrays(1, &_id); _id=0; } }
         void bind() const { glBindVertexArray(_id); }
-        void unbind() const { glBindVertexArray(0); }
-        GLsizeiptr size() const { return _size_bytes / GLsizeiptr(sizeof(GLuint)); }
-        GLsizeiptr size_bytes() const { return _size_bytes; }
+        static void unbind() { glBindVertexArray(0); }
 
     private:
         GLuint _id;
-        GLsizeiptr _size_bytes;
     };
 
 }

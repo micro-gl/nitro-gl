@@ -14,20 +14,35 @@ namespace nitrogl {
 
     class gl_texture {
     public:
-        static GLenum ch2enum(unsigned channels) {
-            return (channels==4) ? GL_RGBA : (channels==3 ? GL_RGB : (channels==2) ? GL_RG : GL_RED);
-        }
-        static GLenum bits2type(unsigned bits) {
-            return (bits<=8) ? GL_UNSIGNED_BYTE : (bits<=16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT);
-        }
+        static GLenum ch2enum(unsigned channels)
+        { return (channels==4) ? GL_RGBA : (channels==3 ? GL_RGB : (channels==2) ? GL_RG : GL_RED); }
+        static GLenum bits2type(unsigned bits)
+        { return (bits<=8) ? GL_UNSIGNED_BYTE : (bits<=16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT); }
+        static unsigned max(unsigned a, unsigned b) { return a<b ? b : a; }
         /**
          * create a texture definition from a tightly unpacked byte-array of pixels (no padding between rows).
-         * This will create the same texture layout in gpu memory. Assumes each color channel is 8 bits.
+         * This will create the same texture layout in gpu memory.
+         * data = {r,g,b, r,g,b, r,g,b ....}
          */
         static gl_texture from_unpacked_image(GLsizei width, GLsizei height, const void * data,
-                                              const unsigned channels=4) {
-            return gl_texture(ch2enum(channels), width, height, ch2enum(channels), GL_UNSIGNED_BYTE, data, 1);
+                                              char r_bits, char g_bits, char b_bits, char a_bits) {
+            const auto max_bits = max(max(r_bits, g_bits), max(b_bits, a_bits));
+            GLenum type = bits2type(max_bits);
+            GLenum format=GL_RGBA;
+            const GLint internalformat = a_bits ? GL_RGBA : GL_RGB;
+
+            if(r_bits && g_bits && b_bits && a_bits) { format=GL_RGBA; }
+            else if(r_bits && g_bits && b_bits) { format= GL_RGB; }
+            else if(r_bits && g_bits) { format=GL_RG; }
+            else if(r_bits) { format=GL_RED; }
+
+            return gl_texture(internalformat, width, height, format, type, data, 1);
         }
+        /**
+         * create a texture definition from a tightly packed pixel-array of pixels (no padding between rows).
+         * This will create the same texture layout in gpu memory.
+         * data = { (r|g|b|a), (r|g|b|a), (r|g|b|a) ....}
+         */
         static gl_texture from_packed_image(GLsizei width, GLsizei height, const void * data,
                                             char r_bits, char g_bits, char b_bits, char a_bits,
                                             bool reversed=false) {
@@ -73,32 +88,49 @@ namespace nitrogl {
                    const void * data, GLint unpack_row_alignment=1) :
                 _id(0), _size_bytes(0), _internalformat(internalformat), _width(width),
                 _height(height), _format(format), _type(type), _data(data),
-                _unpack_row_alignment(unpack_row_alignment) {};
+                _unpack_row_alignment(unpack_row_alignment) {
+            create();
+        };
         /**
          * this ctor assumes pixel data is unpacked and will store the same layout in gpu
          */
         gl_texture(GLsizei width, GLsizei height, const void * data, const unsigned channels=4) :
                         gl_texture(ch2enum(channels), width, height, ch2enum(channels), GL_UNSIGNED_BYTE, data, 1) {}
 
-        ~gl_texture() { del(); GL_RGBA}
+        ~gl_texture() { del(); }
 
-        void uploadData(GLuint * array, GLsizeiptr array_size_bytes) {
-            if(_id==0) return;
-            bind();
-            glBufferData(GL_ARRAY_BUFFER, array_size_bytes, array, GL_STATIC_DRAW);
-            _size_bytes = array_size_bytes;
+        bool wasCreated() const { return _id; }
+        bool create() {
+            if(wasCreated()) return false;
+            glGenTextures(1, &_id);
+            glBindTexture(GL_TEXTURE_2D, _id);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, _unpack_row_alignment);
+            glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
+                         _format, _type, _data);
+
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            // these two are required for opengl es 2.0
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            return true;
         }
-        void uploadSubData(GLintptr offset, const void *array, GLuint size_bytes) {
-            if(_id==0) return;
-            bind();
-            glBufferSubData(GL_ARRAY_BUFFER, offset, size_bytes, array);
+
+        static void unuse() { glBindTexture(GL_TEXTURE_2D, 0); }
+        void use() const { use(0); }
+        bool use(int index) const {
+            glActiveTexture(GL_TEXTURE0 + (unsigned int)index);
+            glBindTexture(GL_TEXTURE_2D, _id);
         }
-        void generate() { if(_id==0) glGenBuffers(1, &_id); bind(); }
-        void del() { if(_id) { glDeleteBuffers(1, &_id); _id=0; } }
-        void bind() const { glBindBuffer(GL_ARRAY_BUFFER, _id); }
-        void unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
-        GLsizeiptr size() const { return _size_bytes / GLsizeiptr(sizeof(GLuint)); }
-        GLsizeiptr size_bytes() const { return _size_bytes; }
+        GLsizei width() const { return _width; }
+        GLsizei height() const { return _height; }
+        const void * data() const { return _data; }
+
+        void del() {
+            if(_id) glDeleteTextures(1, &_id);
+            _id=_size_bytes=_internalformat=_width=_height=_format=_type=0;
+            _data=nullptr;
+        }
 
     private:
         GLuint _id;
@@ -108,7 +140,6 @@ namespace nitrogl {
         GLenum _format, _type;
         const void * _data;
         GLint _unpack_row_alignment;
-
     };
 
 }
