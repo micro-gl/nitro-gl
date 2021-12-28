@@ -14,6 +14,7 @@ namespace nitrogl {
     class shader {
         enum class type { vertex, fragment, unknown };
         static GLenum type2enum(const type t) { return t==type::vertex ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER; }
+
     public:
         /**
          *
@@ -31,7 +32,9 @@ namespace nitrogl {
                const GLint *length=nullptr, bool compile_right_away=false) :
                 _type(shader_type), _is_compiled(false), _id(0) {
             _id = glCreateShader(type2enum(_type));
-            glShaderSource(_id, count, sources, length); // upload source code
+            // upload source code as soon as we have sources, we don't know how long
+            // these pointed objects will last
+            glShaderSource(_id, count, sources, length);
             if(compile_right_away) compile();
         }
         /**
@@ -56,24 +59,22 @@ namespace nitrogl {
         bool isVertexShader() const { return _type==type::vertex; }
         bool isFragmentShader() const { return _type==type::fragment; }
         bool isCompiled() const { return _is_compiled; }
-        bool compile(char * log_bufer = nullptr, GLint log_buffer_size=0) {
+        bool compile() {
             if(isCompiled()) return true;
             glCompileShader(_id);
             //Check shader for errors
             GLint compile_status = GL_FALSE;
             glGetShaderiv(_id, GL_COMPILE_STATUS, &compile_status);
-            // record
-            if(log_bufer && compile_status!=GL_TRUE) {
-                //Make sure name is shader
-                if(glIsShader(_id)) {
-                    // Shader copied log length
-                    GLint copied_length = 0;
-                    // copy info log
-                    glGetShaderInfoLog(_id, log_buffer_size, &copied_length, log_bufer);
-                }
-            }
             _is_compiled = compile_status;
             return compile_status;
+        }
+        GLint info_log(char * log_buffer = nullptr, GLint log_buffer_size=0) const {
+            if(!log_buffer or !glIsShader(_id)) return 0;
+            // Shader copied log length
+            GLint copied_length = 0;
+            // copy info log
+            glGetShaderInfoLog(_id, log_buffer_size, &copied_length, log_buffer);
+            return copied_length;
         }
         void del() { glDeleteShader(_id); _is_compiled=false; _id=0; _type=type::unknown; }
 

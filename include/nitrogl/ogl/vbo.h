@@ -17,7 +17,7 @@ namespace nitrogl {
         vbo() : _id(0), _size_bytes(0) { generate(); bind(); };
         ~vbo() { del(); unbind(); }
 
-        void uploadData(GLuint * array, GLsizeiptr array_size_bytes) {
+        void uploadData(const void * array, GLsizeiptr array_size_bytes) {
             if(_id==0) return;
             bind();
             glBufferData(GL_ARRAY_BUFFER, array_size_bytes, array, GL_STATIC_DRAW);

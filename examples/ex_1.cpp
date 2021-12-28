@@ -7,6 +7,7 @@
 #include <nitrogl/ogl/fbo.h>
 #include <nitrogl/ogl/gl_texture.h>
 #include <nitrogl/ogl/shader.h>
+#include <nitrogl/ogl/shader_program.h>
 
 struct CC {
     int width() { return 600; }
