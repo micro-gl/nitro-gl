@@ -23,6 +23,7 @@ namespace nitrogl {
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, array_size_bytes, array, GL_STATIC_DRAW);
             _size_bytes = array_size_bytes;
         }
+        GLuint id() const { return _id; }
         void generate() { if(_id==0) glGenBuffers(1, &_id); bind(); }
         void del() { if(_id) { glDeleteBuffers(1, &_id); _size_bytes=_id=0; } }
         void bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id); }

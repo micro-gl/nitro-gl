@@ -13,12 +13,12 @@
 namespace nitrogl {
 
     class gl_texture {
-    public:
         static GLenum ch2enum(unsigned channels)
         { return (channels==4) ? GL_RGBA : (channels==3 ? GL_RGB : (channels==2) ? GL_RG : GL_RED); }
         static GLenum bits2type(unsigned bits)
         { return (bits<=8) ? GL_UNSIGNED_BYTE : (bits<=16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT); }
         static unsigned max(unsigned a, unsigned b) { return a<b ? b : a; }
+    public:
         /**
          * create a texture definition from a tightly unpacked byte-array of pixels (no padding between rows).
          * This will create the same texture layout in gpu memory.
@@ -66,6 +66,7 @@ namespace nitrogl {
             { format=r ? GL_BGRA : GL_RGBA; type=GL_UNSIGNED_INT_10_10_10_2; }
             else if(r_bits && g_bits==0 && b_bits==0 && a_bits==0)
             { format=GL_RED; type=bits2type(r_bits); }
+            else { /* custom converter with memory allocation ? */ }
 
             return gl_texture(internalformat, width, height, format, type, data, 1);
         }
@@ -116,9 +117,10 @@ namespace nitrogl {
             return true;
         }
 
+        GLuint id() const { return _id; }
         static void unuse() { glBindTexture(GL_TEXTURE_2D, 0); }
         void use() const { use(0); }
-        bool use(int index) const {
+        void use(int index) const {
             glActiveTexture(GL_TEXTURE0 + (unsigned int)index);
             glBindTexture(GL_TEXTURE_2D, _id);
         }

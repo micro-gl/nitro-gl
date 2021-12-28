@@ -29,6 +29,7 @@ namespace nitrogl {
 //            if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 //                log("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
         }
+        GLuint id() const { return _id; }
         void generate() { if(_id==0) glGenFramebuffers(1, &_id); bind(); }
         void del() { if(_id) { glDeleteFramebuffers(1, &_id); _attached_tex_id=_size_bytes=_id=0; } }
         void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, _id); }

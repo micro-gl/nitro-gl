@@ -60,10 +60,9 @@ void example_run(canvas_type canvas, const render_callback &render) {
     int maj=0, min=0;
 //    glGetIntegerv(GL_MAJOR_VERSION, &maj);
 //    glGetIntegerv(GL_MINOR_VERSION, &min);
-    const unsigned char * a = glGetString(GL_VERSION);
+    const unsigned char * version = glGetString(GL_VERSION);
 
-    std::cout << maj << "," << min << " hello\n";
-    std::cout << GL_VERSION_3_3 << " hello\n";
+    std::cout << version <<" hello\n";
 
     bool quit = false;
     SDL_Event event;
