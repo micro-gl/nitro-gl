@@ -14,8 +14,13 @@ namespace nitrogl {
 
     class fbo {
     public:
-        fbo() : _id(0), _attached_tex_id(0), _size_bytes(0) { generate(); bind(); };
+        static fbo main() { return fbo(true); } // get main framebuffer
+        fbo() : _id(0), _attached_tex_id(0) { glGenFramebuffers(1, &_id); };
         ~fbo() { del(); unbind(); }
+
+    private:
+        explicit fbo(bool main) : _id(0), _attached_tex_id(0) {};
+    public:
 
         void attachTexture(GLuint tex_id) {
             if(_attached_tex_id==tex_id) return;
@@ -30,17 +35,15 @@ namespace nitrogl {
 //                log("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
         }
         GLuint id() const { return _id; }
-        void generate() { if(_id==0) glGenFramebuffers(1, &_id); bind(); }
-        void del() { if(_id) { glDeleteFramebuffers(1, &_id); _attached_tex_id=_size_bytes=_id=0; } }
+        void del() { if(_id) { glDeleteFramebuffers(1, &_id); _attached_tex_id=_id=0; } }
         void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, _id); }
+        void bind_read() const { glBindFramebuffer(GL_READ_FRAMEBUFFER, _id); }
+        void bind_draw() const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _id); }
         static void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
-        GLsizeiptr size() const { return _size_bytes / GLsizeiptr(sizeof(GLuint)); }
-        GLsizeiptr size_bytes() const { return _size_bytes; }
 
     private:
         GLuint _id;
         GLuint _attached_tex_id;
-        GLsizeiptr _size_bytes;
     };
 
 }

@@ -70,6 +70,7 @@ namespace nitrogl {
 
         window_t _window;
         gl_texture _tex;
+        gl_texture _tex_backdrop;
 
     public:
         explicit canvas(const gl_texture & tex) : _tex(tex) {

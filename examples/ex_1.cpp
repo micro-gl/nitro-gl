@@ -19,11 +19,11 @@ struct CC {
 
 int main() {
 
-    const auto on_init = [](SDL_Window *, void *) {
+    auto on_init = [](SDL_Window *, void *) {
         gl_texture tex(300, 300);
         canvas canva(tex);
 
-        const auto render = [&]() {
+        auto render = [&]() {
         };
 
         example_run(canva, render);

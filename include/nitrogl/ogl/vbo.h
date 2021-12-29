@@ -14,7 +14,7 @@ namespace nitrogl {
 
     class vbo {
     public:
-        vbo() : _id(0), _size_bytes(0) { generate(); bind(); };
+        vbo() : _id(0), _size_bytes(0) { glGenBuffers(1, &_id); };
         ~vbo() { del(); unbind(); }
 
         void uploadData(const void * array, GLsizeiptr array_size_bytes) {
@@ -28,7 +28,6 @@ namespace nitrogl {
             bind();
             glBufferSubData(GL_ARRAY_BUFFER, offset, size_bytes, array);
         }
-        void generate() { if(_id==0) glGenBuffers(1, &_id); bind(); }
         GLuint id() const { return _id; }
         void del() { if(_id) { glDeleteBuffers(1, &_id); _size_bytes=_id=0; } }
         void bind() const { glBindBuffer(GL_ARRAY_BUFFER, _id); }
