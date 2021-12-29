@@ -95,8 +95,8 @@ namespace nitrogl {
         /**
          * this ctor assumes pixel data is unpacked and will store the same layout in gpu
          */
-        gl_texture(GLsizei width, GLsizei height, const void * data, const unsigned channels=4) :
-                        gl_texture(ch2enum(channels), width, height, ch2enum(channels), GL_UNSIGNED_BYTE, data, 1) {}
+        gl_texture(GLsizei width, GLsizei height, const void * data=nullptr, const unsigned channels=4) :
+            gl_texture(ch2enum(channels), width, height, ch2enum(channels), GL_UNSIGNED_BYTE, data, 1) {}
 
         ~gl_texture() { del(); }
 
@@ -117,6 +117,22 @@ namespace nitrogl {
             return true;
         }
 
+        /**
+         *
+         * @param x, y where to start x update in current tex
+         * @param width/height width of sub texture
+         * @param pixels data of sub texture, has to be with the same format and type
+         * @return
+         */
+        bool updateSubTexture(GLint x, GLint y, GLsizei width, GLsizei height,
+                              const void * pixels, GLint unpack_row_alignment=1) {
+            use();
+            glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, _format, _type, pixels);
+            unuse();
+            return true;
+        }
+
         GLuint id() const { return _id; }
         static void unuse() { glBindTexture(GL_TEXTURE_2D, 0); }
         void use() const { use(0); }
@@ -126,7 +142,7 @@ namespace nitrogl {
         }
         GLsizei width() const { return _width; }
         GLsizei height() const { return _height; }
-        const void * data() const { return _data; }
+        const void * data_unsafe() const { return _data; } // might be gone
 
         void del() {
             if(_id) glDeleteTextures(1, &_id);

@@ -12,8 +12,8 @@ template<class canvas> int __get_height(canvas c) { return c.height(); }
 template<> int __get_width<decltype(nullptr)>(decltype(nullptr) c) { return 200; }
 template<> int __get_height<decltype(nullptr)>(decltype(nullptr) c) { return 200; }
 
-template<class canvas_type=void, class render_callback>
-void example_run(canvas_type canvas, const render_callback &render) {
+template<class on_init_callback>
+void example_init(const on_init_callback &on_init) {
     SDL_Window * window;
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -29,14 +29,11 @@ void example_run(canvas_type canvas, const render_callback &render) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-    int w = __get_width(canvas);
-    int h = __get_height(canvas);
-
     //Create window
     window = SDL_CreateWindow( "SDL ", SDL_WINDOWPOS_CENTERED,
-                                SDL_WINDOWPOS_CENTERED,
-                                w, h,
-                                SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+                               SDL_WINDOWPOS_CENTERED,
+                               5, 5,
+                               SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
 
     // use this for DPI scaling of window
     int wPixels, hPixels;
@@ -52,7 +49,6 @@ void example_run(canvas_type canvas, const render_callback &render) {
     }
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
-    SDL_Surface *  surface = SDL_GetWindowSurface(window);
 
 //     Setup our function pointers
 //    gladLoadGLLoader(SDL_GL_GetProcAddress);
@@ -64,9 +60,18 @@ void example_run(canvas_type canvas, const render_callback &render) {
 
     std::cout << version <<" hello\n";
 
+    on_init(window, context);
+}
+
+template<class canvas_type=void, class render_callback>
+void example_run(canvas_type canvas, const render_callback &render) {
+    auto ctx = SDL_GL_GetCurrentContext();
+    SDL_Window * window = SDL_GL_GetCurrentWindow();
     bool quit = false;
     SDL_Event event;
-
+    int w = __get_width(canvas);
+    int h = __get_height(canvas);
+    SDL_SetWindowSize(window, w, h);
     while (!quit) {
         SDL_PollEvent(&event);
 
@@ -79,12 +84,10 @@ void example_run(canvas_type canvas, const render_callback &render) {
                     quit = true;
                 break;
         };
-
-        render(window, context, surface);
+        render();
         SDL_GL_SwapWindow(window);
     }
-
-    SDL_FreeSurface(surface);
+    SDL_GL_DeleteContext(ctx);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }

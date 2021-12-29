@@ -9,15 +9,24 @@
 #include <nitrogl/ogl/shader.h>
 #include <nitrogl/ogl/shader_program.h>
 
+using namespace nitrogl;
+
 struct CC {
     int width() { return 600; }
     int height() { return 600; }
 };
+
 int main() {
 
-    const auto render = [](void *, void *, void *) {
+    const auto on_init = [](SDL_Window *, void *) {
+        gl_texture tex(300,300);
+
+        const auto render = [&]() {
+        };
+
+        example_run(CC(), render);
     };
 
-    example_run(nullptr, render);
+    example_init(on_init);
 }
 
