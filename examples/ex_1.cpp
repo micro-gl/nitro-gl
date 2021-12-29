@@ -8,6 +8,7 @@
 #include <nitrogl/ogl/gl_texture.h>
 #include <nitrogl/ogl/shader.h>
 #include <nitrogl/ogl/shader_program.h>
+#include <nitrogl/canvas.h>
 
 using namespace nitrogl;
 
@@ -19,12 +20,13 @@ struct CC {
 int main() {
 
     const auto on_init = [](SDL_Window *, void *) {
-        gl_texture tex(300,300);
+        gl_texture tex(300, 300);
+        canvas canva(tex);
 
         const auto render = [&]() {
         };
 
-        example_run(CC(), render);
+        example_run(canva, render);
     };
 
     example_init(on_init);

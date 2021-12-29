@@ -17,7 +17,7 @@
 #include "math.h"
 #include "stdint.h"
 #include "math/vertex2.h"
-#include "math/matrix_3x3.h"
+#include "math/mat3.h"
 //#include "porter_duff/None.h"
 //#include "blend_modes/Normal.h"
 #ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
@@ -77,8 +77,7 @@ namespace nitrogl {
             updateCanvasWindow(0, 0);
         }
 
-        canvas(int width, int height) : canvas() {
-            auto a = gl_texture(width, height, nullptr, 4);
+        canvas(int width, int height) : canvas(gl_texture(width, height, nullptr, 4)) {
         }
 
         /**
@@ -89,9 +88,7 @@ namespace nitrogl {
          * @param r right distance to x=0
          * @param b bottom distance to y=0
          */
-        void updateClipRect(int l, int t, int r, int b) {
-            _window.clip_rect = {l, t, r, b};
-        }
+        void updateClipRect(int l, int t, int r, int b) { _window.clip_rect = {l, t, r, b}; }
 
         /**
          * where to position the bitmap relative to the canvas, this feature
@@ -115,10 +112,8 @@ namespace nitrogl {
         /**
          * given that we know the canvas size and the clip rect, calculate
          * the sub rectangle (intersection), where drawing is visible
-         *
-         * @return a rectangle
          */
-        rect calculateEffectiveDrawRect() {
+        rect calculateEffectiveDrawRect() const {
             rect r = _window.canvas_rect.intersect(_window.clip_rect);
             r.bottom-=1;r.right-=1;
             return r;
@@ -126,7 +121,6 @@ namespace nitrogl {
 
         /**
          * get the clipping rectangle
-         * @return rect reference
          */
         const rect & clipRect() const { return _window.clip_rect; }
 

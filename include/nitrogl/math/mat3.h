@@ -17,7 +17,7 @@
 namespace nitrogl {
 
     template<typename number>
-    class matrix_3x3 : public matrix<number, 3, 3> {
+    class mat3 : public matrix<number, 3, 3> {
     private:
         using base__ = matrix<number, 3, 3>;
 
@@ -29,8 +29,8 @@ namespace nitrogl {
         using index = unsigned;
         using type_ref = number &;
         using const_type_ref = const number &;
-        using matrix_ref = matrix_3x3<number> &;
-        using const_matrix_ref = const matrix_3x3<number> &;
+        using matrix_ref = mat3<number> &;
+        using const_matrix_ref = const mat3<number> &;
         using vertex = nitrogl::vertex2<number>;
 
         static const index SX = 0;
@@ -40,49 +40,49 @@ namespace nitrogl {
         static const index SKEWX = 1;
         static const index SKEWY = 3;
 
-        static matrix_3x3 identity() { return matrix_3x3{}; }
+        static mat3 identity() { return mat3{}; }
 
         static
-        matrix_3x3 translate(const_type_ref tx, const_type_ref ty) {
-            matrix_3x3 mat{};
+        mat3 translate(const_type_ref tx, const_type_ref ty) {
+            mat3 mat{};
             mat[TX] = tx;
             mat[TY] = ty;
             return mat;
         }
 
         static
-        matrix_3x3 scale(const_type_ref sx, const_type_ref sy) {
-            matrix_3x3 mat{};
+        mat3 scale(const_type_ref sx, const_type_ref sy) {
+            mat3 mat{};
             mat[SX] = sx;
             mat[SY] = sy;
             return mat;
         }
 
         static
-        matrix_3x3 reflect(bool x_axis, bool y_axis) {
+        mat3 reflect(bool x_axis, bool y_axis) {
             return scale(y_axis ? -1 : 1, x_axis ? -1 : 1);
         }
 
         static
-        matrix_3x3 shear_x(const_type_ref angles) {
-            matrix_3x3 mat{};
-            mat[SKEWX] = microgl::math::tan(angles);
+        mat3 shear_x(const_type_ref angles) {
+            mat3 mat{};
+            mat[SKEWX] = nitrogl::math::tan(angles);
             return mat;
         }
 
         static
-        matrix_3x3 shear_y(const_type_ref angles) {
-            matrix_3x3 mat{};
-            mat[SKEWY] = microgl::math::tan(angles);
+        mat3 shear_y(const_type_ref angles) {
+            mat3 mat{};
+            mat[SKEWY] = nitrogl::math::tan(angles);
             return mat;
         }
 
         static
-        matrix_3x3 rotation(const_type_ref angle) {
-            matrix_3x3 mat{};
+        mat3 rotation(const_type_ref angle) {
+            mat3 mat{};
 
-            const_type_ref cos_ = microgl::math::cos(angle);
-            const_type_ref sin_ = microgl::math::sin(angle);
+            const_type_ref cos_ = nitrogl::math::cos(angle);
+            const_type_ref sin_ = nitrogl::math::sin(angle);
 
             mat[0] = cos_;
             mat[1] = -sin_;
@@ -92,13 +92,13 @@ namespace nitrogl {
         }
 
         static
-        matrix_3x3 rotation(const_type_ref angle,
-                            const_type_ref px,
-                            const_type_ref py) {
-            matrix_3x3 mat{};
+        mat3 rotation(const_type_ref angle,
+                      const_type_ref px,
+                      const_type_ref py) {
+            mat3 mat{};
 
-            const_type_ref cos_ = microgl::math::cos(angle);
-            const_type_ref sin_ = microgl::math::sin(angle);
+            const_type_ref cos_ = nitrogl::math::cos(angle);
+            const_type_ref sin_ = nitrogl::math::sin(angle);
 
             mat[0] = cos_;
             mat[1] = -sin_;
@@ -116,15 +116,15 @@ namespace nitrogl {
         }
 
         static
-        matrix_3x3 rotation(const_type_ref angle,
-                            const_type_ref px,
-                            const_type_ref py,
-                            const_type_ref sx,
-                            const_type_ref sy) {
-            matrix_3x3 mat{};
+        mat3 rotation(const_type_ref angle,
+                      const_type_ref px,
+                      const_type_ref py,
+                      const_type_ref sx,
+                      const_type_ref sy) {
+            mat3 mat{};
 
-            const_type_ref cos_ = microgl::math::cos(angle);
-            const_type_ref sin_ = microgl::math::sin(angle);
+            const_type_ref cos_ = nitrogl::math::cos(angle);
+            const_type_ref sin_ = nitrogl::math::sin(angle);
 
             mat[0] = sx*cos_;
             mat[1] = -sy*sin_;
@@ -141,15 +141,15 @@ namespace nitrogl {
             return mat;
         }
 
-        matrix_3x3() { identity_fill(); };
+        mat3() { identity_fill(); };
 
         template<class Iterable>
-        matrix_3x3(const Iterable & list) : base__{list} {}
-        matrix_3x3(const_type_ref fill_value) : base__(fill_value) {}
-        matrix_3x3(const base__ & mat) : base__(mat) {}
+        mat3(const Iterable & list) : base__{list} {}
+        mat3(const_type_ref fill_value) : base__(fill_value) {}
+        mat3(const base__ & mat) : base__(mat) {}
         template<typename T2>
-        matrix_3x3(const matrix<T2, 3, 3> & mat) : base__(mat) {}
-        virtual ~matrix_3x3() = default;
+        mat3(const matrix<T2, 3, 3> & mat) : base__(mat) {}
+        virtual ~mat3() = default;
 
         vertex operator*(const vertex & point) const {
             vertex res;

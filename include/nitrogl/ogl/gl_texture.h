@@ -88,9 +88,8 @@ namespace nitrogl {
         gl_texture(GLint internalformat, GLsizei width, GLsizei height, GLenum format, GLenum type,
                    const void * data, GLint unpack_row_alignment=1) :
                 _id(0), _size_bytes(0), _internalformat(internalformat), _width(width),
-                _height(height), _format(format), _type(type), _data(data),
-                _unpack_row_alignment(unpack_row_alignment) {
-            create();
+                _height(height), _format(format), _type(type) {
+            create(data, unpack_row_alignment);
         };
         /**
          * this ctor assumes pixel data is unpacked and will store the same layout in gpu
@@ -101,14 +100,15 @@ namespace nitrogl {
         ~gl_texture() { del(); }
 
         bool wasCreated() const { return _id; }
-        bool create() {
+
+    private:
+        bool create(const void * data, GLint unpack_row_alignment=1) {
             if(wasCreated()) return false;
             glGenTextures(1, &_id);
             glBindTexture(GL_TEXTURE_2D, _id);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, _unpack_row_alignment);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
-                         _format, _type, _data);
-
+                         _format, _type, data);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             // these two are required for opengl es 2.0
@@ -117,6 +117,7 @@ namespace nitrogl {
             return true;
         }
 
+    public:
         /**
          *
          * @param x, y where to start x update in current tex
@@ -125,7 +126,7 @@ namespace nitrogl {
          * @return
          */
         bool updateSubTexture(GLint x, GLint y, GLsizei width, GLsizei height,
-                              const void * pixels, GLint unpack_row_alignment=1) {
+                              const void * pixels, GLint unpack_row_alignment=1) const {
             use();
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, _format, _type, pixels);
@@ -142,12 +143,10 @@ namespace nitrogl {
         }
         GLsizei width() const { return _width; }
         GLsizei height() const { return _height; }
-        const void * data_unsafe() const { return _data; } // might be gone
 
         void del() {
             if(_id) glDeleteTextures(1, &_id);
             _id=_size_bytes=_internalformat=_width=_height=_format=_type=0;
-            _data=nullptr;
         }
 
     private:
@@ -156,8 +155,6 @@ namespace nitrogl {
         GLint _internalformat;
         GLsizei _width, _height;
         GLenum _format, _type;
-        const void * _data;
-        GLint _unpack_row_alignment;
     };
 
 }

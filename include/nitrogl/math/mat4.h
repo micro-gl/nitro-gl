@@ -63,8 +63,8 @@ namespace nitrogl {
         matrix_4x4 rotation(const_type_ref angle, const vertex3 &axis) {
             matrix_4x4 mat{};
             const vertex3 ax = axis.normalize();
-            const number s = microgl::math::sin(angle);
-            const number c = microgl::math::cos(angle);
+            const number s = nitrogl::math::sin(angle);
+            const number c = nitrogl::math::cos(angle);
             const number c1 = number(1) - c;
             const number &x = ax.x;
             const number &y = ax.y;
@@ -100,14 +100,14 @@ namespace nitrogl {
             number sx, sy, sz, cx, cy, cz;
             vertex3 vec;
             // rotation angle about X-axis (pitch)
-            sx = microgl::math::sin(rotation.x);
-            cx = microgl::math::cos(rotation.x);
+            sx = nitrogl::math::sin(rotation.x);
+            cx = nitrogl::math::cos(rotation.x);
             // rotation angle about Y-axis (yaw)
-            sy = microgl::math::sin(rotation.y);
-            cy = microgl::math::cos(rotation.y);
+            sy = nitrogl::math::sin(rotation.y);
+            cy = nitrogl::math::cos(rotation.y);
             // rotation angle about Z-axis (roll)
-            sz = microgl::math::sin(rotation.z);
-            cz = microgl::math::cos(rotation.z);
+            sz = nitrogl::math::sin(rotation.z);
+            cz = nitrogl::math::cos(rotation.z);
 
             // determine left vector
             vertex3 left     { cy * cz * scale.x,  (sx * sy * cz + cx * sz) * scale.x, (-cx * sy * cz + sx * sz) * scale.x};

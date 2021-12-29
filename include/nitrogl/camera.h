@@ -11,7 +11,7 @@
 #pragma once
 
 #include "math/vertex4.h"
-#include "math/matrix_4x4.h"
+#include "math/mat4.h"
 #include "math.h"
 
 namespace nitrogl {
