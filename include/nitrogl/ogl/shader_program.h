@@ -20,9 +20,6 @@ namespace nitrogl {
         shader _vertex, _fragment;
         GLuint _id;
 
-        enum class type { vertex, fragment, unknown };
-        static GLenum type2enum(const type t) { return t==type::vertex ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER; }
-
     public:
         /**
          * NOTES about generic attribs to locations:
@@ -68,7 +65,7 @@ namespace nitrogl {
         const shader & vertex() const { return _vertex; }
         const shader & fragment() const { return _fragment; }
         void use() const { glUseProgram(_id); }
-        void unUse() const { glUseProgram(0); }
+        static void unUse() { glUseProgram(0); }
         bool link() const {
             glLinkProgram(_id);
             GLint is_linked;
@@ -183,9 +180,9 @@ namespace nitrogl {
                     default:break;
                 }
                 // calculate stride
-                GLsizei stride = interleaved ? interleaved_window_size : single_size * it->size;
+                GLsizei stride = interleaved ? GLsizei(interleaved_window_size) : GLsizei(single_size * it->size);
                 // enable generic vertex attrib for bound VBO
-                glEnableVertexAttribArray((GLuint)location);
+                glEnableVertexAttribArray((GLuint)it->location);
                 // associate shader attribute with vertex buffer position in VBO
                 glVertexAttribPointer((GLuint)it->location, GLint(it->size), it->type, GL_FALSE,
                                       GLsizei(single_size * it->size),
@@ -193,7 +190,7 @@ namespace nitrogl {
             }
 
             // we must relink to make bind take effect
-            if(binding_occured) link()
+            if(binding_occured) link();
             return true;
         }
 
@@ -202,254 +199,195 @@ namespace nitrogl {
             return glGetUniformLocation(_id, name);
         }
 
-        void updateUniformMatrix2fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName($name);
-            if(location==-1) return false;
+        // matrices
+        GLint updateUniformMatrix2fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix2fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
-
-        bool updateUniformMatrix3fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix3fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix3fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
-
-        bool updateUniformMatrix4fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix4fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix4fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
 
 #ifndef STRICT_ES2
-
-        bool updateUniformMatrix2x3fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix2x3fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix2x3fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
-
-        bool updateUniformMatrix3x2fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix3x2fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix3x2fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
-
-        bool updateUniformMatrix2x4fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix2x4fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix2x4fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
-
-        bool updateUniformMatrix4x2fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix4x2fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix4x2fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
-
-        bool updateUniformMatrix3x4fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix3x4fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix3x4fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
-
-        bool updateUniformMatrix4x3fv(const GLchar * name, const GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniformMatrix4x3fv(const GLchar * name, const GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniformMatrix4x3fv(location, 1, GL_FALSE, value);
-            return true;
+            return location;
         }
 #endif
 
-// uniform 1
-        bool updateUniform1f(const GLchar * name, GLfloat x) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        // uniform 1
+        GLint updateUniform1f(const GLchar * name, GLfloat x) const {
+            const auto location = uniformLocationByName(name);
             glUniform1f(location, x);
-            return true;
+            return location;
         }
-
-        bool updateUniform1fv(const GLchar * name, GLsizei length, GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform1fv(const GLchar * name, GLsizei length, GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform1fv(location, length, value);
-            return true;
+            return location;
         }
-
-        bool updateUniform1i(const GLchar * name, GLint x) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform1i(const GLchar * name, GLint x) const {
+            const auto location = uniformLocationByName(name);
             glUniform1i(location, x);
-            return true;
+            return location;
         }
-
-        bool updateUniform1iv(const GLchar * name, GLsizei length, GLint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform1iv(const GLchar * name, GLsizei length, GLint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform1iv(location, length, value);
-            return true;
+            return location;
         }
 
 #ifndef STRICT_ES2
-
-        bool updateUniform1ui(const GLchar * name, GLuint x) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
-            glUniform1i(location, x);
-            return true;
+        GLint updateUniform1ui(const GLchar * name, GLuint x) const {
+            const auto location = uniformLocationByName(name);
+            glUniform1ui(location, x);
+            return location;
         }
-
-        bool updateUniform1uiv(const GLchar * name, GLsizei length, GLuint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform1uiv(const GLchar * name, GLsizei length, GLuint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform1uiv(location, length, value);
-            return true;
+            return location;
         }
 #endif
 
-// uniform 2
-        bool updateUniform2f(const GLchar * name, GLfloat x, GLfloat y) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        // uniform 2
+        GLint updateUniform2f(const GLchar * name, GLfloat x, GLfloat y) const {
+            const auto location = uniformLocationByName(name);
             glUniform2f(location, x, y);
-            return true;
+            return location;
         }
-
-        bool updateUniform2fv(const GLchar * name, GLsizei length, GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform2fv(const GLchar * name, GLsizei length, GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform2fv(location, length, value);
-            return true;
+            return location;
         }
-
-        bool updateUniform2i(const GLchar * name, GLint x, GLint y) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform2i(const GLchar * name, GLint x, GLint y) const {
+            const auto location = uniformLocationByName(name);
             glUniform2i(location, x, y);
-            return true;
+            return location;
         }
-
-        bool updateUniform2iv(const GLchar * name, GLsizei length, GLint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform2iv(const GLchar * name, GLsizei length, GLint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform2iv(location, length, value);
-            return true;
+            return location;
         }
 
 #ifndef STRICT_ES2
-        bool updateUniform2ui(const GLchar * name, GLuint x, GLuint y) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform2ui(const GLchar * name, GLuint x, GLuint y) const {
+            const auto location = uniformLocationByName(name);
             glUniform2ui(location, x, y);
-            return true;
+            return location;
         }
-
-        bool updateUniform2uiv(const GLchar * name, GLsizei length, GLuint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform2uiv(const GLchar * name, GLsizei length, GLuint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform2uiv(location, length, value);
-            return true;
+            return location;
         }
-
 #endif
 
-// uniform 3
-
-        bool updateUniform3f(const GLchar * name, GLfloat x, GLfloat y, GLfloat z) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        // uniform 3
+        GLint updateUniform3f(const GLchar * name, GLfloat x, GLfloat y, GLfloat z) const {
+            const auto location = uniformLocationByName(name);
             glUniform3f(location, x, y, z);
-            return true;
+            return location;
         }
-
-        bool updateUniform3fv(const GLchar * name, GLsizei length, GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform3fv(const GLchar * name, GLsizei length, GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform3fv(location, length, value);
-            return true;
+            return location;
         }
-
-        bool updateUniform3i(const GLchar * name, GLint x, GLint y, GLint z) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform3i(const GLchar * name, GLint x, GLint y, GLint z) const {
+            const auto location = uniformLocationByName(name);
             glUniform3i(location, x, y, z);
-            return true;
+            return location;
         }
-
-        bool updateUniform3iv(const GLchar * name, GLsizei length, GLint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform3iv(const GLchar * name, GLsizei length, GLint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform3iv(location, length, value);
-            return true;
+            return location;
         }
 
 #ifndef STRICT_ES2
-        bool updateUniform3ui(const GLchar * name, GLuint x, GLuint y, GLuint z) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform3ui(const GLchar * name, GLuint x, GLuint y, GLuint z) const {
+            const auto location = uniformLocationByName(name);
             glUniform3ui(location, x, y, z);
-            return true;
+            return location;
         }
-
-        bool updateUniform3uiv(const GLchar * name, GLsizei length, GLuint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform3uiv(const GLchar * name, GLsizei length, GLuint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform3uiv(location, length, value);
-            return true;
+            return location;
         }
-
 #endif
 
-// uniform 4
-
-        bool updateUniform4f(const GLchar * name, GLfloat x, GLfloat y, GLfloat z, GLfloat w) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        // uniform 4
+        GLint updateUniform4f(const GLchar * name, GLfloat x, GLfloat y, GLfloat z, GLfloat w) const {
+            const auto location = uniformLocationByName(name);
             glUniform4f(location, x, y, z, w);
-            return true;
+            return location;
         }
-
-        bool updateUniform4fv(const GLchar * name, GLsizei length, GLfloat *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform4fv(const GLchar * name, GLsizei length, GLfloat *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform4fv(location, length, value);
-            return true;
+            return location;
         }
-
-        bool updateUniform4i(const GLchar * name, GLint x, GLint y, GLint z, GLint w) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform4i(const GLchar * name, GLint x, GLint y, GLint z, GLint w) const {
+            const auto location = uniformLocationByName(name);
             glUniform4i(location, x, y, z, w);
-            return true;
+            return location;
         }
-
-        bool updateUniform4iv(const GLchar * name, GLsizei length, GLint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform4iv(const GLchar * name, GLsizei length, GLint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform4iv(location, length, value);
-            return true;
+            return location;
         }
 
 #ifndef STRICT_ES2
-        bool updateUniform4ui(const GLchar * name, GLuint x, GLuint y, GLuint z, GLuint w) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform4ui(const GLchar * name, GLuint x, GLuint y, GLuint z, GLuint w) const {
+            const auto location = uniformLocationByName(name);
             glUniform4ui(location, x, y, z, w);
-            return true;
+            return location;
         }
-
-        bool updateUniform4uiv(const GLchar * name, GLsizei length, GLuint *value) {
-            int location = uniformLocationByName(name);
-            if(location==-1) return false;
+        GLint updateUniform4uiv(const GLchar * name, GLsizei length, GLuint *value) const {
+            const auto location = uniformLocationByName(name);
             glUniform4uiv(location, length, value);
-            return true;
+            return location;
         }
+#endif
     };
+
 }
