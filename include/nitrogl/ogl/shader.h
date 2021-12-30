@@ -12,10 +12,10 @@
 
 namespace nitrogl {
     class shader {
-        static GLenum type2enum(const type t) { return t==type::vertex ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER; }
 
     public:
         enum class type { vertex, fragment, unknown };
+        static GLenum type2enum(const type t) { return t==type::vertex ? GL_VERTEX_SHADER : GL_FRAGMENT_SHADER; }
 
         static shader from(const type shader_type, const GLchar ** sources, GLsizei count=1,
                            const GLint *length=nullptr) {
@@ -49,11 +49,15 @@ namespace nitrogl {
          * of the corresponding string (the null character is not counted as part of the string length) or
          * a value less than 0 to indicate that the string is null terminated.
          */
-        void updateShaderSource(const GLchar ** sources, GLsizei count=1, const GLint *length=nullptr,
-                                bool compile_right_away=false) const {
-            create();
+        bool updateShaderSource(const GLchar ** sources, GLsizei count=1, const GLint *length=nullptr,
+                                bool compile_right_away=false) {
+            if(!wasCreated()) return false;
             glShaderSource(_id, count, sources, length);
             if(compile_right_away) compile();
+            return true;
+        }
+        bool updateShaderSource(const GLchar * source, bool compile_right_away=false) {
+            return updateShaderSource(&source, 1, nullptr, compile_right_away);
         }
         GLuint id() const { return _id; }
         /**

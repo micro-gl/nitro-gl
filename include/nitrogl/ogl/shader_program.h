@@ -56,7 +56,7 @@ namespace nitrogl {
         static shader_program from_shaders(const shader & vertex, const shader & fragment) {
             shader_program prog;
             prog.create();
-            prog.attach_shaders(_vertex, _fragment);
+            prog.attach_shaders(vertex, fragment);
             return prog;
         }
         // ctor: init with empty shaders and attach which is legal

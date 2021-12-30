@@ -75,12 +75,13 @@ namespace nitrogl {
         fbo _fbo;
 
     public:
-        explicit canvas(const gl_texture & tex) : _tex(tex),  {
+        explicit canvas(const gl_texture & tex) :
+                _tex(tex), _tex_backdrop(tex.width(), tex.height(), tex.internalFormat()), _fbo() {
             updateClipRect(0, 0, _tex.width(), _tex.height());
             updateCanvasWindow(0, 0);
         }
 
-        canvas(int width, int height) : canvas(gl_texture(width, height, nullptr, 4)) {
+        canvas(int width, int height) : canvas(gl_texture(width, height)) {
         }
 
         /**

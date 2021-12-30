@@ -36,7 +36,8 @@ namespace nitrogl {
             else if(r_bits && g_bits) { format=GL_RG; }
             else if(r_bits) { format=GL_RED; }
 
-            auto & tex = gl_texture(internalformat, width, height);
+            auto tex = gl_texture(width, height, internalformat);
+            tex.generate();
             tex.uploadImage(format, type, data, 1);
             return tex;
         }
@@ -70,7 +71,8 @@ namespace nitrogl {
             { format=GL_RED; type=bits2type(r_bits); }
             else { /* custom converter with memory allocation ? */ }
 
-            auto & tex = gl_texture(internalformat, width, height);
+            auto tex = gl_texture(width, height, internalformat);
+            tex.generate();
             tex.uploadImage(format, type, data, 1);
             return tex;
         }
@@ -80,12 +82,12 @@ namespace nitrogl {
          * @param width The width of the image data
          * @param height The height of the image data
          */
-        gl_texture(GLint internalformat, GLsizei width, GLsizei height) :
+        gl_texture(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA) :
                 _id(0), _internalformat(internalformat), _width(width), _height(height) {};
 
-        ~gl_texture() { _id=_size_bytes=_internalformat=_width=_height=0; }
+        ~gl_texture() { _id=_internalformat=_width=_height=0; }
 
-        void generate() { glGenTextures(1, &_id); }
+        void generate() { if(!_id) glGenTextures(1, &_id); }
         bool wasGenerated() const { return _id; }
 
         /**
@@ -141,10 +143,11 @@ namespace nitrogl {
         }
         GLsizei width() const { return _width; }
         GLsizei height() const { return _height; }
+        GLint internalFormat() const { return _internalformat; }
 
         void del() {
             if(_id) glDeleteTextures(1, &_id);
-            _id=_size_bytes=_internalformat=_width=_height=0;
+            _id=_internalformat=_width=_height=0;
         }
 
     private:

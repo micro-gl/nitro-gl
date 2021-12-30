@@ -22,7 +22,7 @@ namespace nitrogl {
     public:
 
         void attachTexture(const gl_texture & texture) {
-            if(_attached_tex_id==tex_id) return;
+            if(_attached_tex_id==texture.id()) return;
             bind();
             // attach texture to the currently bound frame buffer object
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
