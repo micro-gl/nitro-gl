@@ -36,7 +36,9 @@ namespace nitrogl {
             else if(r_bits && g_bits) { format=GL_RG; }
             else if(r_bits) { format=GL_RED; }
 
-            return gl_texture(internalformat, width, height, format, type, data, 1);
+            auto & tex = gl_texture(internalformat, width, height);
+            tex.uploadImage(format, type, data, 1);
+            return tex;
         }
         /**
          * create a texture definition from a tightly packed pixel-array of pixels (no padding between rows).
@@ -68,28 +70,19 @@ namespace nitrogl {
             { format=GL_RED; type=bits2type(r_bits); }
             else { /* custom converter with memory allocation ? */ }
 
-            return gl_texture(internalformat, width, height, format, type, data, 1);
+            auto & tex = gl_texture(internalformat, width, height);
+            tex.uploadImage(format, type, data, 1);
+            return tex;
         }
         /**
          * The most general ctor
          * @param internalformat Specify The pixel format to store the texture on GPU, usually GL_RGBA
          * @param width The width of the image data
          * @param height The height of the image data
-         * @param format specifies the layout of color channels in a pixel (unless the type argument has that info
-         *               like type=GL_UNSIGNED_BYTE_3_3_2). Common values are GL_RGB/GL_RGBA/GL_BGR/GL_BGRA or
-         *               GL_RED
-         * @param type The pixel type of each pixel in the image array. If it is unpacked just GL_UNSIGNED_BYTE,
-         *             otherwise specify your pixel type, for example GL_UNSIGNED_INT/GL_UNSIGNED_SHORT_5_6_5
-         * @param data The image array of pixels
-         * @param unpack_row_alignment Image data is made up of rows. In case, each end of row of pixels is padded
-         *                  so the next row is aligned to (1|2|4|8), then you need to specify it. Most data can be saved
-         *                  continuously and I recommend saving images with alignment of 1 (no-padding)
          */
-        gl_texture(GLint internalformat, GLsizei width, GLsizei height, GLenum format, GLenum type,
-                   const void * data, GLint unpack_row_alignment=1) :
-                _id(0), _size_bytes(0), _internalformat(internalformat), _width(width),
-                _height(height), _format(format), _type(type) {
-            create(data, unpack_row_alignment);
+        gl_texture(GLint internalformat, GLsizei width, GLsizei height) :
+                _id(0), _internalformat(internalformat), _width(width), _height(height) {
+            glGenTextures(1, &_id);
         };
         /**
          * this ctor assumes pixel data is unpacked and will store the same layout in gpu
@@ -101,14 +94,25 @@ namespace nitrogl {
 
         bool wasCreated() const { return _id; }
 
-    private:
-        bool create(const void * data, GLint unpack_row_alignment=1) {
-            if(wasCreated()) return false;
-            glGenTextures(1, &_id);
-            glBindTexture(GL_TEXTURE_2D, _id);
+    public:
+        /**
+         *
+         * @param format specifies the layout of color channels in a pixel (unless the type argument has that info
+         *               like type=GL_UNSIGNED_BYTE_3_3_2). Common values are GL_RGB/GL_RGBA/GL_BGR/GL_BGRA or
+         *               GL_RED
+         * @param type The pixel type of each pixel in the image array. If it is unpacked just GL_UNSIGNED_BYTE,
+         *             otherwise specify your pixel type, for example GL_UNSIGNED_INT/GL_UNSIGNED_SHORT_5_6_5
+         * @param data The image array of pixels
+         * @param unpack_row_alignment Image data is made up of rows. In case, each end of row of pixels is padded
+         *                  so the next row is aligned to (1|2|4|8), then you need to specify it. Most data can be saved
+         *                  continuously and I recommend saving images with alignment of 1 (no-padding)
+         * @return
+         */
+        bool uploadImage(GLenum format, GLenum type, const void * data, GLint unpack_row_alignment=1) const {
+            use(0);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
-                         _format, _type, data);
+                         format, type, data);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             // these two are required for opengl es 2.0
@@ -117,7 +121,6 @@ namespace nitrogl {
             return true;
         }
 
-    public:
         /**
          *
          * @param x, y where to start x update in current tex
@@ -125,11 +128,12 @@ namespace nitrogl {
          * @param pixels data of sub texture, has to be with the same format and type
          * @return
          */
-        bool updateSubTexture(GLint x, GLint y, GLsizei width, GLsizei height,
-                              const void * pixels, GLint unpack_row_alignment=1) const {
-            use();
+        bool uploadSubImage(GLint x, GLint y, GLsizei width, GLsizei height,
+                            GLenum format, GLenum type, const void * pixels,
+                            GLint unpack_row_alignment= 1) const {
+            use(0);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, _format, _type, pixels);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, format, type, pixels);
             unuse();
             return true;
         }
@@ -146,15 +150,13 @@ namespace nitrogl {
 
         void del() {
             if(_id) glDeleteTextures(1, &_id);
-            _id=_size_bytes=_internalformat=_width=_height=_format=_type=0;
+            _id=_size_bytes=_internalformat=_width=_height=0;
         }
 
     private:
         GLuint _id;
-        GLsizeiptr _size_bytes;
         GLint _internalformat;
         GLsizei _width, _height;
-        GLenum _format, _type;
     };
 
 }

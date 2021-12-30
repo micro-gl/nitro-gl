@@ -46,6 +46,7 @@
 //#include "text/bitmap_font.h"
 
 #include "ogl/gl_texture.h"
+#include "ogl/fbo.h"
 
 using namespace microtess::triangles;
 using namespace microtess::polygons;
@@ -71,9 +72,10 @@ namespace nitrogl {
         window_t _window;
         gl_texture _tex;
         gl_texture _tex_backdrop;
+        fbo _fbo;
 
     public:
-        explicit canvas(const gl_texture & tex) : _tex(tex) {
+        explicit canvas(const gl_texture & tex) : _tex(tex),  {
             updateClipRect(0, 0, _tex.width(), _tex.height());
             updateCanvasWindow(0, 0);
         }
