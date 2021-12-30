@@ -53,18 +53,18 @@ namespace nitrogl {
             GLint location=0; // the location
         };
 
+        static shader_program from_shaders(const shader & vertex, const shader & fragment) {
+            shader_program prog;
+            prog.create();
+            prog.attach_shaders(_vertex, _fragment);
+            return prog;
+        }
         // ctor: init with empty shaders and attach which is legal
-        shader_program() : _vertex(shader::type::vertex), _fragment(shader::type::fragment), _id(0) {
-            _id = glCreateProgram();
-            attach_shaders(_vertex, _fragment);
-        }
-        shader_program(const shader & vertex, const shader & fragment) :
-                _vertex(vertex), _fragment(fragment), _id(0) {
-            _id = glCreateProgram();
-            attach_shaders(vertex, fragment);
-        }
-        ~shader_program() { del(); }
+        shader_program() : _vertex(shader::type::vertex), _fragment(shader::type::fragment), _id(0) {}
+        ~shader_program() { _id=0; }
 
+        bool wasCreated() const { return _id; }
+        void create() { if(!_id) _id = glCreateProgram(); }
         void attach_shaders(const shader & vertex, const shader & fragment) {
             detachShaders();
             _vertex = vertex;
@@ -77,8 +77,8 @@ namespace nitrogl {
             glDetachShader(_id, _fragment.id());
         }
         GLuint id() const { return _id; }
-        const shader & vertex() const { return _vertex; }
-        const shader & fragment() const { return _fragment; }
+        shader & vertex() { return _vertex; }
+        shader & fragment() { return _fragment; }
         void use() const { glUseProgram(_id); }
         static void unUse() { glUseProgram(0); }
         bool link() const {

@@ -36,12 +36,6 @@ namespace nitrogl {
         { return from(type::fragment, &source, 1, nullptr); }
 
         shader(const type shader_type) : _type(shader_type), _is_compiled(false), _id(0) {}
-
-        /**
-         * Convenience Ctor. Shader's source is assumed to be null terminated
-         */
-        shader(const type shader_type, const GLchar * source, bool compile_right_away=false) :
-                shader(shader_type, &source, 1, nullptr, compile_right_away) { }
         ~shader() { _is_compiled=false; _id=0; _type=type::unknown; }
 
         void create() { if(!_id) { _id = glCreateShader(type2enum(_type)); } }
@@ -77,6 +71,7 @@ namespace nitrogl {
         bool isFragmentShader() const { return _type==type::fragment; }
         bool isCompiled() const { return _is_compiled; }
         bool compile() {
+            if(wasCreated()) return false;
             glCompileShader(_id);
             //Check shader for errors
             GLint compile_status = GL_FALSE;
