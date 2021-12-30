@@ -3581,7 +3581,7 @@ static stbi_uc *load_jpeg_image(stbi__jpeg *z, int *out_x, int *out_y, int *comp
     // load a jpeg image from_sampler whichever source, but leave in YCbCr format
     if (!stbi__decode_jpeg_image(z)) { stbi__cleanup_jpeg(z); return NULL; }
 
-    // determine actual number of components to generate
+    // determine actual number of components to create
     n = req_comp ? req_comp : z->s->img_n >= 3 ? 3 : 1;
 
     is_rgb = z->s->img_n == 3 && (z->rgb == 3 || (z->app14_color_transform == 0 && !z->jfif));

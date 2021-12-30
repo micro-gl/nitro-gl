@@ -10,30 +10,31 @@
 ========================================================================================*/
 #pragma once
 
+#include "gl_texture.h"
+
 namespace nitrogl {
 
     class fbo {
     public:
-        static fbo main() { return fbo(true); } // get main framebuffer
-        fbo() : _id(0), _attached_tex_id(0) { glGenFramebuffers(1, &_id); };
-        ~fbo() { del(); unbind(); }
+        fbo() : _id(0), _attached_tex_id(0) {};
+        ~fbo() { _attached_tex_id=_id=0; unbind(); }
 
-    private:
-        explicit fbo(bool main) : _id(0), _attached_tex_id(0) {};
     public:
 
-        void attachTexture(GLuint tex_id) {
+        void attachTexture(const gl_texture & texture) {
             if(_attached_tex_id==tex_id) return;
             bind();
             // attach texture to the currently bound frame buffer object
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                   GL_TEXTURE_2D, tex_id, 0);
+                                   GL_TEXTURE_2D, texture.id(), 0);
             // i do not keep track of the texture, since we might want it managed by other components
-            _attached_tex_id = tex_id;
+            _attached_tex_id = texture.id();
             // check for completeness
 //            if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 //                log("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
         }
+        bool wasGenerated() const { return _id; }
+        void generate() { glGenFramebuffers(1, &_id); }
         GLuint id() const { return _id; }
         void del() { if(_id) { glDeleteFramebuffers(1, &_id); _attached_tex_id=_id=0; } }
         void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, _id); }

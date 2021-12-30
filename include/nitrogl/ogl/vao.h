@@ -14,8 +14,10 @@ namespace nitrogl {
 
     class vao {
     public:
-        vao() : _id(0) { glGenVertexArrays(1, &_id); };
-        ~vao() { del(); unbind(); }
+        vao() : _id(0) { };
+        ~vao() { _id=0; unbind(); }
+        bool wasGenerated() const { return _id; }
+        void generate() { glGenVertexArrays(1, &_id); }
         GLuint id() const { return _id; }
         void del() { if(_id) { glDeleteVertexArrays(1, &_id); _id=0; } }
         void bind() const { glBindVertexArray(_id); }

@@ -14,9 +14,11 @@ namespace nitrogl {
 
     class ebo {
     public:
-        ebo() : _id(0), _size_bytes(0) { glGenBuffers(1, &_id); };
-        ~ebo() { del(); unbind(); }
+        ebo() : _id(0), _size_bytes(0) {};
+        ~ebo() { _size_bytes=_id=0; unbind(); }
 
+        bool wasGenerated() const { return _id; }
+        void generate() { glGenBuffers(1, &_id); }
         void uploadData(GLuint * array, GLsizeiptr array_size_bytes) {
             if(_id==0) return;
             bind();

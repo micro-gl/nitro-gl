@@ -53,14 +53,29 @@ namespace nitrogl {
             GLint location=0; // the location
         };
 
+        // ctor: init with empty shaders and attach which is legal
+        shader_program() : _vertex(shader::type::vertex), _fragment(shader::type::fragment), _id(0) {
+            _id = glCreateProgram();
+            attach_shaders(_vertex, _fragment);
+        }
         shader_program(const shader & vertex, const shader & fragment) :
                 _vertex(vertex), _fragment(fragment), _id(0) {
             _id = glCreateProgram();
-            glAttachShader(_id, _vertex.id());
-            glAttachShader(_id, _fragment.id());
+            attach_shaders(vertex, fragment);
         }
         ~shader_program() { del(); }
 
+        void attach_shaders(const shader & vertex, const shader & fragment) {
+            detachShaders();
+            _vertex = vertex;
+            _fragment = fragment;
+            glAttachShader(_id, _vertex.id());
+            glAttachShader(_id, _fragment.id());
+        }
+        void detachShaders() const {
+            glDetachShader(_id, _vertex.id());
+            glDetachShader(_id, _fragment.id());
+        }
         GLuint id() const { return _id; }
         const shader & vertex() const { return _vertex; }
         const shader & fragment() const { return _fragment; }
@@ -83,8 +98,7 @@ namespace nitrogl {
             return copied_length;
         }
         void del() {
-            glDetachShader(_id, _vertex.id());
-            glDetachShader(_id, _fragment.id());
+            detachShaders();
             glDeleteProgram(_id);
             _id=0;
         }

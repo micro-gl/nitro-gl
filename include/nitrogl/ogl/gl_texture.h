@@ -81,20 +81,13 @@ namespace nitrogl {
          * @param height The height of the image data
          */
         gl_texture(GLint internalformat, GLsizei width, GLsizei height) :
-                _id(0), _internalformat(internalformat), _width(width), _height(height) {
-            glGenTextures(1, &_id);
-        };
-        /**
-         * this ctor assumes pixel data is unpacked and will store the same layout in gpu
-         */
-        gl_texture(GLsizei width, GLsizei height, const void * data=nullptr, const unsigned channels=4) :
-            gl_texture(ch2enum(channels), width, height, ch2enum(channels), GL_UNSIGNED_BYTE, data, 1) {}
+                _id(0), _internalformat(internalformat), _width(width), _height(height) {};
 
-        ~gl_texture() { del(); }
+        ~gl_texture() { _id=_size_bytes=_internalformat=_width=_height=0; }
 
-        bool wasCreated() const { return _id; }
+        void generate() { glGenTextures(1, &_id); }
+        bool wasGenerated() const { return _id; }
 
-    public:
         /**
          *
          * @param format specifies the layout of color channels in a pixel (unless the type argument has that info
@@ -109,6 +102,7 @@ namespace nitrogl {
          * @return
          */
         bool uploadImage(GLenum format, GLenum type, const void * data, GLint unpack_row_alignment=1) const {
+            if(!wasGenerated()) return false;
             use(0);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
@@ -131,10 +125,10 @@ namespace nitrogl {
         bool uploadSubImage(GLint x, GLint y, GLsizei width, GLsizei height,
                             GLenum format, GLenum type, const void * pixels,
                             GLint unpack_row_alignment= 1) const {
+            if(!wasGenerated()) return false;
             use(0);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, format, type, pixels);
-            unuse();
             return true;
         }
 

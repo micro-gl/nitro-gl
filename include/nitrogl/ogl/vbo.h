@@ -14,9 +14,11 @@ namespace nitrogl {
 
     class vbo {
     public:
-        vbo() : _id(0), _size_bytes(0) { glGenBuffers(1, &_id); };
-        ~vbo() { del(); unbind(); }
+        vbo() : _id(0), _size_bytes(0) {};
+        ~vbo() { _size_bytes=_id=0; unbind(); }
 
+        bool wasGenerated() const { return _id; }
+        void generate() { glGenBuffers(1, &_id); }
         void uploadData(const void * array, GLsizeiptr array_size_bytes) {
             if(_id==0) return;
             bind();

@@ -483,7 +483,7 @@ namespace microtess {
                          container_output_vertices &output_vertices,
                          container_output_indices &output_indices,
                          container_output_boundary *boundary_buffer) {
-            // this procedure will generate points on a half circle adaptively
+            // this procedure will create points on a half circle adaptively
             const auto dir= to-from;
             bool done= (dir.x*dir.x + dir.y*dir.y)<=max_distance_squared;
             if(done) return;
