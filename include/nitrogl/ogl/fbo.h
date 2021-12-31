@@ -16,13 +16,18 @@ namespace nitrogl {
 
     class fbo {
     public:
+        static fbo from_current() {
+            fbo o; GLint id=0;
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &id);
+            o._id=id;
+            return o;
+        }
         fbo() : _id(0), _attached_tex_id(0) {};
         ~fbo() { _attached_tex_id=_id=0; unbind(); }
 
     public:
 
         void attachTexture(const gl_texture & texture) {
-            if(_attached_tex_id==texture.id()) return;
             bind();
             // attach texture to the currently bound frame buffer object
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -34,7 +39,7 @@ namespace nitrogl {
 //                log("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
         }
         bool wasGenerated() const { return _id; }
-        void generate() { glGenFramebuffers(1, &_id); }
+        void generate() { if(!_id) glGenFramebuffers(1, &_id); }
         GLuint id() const { return _id; }
         void del() { if(_id) { glDeleteFramebuffers(1, &_id); _attached_tex_id=_id=0; } }
         void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, _id); }

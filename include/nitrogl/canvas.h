@@ -70,18 +70,39 @@ namespace nitrogl {
     private:
 
         window_t _window;
-        gl_texture _tex;
+//        gl_texture _tex;
         gl_texture _tex_backdrop;
         fbo _fbo;
 
+    private:
+        //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
     public:
+        // if wants AA:
+        // 1. create RBO with multisampling and attach it to color in fbo, and then blit to texture's fbo
+        // if you are given texture, then draw into it
         explicit canvas(const gl_texture & tex) :
-                _tex(tex), _tex_backdrop(tex.width(), tex.height(), tex.internalFormat()), _fbo() {
-            updateClipRect(0, 0, _tex.width(), _tex.height());
-            updateCanvasWindow(0, 0);
+                _tex_backdrop(tex.width(), tex.height(), tex.internalFormat()),
+                _fbo(), _window() {
+            updateClipRect(0, 0, tex.width(), tex.height());
+            updateCanvasWindow(0, 0, tex.width(), tex.height());
+            if(!tex.wasGenerated()) {
+                std::cout << "tex - not generated !!\n";
+            }
+            _fbo.generate();
+            _fbo.attachTexture(tex);
+            auto curr = fbo::from_current();
+            fbo::unbind();
+            _tex_backdrop.generate();
         }
 
-        canvas(int width, int height) : canvas(gl_texture(width, height)) {
+        // if you got nothing, draw to bound fbo
+        canvas(int width, int height) :
+                _tex_backdrop(width, height, GL_RGBA), _fbo(fbo::from_current()), _window() {
+            updateClipRect(0, 0, width, height);
+            updateCanvasWindow(0, 0, width, height);
+            _tex_backdrop.generate();
+            fbo::unbind();
+
         }
 
         /**
@@ -110,7 +131,7 @@ namespace nitrogl {
         }
 
         void updateCanvasWindow(int left, int top) {
-            updateCanvasWindow(left, top, _tex.width(), _tex.height());
+            updateCanvasWindow(left, top, width(), height());
         }
 
         /**
@@ -151,13 +172,49 @@ namespace nitrogl {
 
 //    bitmap_type & bitmapCanvas() const;
 
-        /**
-         * clear the canvas with a color intensity
-         * @tparam number the number type of the intensity
-         * @param color the color intensity
-         */
-        template <typename number>
-        void clear(const color_t<number> &color);
+        void clear(const color_t<float> &color) {
+            clear(color.r, color.g, color.b, color.a);
+        }
+        void clear(float r, float g, float b, float a) const {
+            _fbo.bind();
+            glClearColor(r, g, b, a);
+            glClear(GL_COLOR_BUFFER_BIT);
+            copy_to_backdrop();
+            _fbo.unbind();
+        }
+
+#define max___(a, b) ((a)<(b) ? (b) : (a))
+#define min___(a, b) ((a)<(b) ? (a) : (b))
+
+    private:
+        void copy_region_to_backdrop(int left, int top, int right, int bottom) const {
+            copy_region_to_texture(_tex_backdrop, left, top, left, top, right, bottom);
+        }
+        void copy_to_backdrop() const {
+            copy_region_to_backdrop(0, 0, width(), height());
+        }
+
+        void copy_region_to_texture(const gl_texture &texture,
+                            int textureLeft, int textureTop,
+                            int left, int top, int right, int bottom) const {
+            rect t = rect(textureLeft, textureTop, texture.width(), texture.height());
+            rect c = rect(left, top, right, bottom)
+                        .translate(textureLeft, textureTop)
+                        .intersect(t)
+                        .translate(-textureLeft, -textureTop)
+                        .intersect(canvasWindowRect());
+            // invert to opengl coordinates (0,0) is bottom-left
+            int y_canvas = height() - c.bottom;
+            int y_texture = texture.height() - (textureTop + c.height());
+            _fbo.bind();
+            texture.use();
+            glCopyTexSubImage2D(GL_TEXTURE_2D, 0, textureLeft, y_texture,
+                                c.left, y_canvas, c.width(), c.height());
+            texture.unuse();
+            _fbo.unbind();
+        }
+
+    public:
 
 //        // integer blenders
 //        /**

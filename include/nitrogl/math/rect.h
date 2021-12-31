@@ -19,6 +19,10 @@ namespace nitrogl {
         rect_t(cref left=0, cref top=0, cref right=0, cref bottom=0) :
                         left{left}, top{top}, right{right}, bottom{bottom}{}
         rect_t(const rect_t& r) : rect_t{r.left, r.top, r.right, r.bottom} {}
+        rect_t & translate(const number l, const number t) {
+            left+=l; right+=l; top+=t; bottom+=t;
+            return *this;
+        }
         rect_t &operator=(const rect_t& r) {
             left=r.left; top=r.top; right=r.right; bottom=r.bottom;
             return *this;

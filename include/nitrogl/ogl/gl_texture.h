@@ -19,6 +19,11 @@ namespace nitrogl {
         { return (bits<=8) ? GL_UNSIGNED_BYTE : (bits<=16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT); }
         static unsigned max(unsigned a, unsigned b) { return a<b ? b : a; }
     public:
+        static gl_texture empty(GLsizei width, GLsizei height) {
+            gl_texture tex(width, height, GL_RGBA);
+            tex.generate();
+            return tex;
+        }
         /**
          * create a texture definition from a tightly unpacked byte-array of pixels (no padding between rows).
          * This will create the same texture layout in gpu memory.
@@ -87,7 +92,18 @@ namespace nitrogl {
 
         ~gl_texture() { _id=_internalformat=_width=_height=0; }
 
-        void generate() { if(!_id) glGenTextures(1, &_id); }
+        void generate() {
+            if(!_id) {
+                glGenTextures(1, &_id);
+                use(0);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                // these two are required for opengl es 2.0
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                unuse();
+            }
+        }
         bool wasGenerated() const { return _id; }
 
         /**
@@ -109,11 +125,6 @@ namespace nitrogl {
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
                          format, type, data);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            // these two are required for opengl es 2.0
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             return true;
         }
 
