@@ -93,6 +93,7 @@ namespace nitrogl {
             auto curr = fbo::from_current();
             fbo::unbind();
             _tex_backdrop.generate();
+            copy_to_backdrop();
         }
 
         // if you got nothing, draw to bound fbo
@@ -101,8 +102,8 @@ namespace nitrogl {
             updateClipRect(0, 0, width, height);
             updateCanvasWindow(0, 0, width, height);
             _tex_backdrop.generate();
+            copy_to_backdrop();
             fbo::unbind();
-
         }
 
         /**
