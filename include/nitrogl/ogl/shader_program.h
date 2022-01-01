@@ -11,6 +11,7 @@
 #pragma once
 
 #include "shader.h"
+#include "../traits.h"
 
 namespace nitrogl {
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -39,12 +40,12 @@ namespace nitrogl {
          *
          */
         struct attr_t {
-            const GLchar * name=nullptr; // name of vertex attribute
-            GLint location=-1; // the index of the attribute in the vertex shader
-            GLenum type=GL_FLOAT; // the type of element in attribute
-            GLuint size=1; // the number of elements in attribute (1,2,3,4)
+            const GLchar * name; // name of vertex attribute
+            GLint location; // the index of the attribute in the vertex shader
+            GLenum type; // the type of element in attribute
+            GLuint size; // the number of elements in attribute (1,2,3,4)
             // the attribute's first relative occurrence offset in the buffer
-            const void * offset=nullptr;
+            const void * offset;
             // stride can be calculated automatically if the buffer is interleaved or non.
         };
 
@@ -55,17 +56,29 @@ namespace nitrogl {
 
         static shader_program from_shaders(const shader & vertex, const shader & fragment) {
             shader_program prog;
-            prog.create();
+//            prog.create();
             prog.attach_shaders(vertex, fragment);
+            prog.link();
             return prog;
         }
-        // ctor: init with empty shaders and attach which is legal
-        shader_program() : _vertex(shader::type::vertex), _fragment(shader::type::fragment), _id(0) {}
-        ~shader_program() { _id=0; }
+        // ctor: init with empty shaders
+        shader_program() : _vertex(shader::type::unknown), _fragment(shader::type::unknown), _id(0) {
+            create();
+        }
+        shader_program(shader_program && o) noexcept : _id(o._id), _vertex(o._vertex), _fragment(o._fragment) {
+           o._id=0;
+        }
+        shader_program & operator=(shader_program && o) noexcept {
+            _id=o._id; _vertex=o._vertex; _fragment=o._fragment; o._id=0; return *this;
+        }
+        shader_program(const shader_program &)=default;
+        shader_program & operator=(const shader_program &)=default;
+        ~shader_program() { del(); unUse(); }
 
         bool wasCreated() const { return _id; }
         void create() { if(!_id) _id = glCreateProgram(); }
         void attach_shaders(const shader & vertex, const shader & fragment) {
+            create();
             detachShaders();
             _vertex = vertex;
             _fragment = fragment;
@@ -124,7 +137,7 @@ namespace nitrogl {
         }
 
         /**
-         *
+         * NOTE: VBO must be bound when calling this method
          * three modes:
          * 1. { location<0, name!=nullptr } --> first link if hasn't, then glGetAttribLocation
          * 1. { location>=0, name!=nullptr } --> first glBindAttribLocation, and re-link at end
@@ -199,7 +212,7 @@ namespace nitrogl {
                 glEnableVertexAttribArray((GLuint)it->location);
                 // associate shader attribute with vertex buffer position in VBO
                 glVertexAttribPointer((GLuint)it->location, GLint(it->size), it->type, GL_FALSE,
-                                      GLsizei(single_size * it->size),
+                                      stride,
                                       it->offset);
             }
 

@@ -47,12 +47,17 @@
 
 #include "ogl/gl_texture.h"
 #include "ogl/fbo.h"
+#include "ogl/vbo.h"
+#include "ogl/ebo.h"
+#include "ogl/main_shader_program.h"
 
 using namespace microtess::triangles;
 using namespace microtess::polygons;
 //using namespace nitrogl;
 
 namespace nitrogl {
+    #define OFFSET(byteOffset) (reinterpret_cast<const void *>(byteOffset))
+//    #define OFFSET(i) ((char *)NULL + (i))
 
     class canvas {
     public:
@@ -72,13 +77,13 @@ namespace nitrogl {
         window_t _window;
 //        gl_texture _tex;
         gl_texture _tex_backdrop;
-        fbo _fbo;
+        fbo_t _fbo;
 
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
     public:
         // if wants AA:
-        // 1. create RBO with multisampling and attach it to color in fbo, and then blit to texture's fbo
+        // 1. create RBO with multisampling and attach it to color in fbo_t, and then blit to texture's fbo_t
         // if you are given texture, then draw into it
         explicit canvas(const gl_texture & tex) :
                 _tex_backdrop(tex.width(), tex.height(), tex.internalFormat()),
@@ -90,20 +95,20 @@ namespace nitrogl {
             }
             _fbo.generate();
             _fbo.attachTexture(tex);
-            auto curr = fbo::from_current();
-            fbo::unbind();
+            auto curr = fbo_t::from_current();
+            fbo_t::unbind();
             _tex_backdrop.generate();
             copy_to_backdrop();
         }
 
-        // if you got nothing, draw to bound fbo
+        // if you got nothing, draw to bound fbo_t
         canvas(int width, int height) :
-                _tex_backdrop(width, height, GL_RGBA), _fbo(fbo::from_current()), _window() {
+                _tex_backdrop(width, height, GL_RGBA), _fbo(fbo_t::from_current()), _window() {
             updateClipRect(0, 0, width, height);
             updateCanvasWindow(0, 0, width, height);
             _tex_backdrop.generate();
             copy_to_backdrop();
-            fbo::unbind();
+            fbo_t::unbind();
         }
 
         /**
@@ -162,18 +167,7 @@ namespace nitrogl {
         // get canvas height
         int height() const { return _window.canvas_rect.height(); };
         // get the pixels array from the underlying bitmap
-//    const pixel * pixels() const;
-//    pixel * pixels();
-        // get a pixel by position
-//    pixel getPixel(int x, int y) const ;
-//    pixel getPixel(int index) const ;
-        // decode pixel color by position
-//        void getPixelColor(int index, color_t & output) const {}
-//        void getPixelColor(int x, int y, color_t & output) const {}
-
-//    bitmap_type & bitmapCanvas() const;
-
-        void clear(const color_t<float> &color) {
+        void clear(const color_t &color) const {
             clear(color.r, color.g, color.b, color.a);
         }
         void clear(float r, float g, float b, float a) const {
@@ -216,6 +210,62 @@ namespace nitrogl {
         }
 
     public:
+
+        void drawRect(float left, float top, float right, float bottom,
+                      opacity_t opacity = 255) {
+            glViewport(0, 0, width(), height());
+            _fbo.bind();
+            // draw
+            // init
+            vao_t vao;
+            vbo_t vbo;
+            ebo_t ebo;
+
+            // interleaved, initialize vertices: index + pos + uv (counter clock-wise)
+            // interleaved is preferred because the offset can be known before the data size
+            // as opposed to non-interleaved
+            GLfloat v[24] =  {
+                    0, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // Bottom-left
+                    1, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, // Bottom-right
+                    2, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, // Top-right
+                    3, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // Top-left
+            };
+
+            // vertex attributes
+            shader_program::attr_t vertex_attributes[3] = {
+                    {"index",         0, GL_FLOAT,  1, OFFSET(0)},
+                    {"position",      1, GL_FLOAT,  2, OFFSET(4)},
+                    {"tex_vertex_in", 2, GL_FLOAT,  3, OFFSET(12)}
+            };
+
+            // elements buffer
+            GLuint e[6] = {
+                    0, 1, 2,
+                    2, 3, 0
+            };
+
+            main_shader_program prog;
+//            vao.generate(); vao.bind();
+//            vbo.generate(); vbo.bind();
+//            ebo.generate(); ebo.bind();
+            vbo.uploadData(v, sizeof(v));
+            ebo.uploadData(e, sizeof(e));
+
+            // enable and point vertex attributes
+            prog.pointVertexAttributes(vertex_attributes, 3, true);
+
+            vao.unbind();
+
+            // draw
+
+
+
+            //
+            copy_region_to_backdrop(int(left), int(top),
+                                    int(right+0.5f), int(bottom+0.5f));
+
+            fbo_t::unbind();
+        }
 
 //        // integer blenders
 //        /**

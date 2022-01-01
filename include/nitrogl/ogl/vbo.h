@@ -12,13 +12,24 @@
 
 namespace nitrogl {
 
-    class vbo {
+    class vbo_t {
+        GLuint _id;
+        GLsizeiptr _size_bytes;
+
+        void generate() { if(!_id) glGenBuffers(1, &_id); }
+
     public:
-        vbo() : _id(0), _size_bytes(0) {};
-        ~vbo() { _size_bytes=_id=0; unbind(); }
+        vbo_t() : _id(0), _size_bytes(0) { generate(); };
+        vbo_t(vbo_t && o)  noexcept : _id(o._id), _size_bytes(o._size_bytes) { o._id=0; }
+        vbo_t(const vbo_t &)=default;
+        vbo_t & operator=(const vbo_t &)=default;
+        vbo_t & operator=(vbo_t && o) noexcept {
+            _id=o._id; _size_bytes=o._size_bytes;
+            o._id=0; return *this;
+        }
+        ~vbo_t() { del(); unbind(); }
 
         bool wasGenerated() const { return _id; }
-        void generate() { glGenBuffers(1, &_id); }
         void uploadData(const void * array, GLsizeiptr array_size_bytes) {
             if(_id==0) return;
             bind();
@@ -36,10 +47,6 @@ namespace nitrogl {
         static void unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
         GLsizeiptr size() const { return _size_bytes / GLsizeiptr(sizeof(GLuint)); }
         GLsizeiptr size_bytes() const { return _size_bytes; }
-
-    private:
-        GLuint _id;
-        GLsizeiptr _size_bytes;
     };
 
 }

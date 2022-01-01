@@ -180,4 +180,7 @@ namespace nitrogl {
                 this->_data[6]==zero && this->_data[7]==zero && this->_data[8]==one);
         }
     };
+
+    using mat3f = mat3<float>;
+
 }

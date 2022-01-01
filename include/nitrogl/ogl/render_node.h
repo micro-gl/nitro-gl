@@ -10,27 +10,44 @@
 ========================================================================================*/
 #pragma once
 
+#include "shader_program.h"
+#include "vbo.h"
+#include "ebo.h"
+#include "vao.h"
+#include "../math/mat4.h"
+#include "../color.h"
+
 namespace nitrogl {
 
-    class vao_t {
-        GLuint _id;
-
-        void generate() { if(!_id) glGenVertexArrays(1, &_id); }
-
+    template<class ShaderProgram>
+    class render_node {
     public:
-        vao_t() : _id(0) { generate(); };
-        vao_t(vao_t && o)  noexcept : _id(o._id) { o._id=0; }
-        vao_t(const vao_t &)=default;
-        vao_t & operator=(vao_t && o)  noexcept { _id=o._id; o._id=0; return *this; }
-        vao_t & operator=(const vao_t &)=default;
-        ~vao_t() { del(); unbind(); }
+        using shader_program_type = ShaderProgram;
 
-        bool wasGenerated() const { return _id; }
-        GLuint id() const { return _id; }
-        void del() { if(_id) { glDeleteVertexArrays(1, &_id); _id=0; } }
-        void bind() const { glBindVertexArray(_id); }
-        static void unbind() { glBindVertexArray(0); }
+        struct data_type {
+            color_t color;
+        };
+
+    private:
+        const shader_program_type _program;
+        vao_t _vao;
+        vbo_t _vbo;
+        ebo_t _ebo;
+        mat4f _mat_model, _mat_view, _mat_proj;
+    public:
+
+        render_node(const shader_program_type & program = shader_program_type()) : _program(program) {}
+        ~render_node()=default;
+
+        void init() {
+            _vao.bind(); _vbo.bind(); _ebo.bind();
+
+        }
+
+        void render(const data_type & data) {
+
+        }
+
     };
 
 }
-

@@ -35,10 +35,26 @@ namespace nitrogl {
         static shader from_fragment(const GLchar * source)
         { return from(type::fragment, &source, 1, nullptr); }
 
-        shader(const type shader_type) : _type(shader_type), _is_compiled(false), _id(0) {}
-        ~shader() { _is_compiled=false; _id=0; _type=type::unknown; }
+    private:
+        GLuint _id;
+        type _type;
+        bool _is_compiled;
 
-        void create() { if(!_id) { _id = glCreateShader(type2enum(_type)); } }
+    public:
+        explicit shader(const type shader_type) : _type(shader_type), _is_compiled(false), _id(0) {
+            create();
+        }
+        shader(shader && o)  noexcept : _id(o._id), _type(o._type), _is_compiled(o._is_compiled) { o._id=0; }
+        shader(const shader &)=default;
+        shader & operator=(const shader & ) = default;
+        shader & operator=(shader && o)  noexcept {
+            _id=o._id; _type=o._type; _is_compiled=o._is_compiled;
+            o._id=0; return *this;
+        }
+
+        ~shader() { del(); }
+
+        void create() { if(!_id and _type!=type::unknown) { _id = glCreateShader(type2enum(_type)); } }
         bool wasCreated() const { return _id; }
         /**
          * @param sources array of char arrays, each is a source code for shader
@@ -93,9 +109,5 @@ namespace nitrogl {
         }
         void del() { glDeleteShader(_id); _is_compiled=false; _id=0; _type=type::unknown; }
 
-    private:
-        GLuint _id;
-        type _type;
-        bool _is_compiled;
     };
 }

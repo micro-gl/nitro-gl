@@ -155,6 +155,8 @@ namespace nitrogl {
         inline constexpr index columns() const { return _cols; }
         inline constexpr index rows() const { return _rows; }
         inline constexpr index size() const { return _size; }
+        number * data() const { return _data; }
+        number * data() { return _data; }
     };
 
     template <typename T, unsigned N> using column_vector = matrix<T, 1, N>;

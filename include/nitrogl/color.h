@@ -25,14 +25,8 @@ namespace nitrogl {
 //        channel_t r, g, b, a;
 //    };
 
-    template <typename number=float>
     struct color_t {
-        color_t(const number &r=number(0),
-                  const number &g=number(0),
-                  const number &b=number(0),
-                  const number &a=number(1)) :
-                r{r}, g{g}, b{b}, a{a} {}
-        number r, g, b, a;
+        float r, g, b, a;
     };
 //
 //    /**

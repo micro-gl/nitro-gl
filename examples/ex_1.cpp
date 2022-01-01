@@ -8,6 +8,8 @@
 #include <nitrogl/ogl/gl_texture.h>
 #include <nitrogl/ogl/shader.h>
 #include <nitrogl/ogl/shader_program.h>
+#include <nitrogl/ogl/main_shader_program.h>
+#include <nitrogl/ogl/render_node.h>
 #include <nitrogl/canvas.h>
 
 using namespace nitrogl;

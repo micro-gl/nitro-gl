@@ -14,19 +14,29 @@
 
 namespace nitrogl {
 
-    class fbo {
+    class fbo_t {
+        GLuint _id;
+        GLuint _attached_tex_id;
+
+        explicit fbo_t(GLint id) : _id(id), _attached_tex_id(0) {};
+
     public:
-        static fbo from_current() {
-            fbo o; GLint id=0;
+        static fbo_t un_generated() { return fbo_t(0); }
+        static fbo_t from_current() {
+            GLint id=0;
             glGetIntegerv(GL_FRAMEBUFFER_BINDING, &id);
-            o._id=id;
-            return o;
+            return fbo_t(id);
         }
-        fbo() : _id(0), _attached_tex_id(0) {};
-        ~fbo() { _attached_tex_id=_id=0; unbind(); }
+        fbo_t() : _id(0), _attached_tex_id(0) { generate(); };
+        fbo_t(fbo_t && o)  noexcept : _id(o._id), _attached_tex_id(o._attached_tex_id) { o._id=0; }
+        fbo_t(const fbo_t &)=default;
+         ~fbo_t() { del(); unbind(); }
+         fbo_t & operator=(fbo_t && o)  noexcept { _id=o._id; o._id=0; return *this;}
+         fbo_t & operator=(const fbo_t &)=default;
 
     public:
 
+        void generate() { if(!_id) glGenFramebuffers(1, &_id); }
         void attachTexture(const gl_texture & texture) {
             bind();
             // attach texture to the currently bound frame buffer object
@@ -39,17 +49,12 @@ namespace nitrogl {
 //                log("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
         }
         bool wasGenerated() const { return _id; }
-        void generate() { if(!_id) glGenFramebuffers(1, &_id); }
         GLuint id() const { return _id; }
         void del() { if(_id) { glDeleteFramebuffers(1, &_id); _attached_tex_id=_id=0; } }
         void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, _id); }
         void bind_read() const { glBindFramebuffer(GL_READ_FRAMEBUFFER, _id); }
         void bind_draw() const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _id); }
         static void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
-
-    private:
-        GLuint _id;
-        GLuint _attached_tex_id;
     };
 
 }

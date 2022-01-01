@@ -21,7 +21,7 @@ namespace nitrogl {
     public:
         static gl_texture empty(GLsizei width, GLsizei height) {
             gl_texture tex(width, height, GL_RGBA);
-            tex.generate();
+//            tex.generate();
             return tex;
         }
         /**
@@ -42,7 +42,7 @@ namespace nitrogl {
             else if(r_bits) { format=GL_RED; }
 
             auto tex = gl_texture(width, height, internalformat);
-            tex.generate();
+//            tex.generate();
             tex.uploadImage(format, type, data, 1);
             return tex;
         }
@@ -77,10 +77,15 @@ namespace nitrogl {
             else { /* custom converter with memory allocation ? */ }
 
             auto tex = gl_texture(width, height, internalformat);
-            tex.generate();
+//            tex.generate();
             tex.uploadImage(format, type, data, 1);
             return tex;
         }
+    private:
+        GLuint _id;
+        GLint _internalformat;
+        GLsizei _width, _height;
+    public:
         /**
          * The most general ctor
          * @param internalformat Specify The pixel format to store the texture on GPU, usually GL_RGBA
@@ -88,8 +93,21 @@ namespace nitrogl {
          * @param height The height of the image data
          */
         gl_texture(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA) :
-                _id(0), _internalformat(internalformat), _width(width), _height(height) {};
-
+            _id(0), _internalformat(internalformat), _width(width), _height(height) {
+            generate();
+        }
+        gl_texture(gl_texture && o)  noexcept : _id(o._id), _internalformat(o._internalformat),
+                        _width(o._width), _height(o._height) {
+            o._id=0;
+        }
+        gl_texture & operator=(gl_texture && o) noexcept {
+            _id=o._id; _internalformat=o._internalformat,
+            _width=o._width, _height=o._height;
+            o._id=0;
+            return *this;
+        }
+        gl_texture(const gl_texture &)=default;
+        gl_texture & operator=(const gl_texture &)=default;
         ~gl_texture() { _id=_internalformat=_width=_height=0; }
 
         void generate() {
@@ -161,10 +179,6 @@ namespace nitrogl {
             _id=_internalformat=_width=_height=0;
         }
 
-    private:
-        GLuint _id;
-        GLint _internalformat;
-        GLsizei _width, _height;
     };
 
 }

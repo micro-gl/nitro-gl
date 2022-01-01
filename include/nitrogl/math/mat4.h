@@ -17,7 +17,7 @@
 namespace nitrogl {
 
     template<typename number>
-    class matrix_4x4 : public matrix<number, 4, 4> {
+    class mat4 : public matrix<number, 4, 4> {
     private:
         using base__ = matrix<number, 4, 4>;
 
@@ -29,8 +29,8 @@ namespace nitrogl {
         using value_type = number;
         using type_ref = number &;
         using const_type_ref = const number &;
-        using matrix_ref = matrix_4x4<number> &;
-        using const_matrix_ref = const matrix_4x4<number> &;
+        using matrix_ref = mat4<number> &;
+        using const_matrix_ref = const mat4<number> &;
         using vertex3 = nitrogl::vertex3<number>;
         using vertex4 = nitrogl::vertex4<number>;
 
@@ -42,8 +42,8 @@ namespace nitrogl {
         static const index numberZ = 11;
 
         static
-        matrix_4x4 translate(const_type_ref tx, const_type_ref ty, const_type_ref tz) {
-            matrix_4x4 mat{};
+        mat4 translate(const_type_ref tx, const_type_ref ty, const_type_ref tz) {
+            mat4 mat{};
             mat[numberX] = tx;
             mat[numberY] = ty;
             mat[numberZ] = tz;
@@ -51,8 +51,8 @@ namespace nitrogl {
         }
 
         static
-        matrix_4x4 scale(const_type_ref sx, const_type_ref sy, const_type_ref sz) {
-            matrix_4x4 mat{};
+        mat4 scale(const_type_ref sx, const_type_ref sy, const_type_ref sz) {
+            mat4 mat{};
             mat[SX] = sx;
             mat[SY] = sy;
             mat[SZ] = sz;
@@ -60,8 +60,8 @@ namespace nitrogl {
         }
 
         static
-        matrix_4x4 rotation(const_type_ref angle, const vertex3 &axis) {
-            matrix_4x4 mat{};
+        mat4 rotation(const_type_ref angle, const vertex3 &axis) {
+            mat4 mat{};
             const vertex3 ax = axis.normalize();
             const number s = nitrogl::math::sin(angle);
             const number c = nitrogl::math::cos(angle);
@@ -92,11 +92,11 @@ namespace nitrogl {
         // |0 Sx  Cx| |-Sy  0 Cy| | 0   0 1|   |-CxSyCz+SxSz  CxSySz+SxCz  CxCy|
         ///////////////////////////////////////////////////////////////////////////////
         static
-        matrix_4x4 transform(const vertex3 & rotation = {0, 0, 0},
-                             const vertex3 & translation = {0, 0, 0},
-                             const vertex3 & scale = {1, 1, 1})
+        mat4 transform(const vertex3 & rotation = {0, 0, 0},
+                       const vertex3 & translation = {0, 0, 0},
+                       const vertex3 & scale = {1, 1, 1})
         {
-            matrix_4x4 result {};
+            mat4 result {};
             number sx, sy, sz, cx, cy, cz;
             vertex3 vec;
             // rotation angle about X-axis (pitch)
@@ -133,14 +133,14 @@ namespace nitrogl {
             return mat;
         }
 
-        matrix_4x4() { identity(); };
+        mat4() { identity(); };
         template<class Iterable>
-        matrix_4x4(const Iterable & list) : base__{list} {}
-        matrix_4x4(const_type_ref fill_value) : base__(fill_value) {}
-        matrix_4x4(const base__ & mat) : base__(mat) {}
+        mat4(const Iterable & list) : base__{list} {}
+        mat4(const_type_ref fill_value) : base__(fill_value) {}
+        mat4(const base__ & mat) : base__(mat) {}
         template<typename number2>
-        matrix_4x4(const matrix<number2, 4, 4> & mat) : base__(mat) {}
-        virtual ~matrix_4x4() = default;
+        mat4(const matrix<number2, 4, 4> & mat) : base__(mat) {}
+        virtual ~mat4() = default;
 
         void fill_diagonal(const_type_ref value) {
             index next = 0;
@@ -189,4 +189,6 @@ namespace nitrogl {
                     this->_data[12]==zero && this->_data[13]==zero && this->_data[14]==zero && this->_data[15]==one);
         }
     };
+
+    using mat4f = mat4<float>;
 }

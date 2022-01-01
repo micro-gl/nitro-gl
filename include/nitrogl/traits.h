@@ -10,7 +10,7 @@
 ========================================================================================*/
 #pragma once
 
-namespace microgl {
+namespace nitrogl {
     namespace traits {
 
         template<class T1, class T2> struct is_same { const static bool value = false; };
