@@ -28,9 +28,10 @@ namespace nitrogl {
 
     public:
 
-        explicit main_render_node(const main_shader_program & program = main_shader_program()) :
-                        base(program) {
-
+        main_render_node() : base() {}
+        explicit main_render_node(const main_shader_program & program) : base(program) {}
+        explicit main_render_node(main_shader_program && program ) noexcept :
+                        base(nitrogl::traits::move(program)) {
         }
         ~main_render_node()=default;
 
@@ -47,6 +48,13 @@ namespace nitrogl {
 
             // non interleaved vertices: index + pos + uv (counter clock-wise)
             GLfloat pos[8] =  {
+                    10.0f, 10.0f, // Bottom-left
+                    250.0f, 10.0f, // Bottom-right
+                    250.0f, 250.0f, // Top-right
+                    10.0f, 250.0f, // Top-left
+            };
+
+            GLfloat pos3[8] =  {
                     50.0f, 50.0f, // Bottom-left
                     100.0f, 50.0f, // Bottom-right
                     100.0f, 100.0f, // Top-right
@@ -80,7 +88,7 @@ namespace nitrogl {
             _ebo.uploadData(e, sizeof(e));
 
             // enable and point vertex attributes
-            _program.pointVertexAttributes(vertex_attributes, 3, interleave);
+            _program.pointVertexAttributes(vertex_attributes, 2, interleave);
 
             _vao.unbind();
 
@@ -116,7 +124,7 @@ namespace nitrogl {
             _vbo.bind();
             _ebo.bind();
 
-            _program.pointVertexAttributes(vertex_attributes, 3, interleave);
+            _program.pointVertexAttributes(vertex_attributes, 2, interleave);
 
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 

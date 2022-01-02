@@ -25,14 +25,14 @@ struct CC {
 int main() {
 
     auto on_init = [](SDL_Window *, void *) {
-        auto tex = gl_texture::empty(500,500);
+        auto tex = gl_texture(500,500);
         glCheckError();
-        canvas canva(tex);
-//        canvas canva(500,500);
+//        canvas canva(tex);
+        canvas canva(500,500);
 
         auto render = [&]() {
             canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawRect(1.0, 1.0, 1.0, 1.0);
+            canva.drawRect(1.0, 0.0, 1.0, 1.0);
         };
 
         example_run(canva, render);

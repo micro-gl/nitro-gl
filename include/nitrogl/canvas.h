@@ -86,32 +86,25 @@ namespace nitrogl {
         // 1. create RBO with multisampling and attach it to color in fbo_t, and then blit to texture's fbo_t
         // if you are given texture, then draw into it
         explicit canvas(const gl_texture & tex) :
-                _tex_backdrop(tex.width(), tex.height(), tex.internalFormat()),
+                _tex_backdrop(gl_texture::empty(tex.width(), tex.height(), tex.internalFormat())),
                 _fbo(), _node(), _window() {
             glCheckError();
             updateClipRect(0, 0, tex.width(), tex.height());
             updateCanvasWindow(0, 0, tex.width(), tex.height());
-            if(!tex.wasGenerated()) {
-                std::cout << "tex - not generated !!\n";
-            }
-            _fbo.generate();
             _fbo.attachTexture(tex);
-            auto curr = fbo_t::from_current();
-            fbo_t::unbind();
-            _tex_backdrop.generate();
             _node.init();
             copy_to_backdrop();
             glCheckError();
         }
 
-        // if you got nothing, draw to bound fbo_t
+        // if you got nothing, draw to bound fbo
         canvas(int width, int height) :
-            _tex_backdrop(width, height, GL_RGBA), _fbo(fbo_t::from_current()), _node(), _window() {
+            _tex_backdrop(gl_texture::empty(width, height, GL_RGBA)), _fbo(fbo_t::from_current()), _node(), _window() {
             updateClipRect(0, 0, width, height);
             updateCanvasWindow(0, 0, width, height);
-            _tex_backdrop.generate();
+            _fbo.bind();
             copy_to_backdrop();
-            fbo_t::unbind();
+            _fbo.unbind();
             _node.init();
         }
 
@@ -219,11 +212,13 @@ namespace nitrogl {
                       opacity_t opacity = 255) {
             glViewport(0, 0, width(), height());
             _fbo.bind();
-            auto mat_proj = camera::orthographic<float>(-width()/2, width()/2, -height()/2, height()/2, -1, 1);
+//                        auto mat_proj = camera::orthographic<float>(-width()/2, width()/2, -height()/2, height()/2, -1, 1);
+            auto mat_proj = camera::orthographic<float>(-0.0, width(), 0., height(), -1, 1);
+//            mat_proj.fill(0);
             _node.updateProjMatrix(mat_proj);
             // draw
             main_render_node::data_type data = {
-                    {1.0f, 0.3f, 0.3f, 1.0f}
+                    {0.0f, 0.3f, 0.3f, 1.0f}
             };
             _node.render(data);
 

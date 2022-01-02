@@ -32,7 +32,12 @@ namespace nitrogl {
         mat4f _mat_model, _mat_view, _mat_proj;
 
     public:
-        explicit render_node(const shader_program_type & program = shader_program_type()) :
+        render_node() : render_node(shader_program_type()) {}
+        explicit render_node(main_shader_program && program ) noexcept :
+            _program(nitrogl::traits::move(program)), _vao(), _vbo(), _ebo(),
+            _mat_model(), _mat_view(), _mat_proj() {
+        }
+        explicit render_node(const shader_program_type & program) :
                     _program(program), _vao(), _vbo(), _ebo(),
                     _mat_model(), _mat_view(), _mat_proj() {
         }

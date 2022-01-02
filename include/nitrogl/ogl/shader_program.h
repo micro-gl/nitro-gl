@@ -19,9 +19,9 @@ namespace nitrogl {
 
     class shader_program {
     private:
-        const shader & _vertex;
-        const shader & _fragment;
+        shader _vertex, _fragment;
         GLuint _id;
+        bool owner;
 
     public:
         /**
@@ -63,30 +63,61 @@ namespace nitrogl {
             return prog;
         }
         // ctor: init with empty shaders
-        shader_program() : _vertex(shader::null_shader), _fragment(shader::null_shader), _id(0) {
+        shader_program() : _vertex(shader::null_shader), _fragment(shader::null_shader),
+                owner(true), _id(0) {
             create();
         }
+        shader_program(const shader & vertex, const shader & fragment) :
+        _vertex(vertex), _fragment(fragment), owner(true), _id(0) {
+            create();
+            glAttachShader(_id, _vertex.id());
+            glAttachShader(_id, _fragment.id());
+            link();
+        }
+        shader_program(shader && vertex, shader && fragment) :
+                    _vertex(nitrogl::traits::move(vertex)), _fragment(nitrogl::traits::move(fragment)),
+                    owner(true), _id(0) {
+            create();
+            glAttachShader(_id, _vertex.id());
+            glAttachShader(_id, _fragment.id());
+            link();
+        }
         shader_program(shader_program && o) noexcept : _id(o._id),
-                    _vertex(o._vertex),
-                    _fragment(o._fragment) {
-            // we copy construct vertex and fragment and not moving because program never owns shaders.
-            o._id=0;
+                        _vertex(nitrogl::traits::move(o._vertex)),
+                        _fragment(nitrogl::traits::move(o._fragment)), owner(o.owner) {
+            // we don't move vertex and fragment shades, we dont want to own them.
+            o.owner=false;
         }
-        shader_program & operator=(shader_program && o) noexcept  {
-            _id=o._id; _vertex=o._vertex;
-            _fragment=o._fragment; o._id=0; return *this;
+        shader_program & operator=(shader_program && o) noexcept {
+            if(this!=&o) {
+                _id=o._id; _vertex=nitrogl::traits::move(o._vertex);
+                _fragment=nitrogl::traits::move(o._fragment);
+                owner=o.owner; o.owner=false;
+            }
+            return *this;
         }
-        shader_program(const shader_program &)=default;
-        shader_program & operator=(const shader_program &)=default;
+        shader_program(const shader_program & o) : _id(o._id),
+            _vertex(o._vertex), _fragment(o._fragment), owner(false) {}
+        shader_program& operator=(const shader_program & o) {
+            if(this!=&o) {
+                _id=o._id; _vertex=o._vertex; _fragment=o._fragment;
+                owner=false;
+            }
+            return *this;
+        }
         ~shader_program() { del(); unuse(); }
 
         bool wasCreated() const { return _id; }
         void create() { if(!_id) _id = glCreateProgram(); }
         void attach_shaders(const shader & vertex, const shader & fragment) {
-            create(); // conditionally
-            detachShaders();
             _vertex = vertex;
             _fragment = fragment;
+            glAttachShader(_id, _vertex.id());
+            glAttachShader(_id, _fragment.id());
+        }
+        void attach_shaders(shader && vertex, shader && fragment) {
+            _vertex = nitrogl::traits::move(vertex);
+            _fragment = nitrogl::traits::move(fragment);
             glAttachShader(_id, _vertex.id());
             glAttachShader(_id, _fragment.id());
         }
@@ -116,7 +147,7 @@ namespace nitrogl {
             return copied_length;
         }
         void del() {
-            if(!_id) return;
+            if(!(_id && owner)) return;
             detachShaders();
             glDeleteProgram(_id);
             _id=0;

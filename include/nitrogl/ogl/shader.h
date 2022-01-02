@@ -21,6 +21,9 @@ namespace nitrogl {
                            const GLint *length=nullptr) {
             auto shade = shader(shader_type);
             shade.updateShaderSource(sources, count, length, true);
+            shade.compile();
+            char buff[1000];
+            shade.info_log(buff, 1000);
             return shade;
         }
         static shader from(const type shader_type, const GLchar * source)
@@ -50,7 +53,7 @@ namespace nitrogl {
 
         shader(shader && o)  noexcept :
                 owner(o.owner), _id(o._id), _type(o._type), _is_compiled(o._is_compiled) {
-            o._id=0;
+            o._id=0; o.owner=false;
         }
         shader(const shader & o) :
                 owner(false), _id(o._id), _type(o._type), _is_compiled(o._is_compiled) {
@@ -71,7 +74,9 @@ namespace nitrogl {
             return *this;
         }
 
-        ~shader() { if(_id) del(); }
+        ~shader() {
+            del();
+        }
 
         void create() { if(!_id and _type!=type::unknown) { _id = glCreateShader(type2enum(_type)); } }
         bool wasCreated() const { return _id; }

@@ -34,7 +34,7 @@ out vec3 PS_uvs_sampler;
 void main()
 {
     PS_uvs_sampler = VS_uvs_sampler;
-    gl_Position = mat_projection * mat_view * mat_model * vec4(VS_pos, 0.0, 1.0);
+    gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 0.0, 1.0);
 }
 )foo";
 
@@ -45,20 +45,26 @@ void main()
 uniform vec4 color; // color
 
 // out
-out vec4 gl_FragColor;
+out vec4 FragColor;
 
 void main()
 {
-    gl_FragColor = color;
+    FragColor = color;
 }
         )foo";
     public:
 
         // ctor: init with empty shaders and attach which is legal
         main_shader_program() :
-                shader_program(shader_program::from_shaders(shader::from_vertex(vert),
-                                                            shader::from_fragment(frag))) {
-
+                shader_program(shader::from_vertex(vert), shader::from_fragment(frag)) {
+        }
+        main_shader_program(const main_shader_program & o) : shader_program(o) {}
+        main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)) {}
+        main_shader_program & operator=(const main_shader_program & o) {
+            shader_program::operator=(o); return *this;
+        }
+        main_shader_program & operator=(main_shader_program && o)  noexcept {
+            shader_program::operator=(nitrogl::traits::move(o)); return *this;
         }
 
         ~main_shader_program() = default;

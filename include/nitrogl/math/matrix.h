@@ -109,7 +109,8 @@ namespace nitrogl {
             return *this;
         };
 
-        inline index to_index(index row, index col) const { return row * W + col; }
+//        inline index to_index(index row, index col) const { return row * W + col; }
+        inline index to_index(index row, index col) const { return row + col*H; }
         type_ref operator()(index row, index col) { return _data[to_index(row, col)]; };
         const_type_ref operator()(index row, index col) const { return _data[to_index(row, col)]; };
         type_ref operator[](const index ix) { return _data[ix]; };

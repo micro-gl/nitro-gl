@@ -45,7 +45,6 @@ namespace nitrogl {
         void generate() { if(!_id) glGenFramebuffers(1, &_id); }
         void attachTexture(const gl_texture & texture) const {
             bind();
-            // attach texture to the currently bound frame buffer object
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                    GL_TEXTURE_2D, texture.id(), 0);
             // check for completeness

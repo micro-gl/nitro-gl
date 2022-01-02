@@ -74,6 +74,11 @@ namespace nitrogl {
             tex.uploadImage(format, type, data, 1);
             return tex;
         }
+        static gl_texture empty(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA) {
+            auto tex = gl_texture(width, height, internalformat);
+            tex.uploadImage(GL_RED, GL_UNSIGNED_BYTE, nullptr);
+            return tex;
+        }
     private:
         GLuint _id;
         GLint _internalformat;
