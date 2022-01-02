@@ -74,12 +74,12 @@ namespace nitrogl {
          * @tparam roll     z-axis rotation
         **/
         template <typename number>
-        static matrix_4x4<number> angleAt(const vertex3<number> & position,
+        static mat4<number> angleAt(const vertex3<number> & position,
                                           const number & pitch,
                                           const number & yaw,
                                           const number & roll) {
             using vertex3 = vertex3<number>;
-            matrix_4x4<number> mat;
+            mat4<number> mat;
             vertex3 vec;
             // rotation angle about X-axis (pitch)
             number sx = nitrogl::math::sin(pitch);
@@ -119,7 +119,7 @@ namespace nitrogl {
             auto d = (v.x*v.x) + (v.y*v.y) + (v.z*v.z);
             if(d==number(0))
                 return *this;
-            auto inv_len = number(1) / microgl::math::sqrt(d);
+            auto inv_len = number(1) / nitrogl::math::sqrt(d);
             v.x *= inv_len;
             v.y *= inv_len;
             v.z *= inv_len;
@@ -147,12 +147,12 @@ namespace nitrogl {
          * @return
          */
         template <typename number>
-        static matrix_4x4<number> lookAt(const vertex3<number> & position,
+        static mat4<number> lookAt(const vertex3<number> & position,
                                          const vertex3<number>& target,
                                          const vertex3<number>& up)
         {
             using vertex3 = vertex3<number>;
-            matrix_4x4<number> result{};
+            mat4<number> result{};
 
             // 3 axis of rotation matrix for scene
             vertex3 z_axis = (position-target).normalize(); // forward
@@ -187,7 +187,7 @@ namespace nitrogl {
          * @return matrix_4x4<number> result
          */
         template <typename number> static
-        matrix_4x4<number> perspective(const number &horizontal_fov_radians,
+        mat4<number> perspective(const number &horizontal_fov_radians,
                                        const number & screen_width, const number & screen_height,
                                        const number & near, const number & far) {
             return perspective(horizontal_fov_radians, screen_width/screen_height, near, far);
@@ -206,12 +206,12 @@ namespace nitrogl {
          * @return matrix_4x4<number> result
          */
         template <typename number> static
-        matrix_4x4<number> perspective(const number & horizontal_fov_radians,
+        mat4<number> perspective(const number & horizontal_fov_radians,
                                        const number & aspect_ratio,
                                        const number & near, const number & far) {
-            matrix_4x4<number> mat{};
+            mat4<number> mat{};
 
-            auto tan = number(1) / (microgl::math::tan(horizontal_fov_radians/number(2)));
+            auto tan = number(1) / (nitrogl::math::tan(horizontal_fov_radians/number(2)));
             auto tan2 = tan/aspect_ratio;
 
             // an optimized version
@@ -224,7 +224,7 @@ namespace nitrogl {
 
             return mat;
 
-            auto scale = microgl::math::tan(horizontal_fov_radians/number(2)) * near;
+            auto scale = nitrogl::math::tan(horizontal_fov_radians/number(2)) * near;
             auto r = aspect_ratio * scale, l = -r;
             auto t = scale, b = -t;
             return perspective(l,r,b,t,near,far);
@@ -245,10 +245,10 @@ namespace nitrogl {
          * @return matrix_4x4<number> result
          */
         template <typename number> static
-        matrix_4x4<number> perspective(const number & l, const number & r,
+        mat4<number> perspective(const number & l, const number & r,
                                        const number & b, const number & t,
                                        const number & n, const number & f) {
-            matrix_4x4<number> m{};
+            mat4<number> m{};
             number two = number(2);
             number one = number(1);
             // set OpenGL like perspective projection matrix columns, we assume, that
@@ -277,13 +277,13 @@ namespace nitrogl {
          * @return matrix_4x4<number> result
          */
         template <typename number> static
-        matrix_4x4<number> orthographic(const number & l, const number & r,
+        mat4<number> orthographic(const number & l, const number & r,
                                         const number & b, const number & t,
                                         const number & n, const number & f) {
             // map [l,r]->[-1,1], [b,t]->[-1,1], [-n,-far]->[-1,1]
             // we assume the projection is to be used on right-handed system
             // observing the negative z axis
-            matrix_4x4<number> m{};
+            mat4<number> m{};
             number two = number(2);
             number one = number(1);
             number O = number(0);

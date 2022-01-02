@@ -14,20 +14,27 @@ namespace nitrogl {
 
     class vao_t {
         GLuint _id;
+        bool owner;
 
         void generate() { if(!_id) glGenVertexArrays(1, &_id); }
 
     public:
-        vao_t() : _id(0) { generate(); };
-        vao_t(vao_t && o)  noexcept : _id(o._id) { o._id=0; }
-        vao_t(const vao_t &)=default;
-        vao_t & operator=(vao_t && o)  noexcept { _id=o._id; o._id=0; return *this; }
-        vao_t & operator=(const vao_t &)=default;
+        vao_t() : _id(0), owner(true) { generate(); };
+        vao_t(vao_t && o)  noexcept : _id(o._id), owner(o.owner) { o.owner=false; }
+        vao_t(const vao_t & o) : _id(o._id), owner(false) {}
+        vao_t & operator=(const vao_t & o) {
+            if(&o!=this) { del(); _id=o._id; owner=false; }
+            return *this;
+        };
+        vao_t & operator=(vao_t && o) noexcept {
+            if(&o!=this) { del(); _id=o._id; owner=o.owner; o.owner=false; }
+            return *this;
+        }
         ~vao_t() { del(); unbind(); }
 
         bool wasGenerated() const { return _id; }
         GLuint id() const { return _id; }
-        void del() { if(_id) { glDeleteVertexArrays(1, &_id); _id=0; } }
+        void del() { if(_id && owner) { glDeleteVertexArrays(1, &_id); _id=0; } }
         void bind() const { glBindVertexArray(_id); }
         static void unbind() { glBindVertexArray(0); }
     };

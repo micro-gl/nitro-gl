@@ -14,31 +14,38 @@ namespace nitrogl {
 
     class ebo_t {
         GLuint _id;
-        GLsizeiptr _size_bytes;
+        bool owner;
 
         void generate() { if(!_id) glGenBuffers(1, &_id); }
 
     public:
-        ebo_t() : _id(0), _size_bytes(0) { generate(); };
-        ebo_t(ebo_t && o)  noexcept : _id(o._id), _size_bytes(o._size_bytes) { o._id=0; }
-        ebo_t(const ebo_t &)=default;
+        ebo_t() : _id(0), owner(true) { generate(); };
+        ebo_t(ebo_t && o)  noexcept : _id(o._id), owner(o.owner) { o.owner=false; }
+        ebo_t(const ebo_t & o) : _id(o._id), owner(false) {}
+        ebo_t & operator=(const ebo_t & o) {
+            if(&o!=this) {
+                del(); _id=o._id; owner=false;
+            }
+            return *this;
+        };
+        ebo_t & operator=(ebo_t && o) noexcept {
+            if(&o!=this) {
+                del(); _id=o._id; owner=o.owner; o.owner=false;
+            }
+            return *this;
+        }
         ~ebo_t() { del(); unbind(); }
-        ebo_t & operator=(ebo_t && o)  noexcept { _id=o._id; o._id=0; return *this;}
-        ebo_t & operator=(const ebo_t &)=default;
 
         bool wasGenerated() const { return _id; }
-        void uploadData(GLuint * array, GLsizeiptr array_size_bytes) {
+        void uploadData(GLuint * array, GLsizeiptr array_size_bytes, GLenum usage=GL_STATIC_DRAW) const {
             if(_id==0) return;
             bind();
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, array_size_bytes, array, GL_STATIC_DRAW);
-            _size_bytes = array_size_bytes;
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, array_size_bytes, array, usage);
         }
         GLuint id() const { return _id; }
-        void del() { if(_id) { glDeleteBuffers(1, &_id); _size_bytes=_id=0; } }
+        void del() { if(_id && owner) { glDeleteBuffers(1, &_id); _id=0; } }
         void bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id); }
         static void unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
-        GLsizeiptr size() const { return _size_bytes / GLsizeiptr(sizeof(GLuint)); }
-        GLsizeiptr size_bytes() const { return _size_bytes; }
     };
 
 }

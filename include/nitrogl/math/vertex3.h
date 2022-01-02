@@ -19,4 +19,5 @@
 namespace nitrogl {
     template<typename number>
     using vertex3 = microtess::vec3<number>;
+    using vec3f = vertex3<float>;
 }

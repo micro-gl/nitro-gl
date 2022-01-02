@@ -50,15 +50,14 @@
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
 #include "ogl/main_shader_program.h"
+#include "ogl/main_render_node.h"
+#include "camera.h"
 
 using namespace microtess::triangles;
 using namespace microtess::polygons;
 //using namespace nitrogl;
 
 namespace nitrogl {
-    #define OFFSET(byteOffset) (reinterpret_cast<const void *>(byteOffset))
-//    #define OFFSET(i) ((char *)NULL + (i))
-
     class canvas {
     public:
         using rect = nitrogl::rect_t<int>;
@@ -78,6 +77,7 @@ namespace nitrogl {
 //        gl_texture _tex;
         gl_texture _tex_backdrop;
         fbo_t _fbo;
+        main_render_node _node;
 
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
@@ -87,7 +87,8 @@ namespace nitrogl {
         // if you are given texture, then draw into it
         explicit canvas(const gl_texture & tex) :
                 _tex_backdrop(tex.width(), tex.height(), tex.internalFormat()),
-                _fbo(), _window() {
+                _fbo(), _node(), _window() {
+            glCheckError();
             updateClipRect(0, 0, tex.width(), tex.height());
             updateCanvasWindow(0, 0, tex.width(), tex.height());
             if(!tex.wasGenerated()) {
@@ -98,17 +99,20 @@ namespace nitrogl {
             auto curr = fbo_t::from_current();
             fbo_t::unbind();
             _tex_backdrop.generate();
+            _node.init();
             copy_to_backdrop();
+            glCheckError();
         }
 
         // if you got nothing, draw to bound fbo_t
         canvas(int width, int height) :
-                _tex_backdrop(width, height, GL_RGBA), _fbo(fbo_t::from_current()), _window() {
+            _tex_backdrop(width, height, GL_RGBA), _fbo(fbo_t::from_current()), _node(), _window() {
             updateClipRect(0, 0, width, height);
             updateCanvasWindow(0, 0, width, height);
             _tex_backdrop.generate();
             copy_to_backdrop();
             fbo_t::unbind();
+            _node.init();
         }
 
         /**
@@ -215,49 +219,13 @@ namespace nitrogl {
                       opacity_t opacity = 255) {
             glViewport(0, 0, width(), height());
             _fbo.bind();
+            auto mat_proj = camera::orthographic<float>(-width()/2, width()/2, -height()/2, height()/2, -1, 1);
+            _node.updateProjMatrix(mat_proj);
             // draw
-            // init
-            vao_t vao;
-            vbo_t vbo;
-            ebo_t ebo;
-
-            // interleaved, initialize vertices: index + pos + uv (counter clock-wise)
-            // interleaved is preferred because the offset can be known before the data size
-            // as opposed to non-interleaved
-            GLfloat v[24] =  {
-                    0, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // Bottom-left
-                    1, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, // Bottom-right
-                    2, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, // Top-right
-                    3, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // Top-left
+            main_render_node::data_type data = {
+                    {1.0f, 0.3f, 0.3f, 1.0f}
             };
-
-            // vertex attributes
-            shader_program::attr_t vertex_attributes[3] = {
-                    {"index",         0, GL_FLOAT,  1, OFFSET(0)},
-                    {"position",      1, GL_FLOAT,  2, OFFSET(4)},
-                    {"tex_vertex_in", 2, GL_FLOAT,  3, OFFSET(12)}
-            };
-
-            // elements buffer
-            GLuint e[6] = {
-                    0, 1, 2,
-                    2, 3, 0
-            };
-
-            main_shader_program prog;
-//            vao.generate(); vao.bind();
-//            vbo.generate(); vbo.bind();
-//            ebo.generate(); ebo.bind();
-            vbo.uploadData(v, sizeof(v));
-            ebo.uploadData(e, sizeof(e));
-
-            // enable and point vertex attributes
-            prog.pointVertexAttributes(vertex_attributes, 3, true);
-
-            vao.unbind();
-
-            // draw
-
+            _node.render(data);
 
 
             //

@@ -20,4 +20,5 @@
 namespace nitrogl {
     template<typename number>
     using vertex4 = microtess::vec4<number>;
+    using vec4f = vertex4<float>;
 }

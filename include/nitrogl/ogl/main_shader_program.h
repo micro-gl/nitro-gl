@@ -19,44 +19,37 @@ namespace nitrogl {
         static constexpr const char * const vert = R"foo(
 #version 330 core
 
-// matrix of model from local to world space
+// uniforms
 uniform mat4 mat_model;
-// matrix of projection from world into clip space
-uniform mat4 mat_projection;
-// uv coords of blended texture
-uniform vec2 uvs_backdrop_texture[4];
+uniform mat4 mat_view;
+uniform mat4 mat_proj;
 
-// index of vertex
-in float index;
-// position of vertex
-in vec2 position;
-// uv of vertex
-in vec3 tex_vertex_in;
+// in = vertex attributes
+in vec2 VS_pos; // position of vertex
+in vec3 VS_uvs_sampler; // uv of vertex
 
-// uv coord of main shape
-out vec3 tex_coord_0;
-// uv coord of blended texture
-out vec2 tex_coord_backdrop;
+// out = varying
+out vec3 PS_uvs_sampler;
 
 void main()
 {
-    int idx = int(index);
-    // correct tex coords of main texture
-    tex_coord_0 = tex_vertex_in;
-    // correct tex coords of blended texture
-    tex_coord_backdrop = vec2(uvs_backdrop_texture[idx].x, uvs_backdrop_texture[idx].y);
-
-    // output vertex position in clip space after transforming
-    gl_Position = mat_projection * mat_model * vec4(position, 0.0, 1.0);
+    PS_uvs_sampler = VS_uvs_sampler;
+    gl_Position = mat_projection * mat_view * mat_model * vec4(VS_pos, 0.0, 1.0);
 }
 )foo";
 
         static constexpr const char * const frag = R"foo(
 #version 330 core
-out vec4 outColor;
+
+// uniforms
+uniform vec4 color; // color
+
+// out
+out vec4 gl_FragColor;
+
 void main()
 {
-    outColor = vec4(0.0, 0.5, 0.25, 1.0);
+    gl_FragColor = color;
 }
         )foo";
     public:
@@ -70,25 +63,18 @@ void main()
 
         ~main_shader_program() = default;
 
-        void updateModelMatrix(nitrogl::mat4f & matrix) {
-            updateUniformMatrix4fv("mat_model", matrix.data());
-        }
-
-        void updateProjectionMatrix(nitrogl::mat4f & matrix) {
-            updateUniformMatrix4fv("mat_projection", matrix.data());
-        }
-
-        void updateTextureSampler(const GLchar * name, GLint texture_index) {
-            updateUniform1i(name, texture_index);
-        }
-
-        void updateOpacity(GLfloat opacity) {
-            updateUniform1f("opacity", opacity);
-        }
-
-        void updateColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
-            updateUniform4f("color", r, g, b, a);
-        }
+        void updateModelMatrix(nitrogl::mat4f & matrix) const
+        { updateUniformMatrix4fv("mat_model", matrix.data()); }
+        void updateViewMatrix(nitrogl::mat4f & matrix) const
+        { updateUniformMatrix4fv("mat_view", matrix.data()); }
+        void updateProjectionMatrix(nitrogl::mat4f & matrix) const
+        { updateUniformMatrix4fv("mat_proj", matrix.data()); }
+        void updateTextureSampler(const GLchar * name, GLint texture_index) const
+        { updateUniform1i(name, texture_index); }
+        void updateOpacity(GLfloat opacity) const
+        { updateUniform1f("opacity", opacity); }
+        void updateColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) const
+        { updateUniform4f("color", r, g, b, a); }
 
     };
 

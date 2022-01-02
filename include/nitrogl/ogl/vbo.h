@@ -14,27 +14,29 @@ namespace nitrogl {
 
     class vbo_t {
         GLuint _id;
-        GLsizeiptr _size_bytes;
+        bool owner;
 
         void generate() { if(!_id) glGenBuffers(1, &_id); }
 
     public:
-        vbo_t() : _id(0), _size_bytes(0) { generate(); };
-        vbo_t(vbo_t && o)  noexcept : _id(o._id), _size_bytes(o._size_bytes) { o._id=0; }
-        vbo_t(const vbo_t &)=default;
-        vbo_t & operator=(const vbo_t &)=default;
+        vbo_t() : _id(0), owner(true) { generate(); };
+        vbo_t(vbo_t && o)  noexcept : _id(o._id), owner(o.owner) { o.owner=false; }
+        vbo_t(const vbo_t & o) : _id(o._id), owner(false) {}
+        vbo_t & operator=(const vbo_t & o) {
+            if(&o!=this) { del(); _id=o._id; owner=false; }
+            return *this;
+        };
         vbo_t & operator=(vbo_t && o) noexcept {
-            _id=o._id; _size_bytes=o._size_bytes;
-            o._id=0; return *this;
+            if(&o!=this) { del(); _id=o._id; owner=o.owner; o.owner=false; }
+            return *this;
         }
         ~vbo_t() { del(); unbind(); }
 
         bool wasGenerated() const { return _id; }
-        void uploadData(const void * array, GLsizeiptr array_size_bytes) {
+        void uploadData(const void * array, GLsizeiptr array_size_bytes, GLenum usage=GL_STATIC_DRAW) const {
             if(_id==0) return;
             bind();
-            glBufferData(GL_ARRAY_BUFFER, array_size_bytes, array, GL_STATIC_DRAW);
-            _size_bytes = array_size_bytes;
+            glBufferData(GL_ARRAY_BUFFER, array_size_bytes, array, usage);
         }
         void uploadSubData(GLintptr offset, const void *array, GLuint size_bytes) const {
             if(_id==0) return;
@@ -42,11 +44,9 @@ namespace nitrogl {
             glBufferSubData(GL_ARRAY_BUFFER, offset, size_bytes, array);
         }
         GLuint id() const { return _id; }
-        void del() { if(_id) { glDeleteBuffers(1, &_id); _size_bytes=_id=0; } }
+        void del() { if(_id && owner) { glDeleteBuffers(1, &_id); _id=0; } }
         void bind() const { glBindBuffer(GL_ARRAY_BUFFER, _id); }
         static void unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
-        GLsizeiptr size() const { return _size_bytes / GLsizeiptr(sizeof(GLuint)); }
-        GLsizeiptr size_bytes() const { return _size_bytes; }
     };
 
 }

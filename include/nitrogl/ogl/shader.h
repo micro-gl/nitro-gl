@@ -20,7 +20,6 @@ namespace nitrogl {
         static shader from(const type shader_type, const GLchar ** sources, GLsizei count=1,
                            const GLint *length=nullptr) {
             auto shade = shader(shader_type);
-            shade.create();
             shade.updateShaderSource(sources, count, length, true);
             return shade;
         }
@@ -38,21 +37,41 @@ namespace nitrogl {
     private:
         GLuint _id;
         type _type;
-        bool _is_compiled;
+        bool _is_compiled, owner;
+
+        shader() : _type(type::unknown), _is_compiled(false), _id(0), owner(false) {}
 
     public:
-        explicit shader(const type shader_type) : _type(shader_type), _is_compiled(false), _id(0) {
+        explicit shader(const type shader_type) :
+        owner(true), _type(shader_type), _is_compiled(false), _id(0) {
             create();
         }
-        shader(shader && o)  noexcept : _id(o._id), _type(o._type), _is_compiled(o._is_compiled) { o._id=0; }
-        shader(const shader &)=default;
-        shader & operator=(const shader & ) = default;
+        static shader null_shader;
+
+        shader(shader && o)  noexcept :
+                owner(o.owner), _id(o._id), _type(o._type), _is_compiled(o._is_compiled) {
+            o._id=0;
+        }
+        shader(const shader & o) :
+                owner(false), _id(o._id), _type(o._type), _is_compiled(o._is_compiled) {
+        }
+        shader & operator=(const shader & o) {
+            if(this!=&o) {
+                del();
+                _id=o._id; _type=o._type; _is_compiled=o._is_compiled; owner=false;
+            }
+            return *this;
+        }
         shader & operator=(shader && o)  noexcept {
-            _id=o._id; _type=o._type; _is_compiled=o._is_compiled;
-            o._id=0; return *this;
+            if(this!=&o) {
+                del();
+                _id=o._id; _type=o._type; _is_compiled=o._is_compiled; owner=o.owner;
+                o._id=0; o.owner=false;
+            }
+            return *this;
         }
 
-        ~shader() { del(); }
+        ~shader() { if(_id) del(); }
 
         void create() { if(!_id and _type!=type::unknown) { _id = glCreateShader(type2enum(_type)); } }
         bool wasCreated() const { return _id; }
@@ -91,7 +110,7 @@ namespace nitrogl {
         bool isFragmentShader() const { return _type==type::fragment; }
         bool isCompiled() const { return _is_compiled; }
         bool compile() {
-            if(wasCreated()) return false;
+            if(_is_compiled) return false;
             glCompileShader(_id);
             //Check shader for errors
             GLint compile_status = GL_FALSE;
@@ -107,7 +126,10 @@ namespace nitrogl {
             glGetShaderInfoLog(_id, log_buffer_size, &copied_length, log_buffer);
             return copied_length;
         }
-        void del() { glDeleteShader(_id); _is_compiled=false; _id=0; _type=type::unknown; }
-
+        void del() { if(_id && owner) {
+            glDeleteShader(_id); _is_compiled=false; _id=0; _type=type::unknown; }
+        }
     };
+
+    shader shader::null_shader = shader();
 }

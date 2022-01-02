@@ -24,28 +24,27 @@ namespace nitrogl {
     public:
         using shader_program_type = ShaderProgram;
 
-        struct data_type {
-            color_t color;
-        };
-
-    private:
+    protected:
         const shader_program_type _program;
         vao_t _vao;
         vbo_t _vbo;
         ebo_t _ebo;
         mat4f _mat_model, _mat_view, _mat_proj;
-    public:
 
-        render_node(const shader_program_type & program = shader_program_type()) : _program(program) {}
+    public:
+        explicit render_node(const shader_program_type & program = shader_program_type()) :
+                    _program(program), _vao(), _vbo(), _ebo(),
+                    _mat_model(), _mat_view(), _mat_proj() {
+        }
         ~render_node()=default;
+
+        const shader_program_type & program() const { return _program; }
+        void updateModelMatrix(const mat4f & from) { _mat_model = from; }
+        void updateViewMatrix(const mat4f & from) { _mat_view = from; }
+        void updateProjMatrix(const mat4f & from) { _mat_proj = from; }
 
         void init() {
             _vao.bind(); _vbo.bind(); _ebo.bind();
-
-        }
-
-        void render(const data_type & data) {
-
         }
 
     };

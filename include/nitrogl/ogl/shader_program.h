@@ -14,11 +14,13 @@
 #include "../traits.h"
 
 namespace nitrogl {
-#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+//#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+#define OFFSET(by) (reinterpret_cast<void*>((by)))
 
     class shader_program {
     private:
-        shader _vertex, _fragment;
+        const shader & _vertex;
+        const shader & _fragment;
         GLuint _id;
 
     public:
@@ -56,29 +58,32 @@ namespace nitrogl {
 
         static shader_program from_shaders(const shader & vertex, const shader & fragment) {
             shader_program prog;
-//            prog.create();
             prog.attach_shaders(vertex, fragment);
             prog.link();
             return prog;
         }
         // ctor: init with empty shaders
-        shader_program() : _vertex(shader::type::unknown), _fragment(shader::type::unknown), _id(0) {
+        shader_program() : _vertex(shader::null_shader), _fragment(shader::null_shader), _id(0) {
             create();
         }
-        shader_program(shader_program && o) noexcept : _id(o._id), _vertex(o._vertex), _fragment(o._fragment) {
-           o._id=0;
+        shader_program(shader_program && o) noexcept : _id(o._id),
+                    _vertex(o._vertex),
+                    _fragment(o._fragment) {
+            // we copy construct vertex and fragment and not moving because program never owns shaders.
+            o._id=0;
         }
-        shader_program & operator=(shader_program && o) noexcept {
-            _id=o._id; _vertex=o._vertex; _fragment=o._fragment; o._id=0; return *this;
+        shader_program & operator=(shader_program && o) noexcept  {
+            _id=o._id; _vertex=o._vertex;
+            _fragment=o._fragment; o._id=0; return *this;
         }
         shader_program(const shader_program &)=default;
         shader_program & operator=(const shader_program &)=default;
-        ~shader_program() { del(); unUse(); }
+        ~shader_program() { del(); unuse(); }
 
         bool wasCreated() const { return _id; }
         void create() { if(!_id) _id = glCreateProgram(); }
         void attach_shaders(const shader & vertex, const shader & fragment) {
-            create();
+            create(); // conditionally
             detachShaders();
             _vertex = vertex;
             _fragment = fragment;
@@ -86,14 +91,14 @@ namespace nitrogl {
             glAttachShader(_id, _fragment.id());
         }
         void detachShaders() const {
-            glDetachShader(_id, _vertex.id());
-            glDetachShader(_id, _fragment.id());
+            if(_vertex.id()) glDetachShader(_id, _vertex.id());
+            if(_fragment.id()) glDetachShader(_id, _fragment.id());
         }
         GLuint id() const { return _id; }
         shader & vertex() { return _vertex; }
         shader & fragment() { return _fragment; }
         void use() const { glUseProgram(_id); }
-        static void unUse() { glUseProgram(0); }
+        static void unuse() { glUseProgram(0); }
         bool link() const {
             glLinkProgram(_id);
             GLint is_linked;
@@ -111,6 +116,7 @@ namespace nitrogl {
             return copied_length;
         }
         void del() {
+            if(!_id) return;
             detachShaders();
             glDeleteProgram(_id);
             _id=0;

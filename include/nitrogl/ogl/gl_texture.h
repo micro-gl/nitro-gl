@@ -19,11 +19,6 @@ namespace nitrogl {
         { return (bits<=8) ? GL_UNSIGNED_BYTE : (bits<=16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT); }
         static unsigned max(unsigned a, unsigned b) { return a<b ? b : a; }
     public:
-        static gl_texture empty(GLsizei width, GLsizei height) {
-            gl_texture tex(width, height, GL_RGBA);
-//            tex.generate();
-            return tex;
-        }
         /**
          * create a texture definition from a tightly unpacked byte-array of pixels (no padding between rows).
          * This will create the same texture layout in gpu memory.
@@ -42,7 +37,6 @@ namespace nitrogl {
             else if(r_bits) { format=GL_RED; }
 
             auto tex = gl_texture(width, height, internalformat);
-//            tex.generate();
             tex.uploadImage(format, type, data, 1);
             return tex;
         }
@@ -77,7 +71,6 @@ namespace nitrogl {
             else { /* custom converter with memory allocation ? */ }
 
             auto tex = gl_texture(width, height, internalformat);
-//            tex.generate();
             tex.uploadImage(format, type, data, 1);
             return tex;
         }
@@ -85,6 +78,7 @@ namespace nitrogl {
         GLuint _id;
         GLint _internalformat;
         GLsizei _width, _height;
+        bool owner;
     public:
         /**
          * The most general ctor
@@ -93,21 +87,33 @@ namespace nitrogl {
          * @param height The height of the image data
          */
         gl_texture(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA) :
-            _id(0), _internalformat(internalformat), _width(width), _height(height) {
+            _id(0), _internalformat(internalformat), _width(width), _height(height), owner(true) {
             generate();
         }
         gl_texture(gl_texture && o)  noexcept : _id(o._id), _internalformat(o._internalformat),
-                        _width(o._width), _height(o._height) {
-            o._id=0;
+            _width(o._width), _height(o._height), owner(o.owner) {
+            o._id=0; o.owner=false;
         }
         gl_texture & operator=(gl_texture && o) noexcept {
-            _id=o._id; _internalformat=o._internalformat,
-            _width=o._width, _height=o._height;
-            o._id=0;
+            if(this!=&o) {
+                del();
+                _id=o._id; _internalformat=o._internalformat,
+                _width=o._width, _height=o._height; owner=o.owner;
+                o._id=0; o.owner=false;
+            }
             return *this;
         }
-        gl_texture(const gl_texture &)=default;
-        gl_texture & operator=(const gl_texture &)=default;
+        gl_texture(const gl_texture & o) : _id(o._id), _internalformat(o._internalformat),
+                _width(o._width), _height(o._height), owner(false) {}
+        gl_texture & operator=(const gl_texture & o) {
+            if(this!=&o) {
+                del();
+                _id = o._id; _internalformat = o._internalformat,
+                _width = o._width, _height = o._height;
+                owner = false;
+            }
+            return *this;
+        }
         ~gl_texture() { _id=_internalformat=_width=_height=0; }
 
         void generate() {
@@ -175,11 +181,9 @@ namespace nitrogl {
         GLint internalFormat() const { return _internalformat; }
 
         void del() {
-            if(_id) glDeleteTextures(1, &_id);
+            if(_id && owner) glDeleteTextures(1, &_id);
             _id=_internalformat=_width=_height=0;
         }
-
     };
-
 }
 
