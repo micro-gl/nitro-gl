@@ -209,16 +209,33 @@ namespace nitrogl {
     public:
 
         void drawRect(float left, float top, float right, float bottom,
+                      mat3f transform = mat3f::identity(),
+                      float u0=0., float v0=0., float u1=1., float v1=1.,
+                      mat3f transform_uv = mat3f::identity(),
                       opacity_t opacity = 255) {
             glViewport(0, 0, width(), height());
             _fbo.bind();
-//                        auto mat_proj = camera::orthographic<float>(-width()/2, width()/2, -height()/2, height()/2, -1, 1);
-            auto mat_proj = camera::orthographic<float>(-0.0, width(), 0., height(), -1, 1);
+            auto mat_proj = camera::orthographic<float>(0.0f, width(), 0., height(), -1, 1);
+//            auto mat_proj = camera::orthographic<float>(0.0f, width(), height(), 0, -1, 1);
 //            mat_proj.fill(0);
+//            _node.updateModelMatrix(mat4f::rotation(0.785f, vec3f(0,0, 1)));
             _node.updateProjMatrix(mat_proj);
             // draw
+            float points[8] = {
+                    left, bottom,
+                    right, bottom,
+                    right, top,
+                    left, top
+            };
+            float uvs_sampler[8] = {
+                    left, bottom,
+                    right, bottom,
+                    right, top,
+                    left, top
+            };
             main_render_node::data_type data = {
-                    {0.0f, 0.3f, 0.3f, 1.0f}
+                    {0.0f, 0.3f, 0.3f, 1.0f},
+                    points, uvs_sampler
             };
             _node.render(data);
 

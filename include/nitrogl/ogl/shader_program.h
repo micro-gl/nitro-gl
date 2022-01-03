@@ -173,6 +173,64 @@ namespace nitrogl {
             return glGetAttribLocation(_id, name);
         }
 
+        struct vbo_attr_t {
+//            const GLchar * name; // name of vertex attribute
+//            GLint location; // the index of the attribute in the vertex shader
+            GLenum type; // the type of element in VBO
+            GLenum target_type; // the type of element in shader
+            GLuint size; // the number of elements in attribute (1,2,3,4)
+            // the attribute's first relative occurrence offset in the VBO
+            const void * offset;
+            // stride can be calculated automatically if the buffer is interleaved or non.
+            GLsizei stride;
+        };
+
+        struct shader_attr_t {
+            const GLchar * name; // name of vertex attribute
+            GLint location; // the index of the attribute in the vertex shader
+        };
+
+        void enableLocations(shader_attr_t * attrs, unsigned length) const {
+            // if you have VAO support, then this is part of VAO state
+            for (; length!=0 ; --length, ++attrs) glEnableVertexAttribArray(attrs->location);
+        };
+        void disableLocations(shader_attr_t * attrs, unsigned length) const {
+            // if you have VAO support, then don't run this method. Otherwise, do.
+            for (; length!=0 ; --length, ++attrs) glDisableVertexAttribArray(attrs->location);
+        };
+
+        bool requestOrBindLocations(shader_attr_t * attrs, unsigned length) const {
+            // this runs only once
+            bool has_user_defined_all_locations = true;
+            {
+                for (const auto * iter = attrs; iter < attrs+length; ++iter)
+                    if(iter->location<0) {
+                        has_user_defined_all_locations = false;
+                        break;
+                    }
+            }
+            // if user relies on auto-locations and querying them with names, we have to make
+            // sure, the program was linked at least once.
+            if(!has_user_defined_all_locations && !wasLastLinkSuccessful()) link();
+            bool binding_occured=false;
+            for (auto * it = attrs; it < attrs + length; ++it) {
+                if(it->location<0) { // -1=user asks opengl for auto-location
+                    if(it->name==nullptr) return false; // must have name
+                    it->location = glGetAttribLocation(_id, it->name);
+                } else if(it->name) { // let's bind requested location to shader vertex's attribute name
+                    glBindAttribLocation(_id, it->location, it->name);
+                    binding_occured = true;
+                } else { // it->location>=0 and it->name==nullptr
+                    // We assume user has used (location=#) specifier in shader, so nothing to do here
+                }
+            }
+            // we must relink to make bind take effect, bind can happen before linking does.
+            if(binding_occured) link();
+            return true;
+        };
+
+        bool point
+
         /**
          * NOTE: VBO must be bound when calling this method
          * three modes:

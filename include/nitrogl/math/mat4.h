@@ -82,9 +82,9 @@ namespace nitrogl {
         ///////////////////////////////////////////////////////////////////////////////
         static
         mat4 transform(const vertex3 & rotation = {0, 0, 0},
-                             const vertex3 & translation = {0, 0, 0},
-                             const vertex3 & scale = {1, 1, 1}) {
-            mat4 result {};
+                       const vertex3 & translation = {0, 0, 0},
+                       const vertex3 & scale = {1, 1, 1}) {
+            mat4 result;
             number sx, sy, sz, cx, cy, cz;
             vertex3 vec;
             // rotation angle about X-axis (pitch)

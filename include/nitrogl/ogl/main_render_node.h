@@ -24,6 +24,8 @@ namespace nitrogl {
     public:
         struct data_type {
             color_t color;
+            float * points;
+            float * uvs_sampler;
         };
 
     public:
@@ -109,6 +111,11 @@ namespace nitrogl {
             glCheckError();
 #ifdef SUPPORTS_VAO
             _vao.bind();
+
+//            _vbo.uploadData(nullptr, sizeof(pos) + sizeof(uv) );
+//            _vbo.uploadSubData(0, d.points, 32);
+//            _vbo.uploadSubData(32, d.uvs_sampler, sizeof(uv));
+
             // draw
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
 
