@@ -16,10 +16,10 @@
 
 namespace nitrogl {
 
-    template<typename number>
-    class mat3 : public matrix<number, 3, 3> {
+    template<typename number, bool column_major=true>
+    class mat3 : public matrix<number, 3, 3, column_major> {
     private:
-        using base__ = matrix<number, 3, 3>;
+        using base__ = matrix<number, 3, 3, column_major>;
 
     public:
         // in this derived class I overload * operator, this will default in
@@ -33,28 +33,21 @@ namespace nitrogl {
         using const_matrix_ref = const mat3<number> &;
         using vertex = nitrogl::vertex2<number>;
 
-        static const index SX = 0;
-        static const index SY = 4;
-        static const index TX = 2;
-        static const index TY = 5;
-        static const index SKEWX = 1;
-        static const index SKEWY = 3;
-
         static mat3 identity() { return mat3{}; }
 
         static
         mat3 translate(const_type_ref tx, const_type_ref ty) {
-            mat3 mat{};
-            mat[TX] = tx;
-            mat[TY] = ty;
+            mat3 mat;
+            mat(0, 2) = tx;
+            mat(1, 2) = ty;
             return mat;
         }
 
         static
         mat3 scale(const_type_ref sx, const_type_ref sy) {
-            mat3 mat{};
-            mat[SX] = sx;
-            mat[SY] = sy;
+            mat3 mat;
+            mat(0, 0) = sx;
+            mat(1, 1) = sy;
             return mat;
         }
 
@@ -66,77 +59,73 @@ namespace nitrogl {
         static
         mat3 shear_x(const_type_ref angles) {
             mat3 mat{};
-            mat[SKEWX] = nitrogl::math::tan(angles);
+            mat(0, 1) = nitrogl::math::tan(angles);
             return mat;
         }
 
         static
         mat3 shear_y(const_type_ref angles) {
             mat3 mat{};
-            mat[SKEWY] = nitrogl::math::tan(angles);
+            mat(1, 0) = nitrogl::math::tan(angles);
             return mat;
         }
 
         static
         mat3 rotation(const_type_ref angle) {
-            mat3 mat{};
-
+            mat3 mat;
             const_type_ref cos_ = nitrogl::math::cos(angle);
             const_type_ref sin_ = nitrogl::math::sin(angle);
-
-            mat[0] = cos_;
-            mat[1] = -sin_;
-            mat[3] = sin_;
-            mat[4] = cos_;
+            mat(0,0) = cos_;
+            mat(0,1) = -sin_;
+            mat(1,0) = sin_;
+            mat(1,1) = cos_;
             return mat;
         }
 
         static
         mat3 rotation(const_type_ref angle,
-                      const_type_ref px,
-                      const_type_ref py) {
-            mat3 mat{};
-
+                            const_type_ref px,
+                            const_type_ref py) {
+            mat3 mat;
             const_type_ref cos_ = nitrogl::math::cos(angle);
             const_type_ref sin_ = nitrogl::math::sin(angle);
 
-            mat[0] = cos_;
-            mat[1] = -sin_;
-            mat[2] = -cos_*px + sin_*py + px;
+            mat(0,0) = cos_;
+            mat(0,1) = -sin_;
+            mat(0,2) = -cos_*px + sin_*py + px;
 
-            mat[3] = sin_;
-            mat[4] = cos_;
-            mat[5] = -sin_*px - cos_*py + py;
+            mat(1,0) = sin_;
+            mat(1,1) = cos_;
+            mat(1,2) = -sin_*px - cos_*py + py;
 
-            mat[6] = 0;
-            mat[7] = 0;
-            mat[8] = number(1);
+            mat(2,0) = 0;
+            mat(2,1) = 0;
+            mat(2,2) = number(1);
 
             return mat;
         }
 
         static
         mat3 rotation(const_type_ref angle,
-                      const_type_ref px,
-                      const_type_ref py,
-                      const_type_ref sx,
-                      const_type_ref sy) {
-            mat3 mat{};
-
+                            const_type_ref px,
+                            const_type_ref py,
+                            const_type_ref sx,
+                            const_type_ref sy) {
+            mat3 mat;
             const_type_ref cos_ = nitrogl::math::cos(angle);
             const_type_ref sin_ = nitrogl::math::sin(angle);
 
-            mat[0] = sx*cos_;
-            mat[1] = -sy*sin_;
-            mat[2] = -sx*cos_*px + sy*sin_*py + px;
+            mat(0,0) = sx*cos_;
+            mat(0,1) = -sy*sin_;
+            mat(0,2) = -sx*cos_*px + sy*sin_*py + px;
 
-            mat[3] = sx*sin_;
-            mat[4] = sy*cos_;
-            mat[5] = -sx*sin_*px - sy*cos_*py + py;
+            mat(1,0) = sx*sin_;
+            mat(1,1) = sy*cos_;
+            mat(1,2) = -sx*sin_*px - sy*cos_*py + py;
 
-            mat[6] = 0;
-            mat[7] = 0;
-            mat[8] = number(1);
+            mat(2,0) = 0;
+            mat(2,1) = 0;
+            mat(2,2) = number(1);
 
             return mat;
         }
@@ -148,14 +137,15 @@ namespace nitrogl {
         mat3(const_type_ref fill_value) : base__(fill_value) {}
         mat3(const base__ & mat) : base__(mat) {}
         template<typename T2>
-        mat3(const matrix<T2, 3, 3> & mat) : base__(mat) {}
+        mat3(const matrix<T2, 3, 3, column_major> & mat) : base__(mat) {}
         virtual ~mat3() = default;
 
         vertex operator*(const vertex & point) const {
             vertex res;
             const auto & m = (*this);
-            res.x = m[0]*point.x + m[1]*point.y + m[2];
-            res.y = m[3]*point.x + m[4]*point.y + m[5];
+            constexpr bool c = column_major;
+            res.x = m[0]*point.x + m[c?3:1]*point.y + m[c?6:2];
+            res.y = m[c?1:3]*point.x + m[4]*point.y + m[c?7:5];
             return res;
         }
 
@@ -175,12 +165,11 @@ namespace nitrogl {
         bool isIdentity() const {
             number zero=number{0}, one{1};
             return (
-                this->_data[0]==one  && this->_data[1]==zero && this->_data[2]==zero &&
-                this->_data[3]==zero && this->_data[4]==one  && this->_data[5]==zero &&
-                this->_data[6]==zero && this->_data[7]==zero && this->_data[8]==one);
+                    this->_data[0]==one  && this->_data[1]==zero && this->_data[2]==zero &&
+                    this->_data[3]==zero && this->_data[4]==one  && this->_data[5]==zero &&
+                    this->_data[6]==zero && this->_data[7]==zero && this->_data[8]==one);
         }
     };
 
     using mat3f = mat3<float>;
-
 }
