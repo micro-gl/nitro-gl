@@ -42,7 +42,7 @@ namespace nitrogl {
         explicit matrix(const_type_ref fill_value) { fill(fill_value); }
 
         template<class Iterable>
-                matrix(const Iterable & list) {
+        matrix(const Iterable & list) {
             index ix = 0;
             for (const auto & item : list)
                 _data[ix++] = number(item);

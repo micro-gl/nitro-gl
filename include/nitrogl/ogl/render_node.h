@@ -48,8 +48,7 @@ namespace nitrogl {
         void updateViewMatrix(const mat4f & from) { _mat_view = from; }
         void updateProjMatrix(const mat4f & from) { _mat_proj = from; }
 
-        void init() {
-        }
+        void init() {}
 
     };
 

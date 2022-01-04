@@ -209,16 +209,22 @@ namespace nitrogl {
     public:
 
         void drawRect(float left, float top, float right, float bottom,
-                      mat3f transform = mat3f::identity(),
+                      mat3f transform = mat3f::rotation(math::deg_to_rad(45.0), 25, 25),
                       float u0=0., float v0=0., float u1=1., float v1=1.,
                       mat3f transform_uv = mat3f::identity(),
                       opacity_t opacity = 255) {
             glViewport(0, 0, width(), height());
             _fbo.bind();
-//            auto mat_proj = camera::orthographic<float>(0.0f, width(), 0., height(), -1, 1);
+            // inverted y projection, canvas coords to opengl
             auto mat_proj = camera::orthographic<float>(0.0f, width(), height(), 0, -1, 1);
 //            _node.updateModelMatrix(mat4f::rotation(0.785f, vec3f(0,0, 1)));
+            mat4f model = transform;
+//            mat4f model2 = transform;
+//            model=model2;
+            auto mm = mat4f::identity();
             _node.updateProjMatrix(mat_proj);
+//            _node.updateModelMatrix(mat4f::identity());
+            _node.updateModelMatrix(model);
             // draw
             float points[8] = {
                     left, bottom,

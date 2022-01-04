@@ -11,6 +11,7 @@
 #pragma once
 
 #include "matrix.h"
+#include "mat3.h"
 #include "../math.h"
 #include "vertex4.h"
 
@@ -33,6 +34,8 @@ namespace nitrogl {
         using const_matrix_ref = const mat4<number> &;
         using vertex3 = nitrogl::vertex3<number>;
         using vertex4 = nitrogl::vertex4<number>;
+
+        static mat4 identity() { return mat4(); }
 
         static
         mat4 translate(const_type_ref tx, const_type_ref ty, const_type_ref tz) {
@@ -121,13 +124,20 @@ namespace nitrogl {
             return mat;
         }
 
-        mat4() { identity(); };
+        mat4() { fill_identity(); };
         template<class Iterable>
-        mat4(const Iterable & list) : base__{list} {}
+        mat4(const Iterable & list) : base__(list) {}
         mat4(const_type_ref fill_value) : base__(fill_value) {}
         mat4(const base__ & mat) : base__(mat) {}
         template<typename number2>
         mat4(const matrix<number2, 4, 4, column_major> & mat) : base__(mat) {}
+        template<typename number2>
+        mat4(const mat3<number2> & mat) : base__() {
+            fill_identity();
+            for (int ix = 0; ix < 3; ++ix)
+                for (int jx = 0; jx < 3; ++jx)
+                    this->operator()(ix, jx) = mat(ix, jx);
+        }
         virtual ~mat4() = default;
 
         void fill_diagonal(const_type_ref value) {
@@ -136,7 +146,7 @@ namespace nitrogl {
                 this->_data[next++] = value;
         }
 
-        matrix_ref identity() {
+        matrix_ref fill_identity() {
             this->fill(0);
             number fill_one{1};
             fill_diagonal(fill_one);

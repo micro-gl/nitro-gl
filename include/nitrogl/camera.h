@@ -160,7 +160,7 @@ namespace nitrogl {
             vertex3 y_axis = z_axis.cross(x_axis).normalize(); // up
 
             // copy it to matrix transposed because it is inverted
-            result.identity();
+            result.fill_identity();
             result.setRow(0, x_axis);
             result.setRow(1, y_axis);
             result.setRow(2, z_axis);

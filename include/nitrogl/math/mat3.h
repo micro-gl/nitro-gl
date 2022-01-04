@@ -33,7 +33,7 @@ namespace nitrogl {
         using const_matrix_ref = const mat3<number> &;
         using vertex = nitrogl::vertex2<number>;
 
-        static mat3 identity() { return mat3{}; }
+        static mat3 identity() { return mat3(); }
 
         static
         mat3 translate(const_type_ref tx, const_type_ref ty) {

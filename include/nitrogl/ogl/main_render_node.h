@@ -57,39 +57,6 @@ namespace nitrogl {
         void init() {
             base::init();
 
-            //    // interleaved, initialize vertices: pos + uv (counter clock-wise)
-            GLfloat v[24] =  {
-                    0.0f, 0.0f, 0.0f, 0.0f, 1.0f, // Bottom-left
-                    1.0f, 0.0f, 1.0f, 0.0f, 1.0f, // Bottom-right
-                    1.0f, 1.0f, 1.0f, 1.0f, 1.0f, // Top-right
-                    0.0f, 1.0f, 0.0f, 1.0f, 1.0f, // Top-left
-            };
-
-            // non interleaved vertices: index + pos + uv (counter clock-wise)
-//            GLfloat pos[8] =  {
-//                    10.0f, 10.0f, // Bottom-left
-//                    250.0f, 10.0f, // Bottom-right
-//                    250.0f, 250.0f, // Top-right
-//                    10.0f, 250.0f, // Top-left
-//            };
-//
-//            GLfloat pos3[8] =  {
-//                    50.0f, 50.0f, // Bottom-left
-//                    100.0f, 50.0f, // Bottom-right
-//                    100.0f, 100.0f, // Top-right
-//                    50.0f, 100.0f, // Top-left
-//            };
-//
-//            GLfloat uv[12] =  {
-//                    0.0f, 0.0f, 1.0f, // Bottom-left
-//                    1.0f, 0.0f, 1.0f, // Bottom-right
-//                    1.0f, 1.0f, 1.0f, // Top-right
-//                    0.0f, 1.0f, 1.0f, // Top-left
-//            };
-
-            // vertex attributes
-//            shader_program::vbo_and_shader_attr_t vertex_attributes[2] = {
-
             va = {
                 {
                     {"VS_pos", 0, GL_FLOAT,
@@ -105,14 +72,6 @@ namespace nitrogl {
 
             // elements buffer
             GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
-
-//            if(interleave) {
-//                _vbo.uploadData(v, sizeof(v) ); // interleaved
-//            } else {
-//                _vbo.uploadData(nullptr, sizeof(pos) + sizeof(uv) );
-//                _vbo.uploadSubData(0, pos, sizeof(pos));
-//                _vbo.uploadSubData(sizeof(pos), uv, sizeof(uv));
-//            }
 
             _vao.bind();
             _ebo.bind();

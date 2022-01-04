@@ -33,6 +33,7 @@ out vec3 PS_uvs_sampler;
 
 void main()
 {
+//    mat3 aa(1.0f);
     PS_uvs_sampler = VS_uvs_sampler;
     gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
 }
