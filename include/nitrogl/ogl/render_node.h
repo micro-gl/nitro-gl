@@ -27,18 +27,18 @@ namespace nitrogl {
     protected:
         const shader_program_type _program;
         vao_t _vao;
-        vbo_t _vbo;
+//        vbo_t _vbo;
         ebo_t _ebo;
         mat4f _mat_model, _mat_view, _mat_proj;
 
     public:
         render_node() : render_node(shader_program_type()) {}
         explicit render_node(main_shader_program && program ) noexcept :
-            _program(nitrogl::traits::move(program)), _vao(), _vbo(), _ebo(),
+            _program(nitrogl::traits::move(program)), _vao(), _ebo(),
             _mat_model(), _mat_view(), _mat_proj() {
         }
         explicit render_node(const shader_program_type & program) :
-                    _program(program), _vao(), _vbo(), _ebo(),
+                    _program(program), _vao(), _ebo(),
                     _mat_model(), _mat_view(), _mat_proj() {
         }
         ~render_node()=default;
@@ -49,7 +49,6 @@ namespace nitrogl {
         void updateProjMatrix(const mat4f & from) { _mat_proj = from; }
 
         void init() {
-            _vao.bind(); _vbo.bind(); _ebo.bind();
         }
 
     };

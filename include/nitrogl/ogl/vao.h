@@ -12,6 +12,7 @@
 
 namespace nitrogl {
 
+#ifdef SUPPORTS_VAO
     class vao_t {
         GLuint _id;
         bool owner;
@@ -40,6 +41,18 @@ namespace nitrogl {
         void bind() const { glBindVertexArray(_id); }
         static void unbind() { glBindVertexArray(0); }
     };
-
+#else
+    class vao_t {
+    public:
+        static vao_t from_id(GLuint id, bool owner=true) { return {}; }
+        vao_t()=default;
+        ~vao_t()=default;
+        bool wasGenerated() const { return false; }
+        GLuint id() const { return 0; }
+        void del() {}
+        void bind() const {}
+        static void unbind() {}
+    };
+#endif
 }
 

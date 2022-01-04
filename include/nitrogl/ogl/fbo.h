@@ -18,14 +18,14 @@ namespace nitrogl {
         GLuint _id;
         bool owner;
 
-        explicit fbo_t(GLint id) : _id(id), owner(false) {};
+        explicit fbo_t(GLint id, bool $owner=false) : _id(id), owner($owner) {};
 
     public:
         static fbo_t un_generated() { return fbo_t(0); }
-        static fbo_t from_current() {
+        static fbo_t from_current(bool owner=false) {
             GLint id=0;
             glGetIntegerv(GL_FRAMEBUFFER_BINDING, &id);
-            return fbo_t(id);
+            return fbo_t(id, owner);
         }
         fbo_t() : _id(0), owner(true) { generate(); };
         fbo_t(fbo_t && o)  noexcept : _id(o._id), owner(o.owner) { o.owner=false; }

@@ -191,7 +191,7 @@ namespace nitrogl {
             const void * offset;
             // stride can be calculated automatically if the buffer is interleaved or non.
             GLsizei stride;
-            GLint vbo; // corresponding vbo
+            GLuint vbo; // corresponding vbo
         };
 
         void enableLocations(vbo_and_shader_attr_t * attrs, unsigned length) const {
@@ -204,7 +204,7 @@ namespace nitrogl {
         };
 
         /**
-         * this runs only once, depends only on shader
+         * Helper method, this should run only once, depends only on shader
          * three modes:
          * 1. { location<0, name!=nullptr } --> first link if hasn't, then query glGetAttribLocation
          * 1. { location>=0, name!=nullptr } --> first glBindAttribLocation, and re-link at end so it will affect shader
@@ -243,7 +243,18 @@ namespace nitrogl {
             return true;
         };
 
-        // connect the linkage between VBOs and Vertex Shader's attributes
+        /**
+         * Helper method, connect VBOs to vertex Shader Attributes.
+         * NOTES:
+         * 1. If supports VAO, then
+         *    - If VBO is PREDICTABLE==VBO (constant stride and offset for each vertex attribute in vbo), then:
+         *      THIS METHOD SHOULD RUN ONCE AT INIT WHILE VAO IS BOUND. THEN REUSE VAO BY BINDING AT DRAW PHASE.
+         *    - If VBO is NOT PREDICTABLE (non-interleaved multiple attributes, that change in size), THIS SHOULD RUN EVERYTIME things change
+         * 2. If no VAO support, then ALWAYS RUN this method before draw.
+         * @param attrs
+         * @param length
+         * @return
+         */
         bool pointVertexAtrributes(vbo_and_shader_attr_t * attrs, unsigned length) const {
             bool uniform_vbo=true;
             { // for optimization, inspect if they use same VBO
@@ -254,14 +265,14 @@ namespace nitrogl {
             }
             // this avoids extra bindings if all the vertex attributes are mapped
             // from the same vbo
-            if(uniform_vbo) glBindBuffer(GL_ARRAY_BUFFER, attrs[0].vbo);
+            if(uniform_vbo && attrs->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, attrs[0].vbo);
 
             for (auto * it = attrs; it < attrs + length; ++it) {
                 // so we have to bind the vbo where the vertex attributes will be at.
                 // then enable the location and then point the shader program. If using VAO,
                 // then those are part of its state (VBO binding is not, only the mapping from VBO
                 // to the vertex shader)
-                if(!uniform_vbo) glBindBuffer(GL_ARRAY_BUFFER, it->vbo);
+                if(!uniform_vbo && it->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, it->vbo);
                 // enable generic vertex attrib for bound VBO
                 glEnableVertexAttribArray((GLuint)it->location);
                 switch (it->shader_component_type) {
