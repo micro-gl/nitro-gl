@@ -17,8 +17,10 @@ namespace nitrogl {
         bool owner;
 
         void generate() { if(!_id) glGenVertexArrays(1, &_id); }
+        vao_t(GLuint id, bool owner) : _id(id), owner(owner) {};
 
     public:
+        static vao_t from_id(GLuint id, bool owner=true) { return { id, owner }; }
         vao_t() : _id(0), owner(true) { generate(); };
         vao_t(vao_t && o)  noexcept : _id(o._id), owner(o.owner) { o.owner=false; }
         vao_t(const vao_t & o) : _id(o._id), owner(false) {}

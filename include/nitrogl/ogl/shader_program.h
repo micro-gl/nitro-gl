@@ -194,11 +194,6 @@ namespace nitrogl {
             GLint vbo; // corresponding vbo
         };
 
-//        struct shader_attr_t {
-//            const GLchar * name; // name of vertex attribute
-//            GLint location; // the index of the attribute in the vertex shader
-//        };
-
         void enableLocations(vbo_and_shader_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then this is part of VAO state
             for (; length!=0 ; --length, ++attrs) glEnableVertexAttribArray(attrs->location);
@@ -211,8 +206,8 @@ namespace nitrogl {
         /**
          * this runs only once, depends only on shader
          * three modes:
-         * 1. { location<0, name!=nullptr } --> first link if hasn't, then glGetAttribLocation
-         * 1. { location>=0, name!=nullptr } --> first glBindAttribLocation, and re-link at end
+         * 1. { location<0, name!=nullptr } --> first link if hasn't, then query glGetAttribLocation
+         * 1. { location>=0, name!=nullptr } --> first glBindAttribLocation, and re-link at end so it will affect shader
          * 1. { location>=0, name==nullptr } --> we assume user used (location=#) specifier in shader, nothing to do
          * 1. { location<0, name==nullptr } --> error
          * @param attrs

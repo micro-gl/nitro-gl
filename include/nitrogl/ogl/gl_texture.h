@@ -79,11 +79,20 @@ namespace nitrogl {
             tex.uploadImage(GL_RED, GL_UNSIGNED_BYTE, nullptr);
             return tex;
         }
+        // use this as a hack if you know what you are doing
+        static gl_texture from_id(GLuint id, GLint internalformat, GLsizei width, GLsizei height, bool owner) {
+            return { id, internalformat, width, height, owner };
+        }
+
     private:
         GLuint _id;
         GLint _internalformat;
         GLsizei _width, _height;
         bool owner;
+
+        gl_texture(GLuint id, GLint internalformat, GLsizei width, GLsizei height, bool owner) :
+            _id(id), _internalformat(internalformat), _width(width), _height(height), owner(owner) {};
+
     public:
         /**
          * The most general ctor

@@ -17,8 +17,10 @@ namespace nitrogl {
         bool owner;
 
         void generate() { if(!_id) glGenBuffers(1, &_id); }
+        ebo_t(GLuint id, bool owner) : _id(id), owner(owner) {};
 
     public:
+        static ebo_t from_id(GLuint id, bool owner=true) { return { id, owner }; }
         ebo_t() : _id(0), owner(true) { generate(); };
         ebo_t(ebo_t && o)  noexcept : _id(o._id), owner(o.owner) { o.owner=false; }
         ebo_t(const ebo_t & o) : _id(o._id), owner(false) {}
