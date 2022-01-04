@@ -1,5 +1,6 @@
 #define GL_SILENCE_DEPRECATION
 #define SUPPORTS_VAO
+#define MICROGL_USE_STD_MATH
 #include "src/Resources.h"
 #include "src/example.h"
 #include <nitrogl/ogl/ebo.h>
@@ -31,9 +32,14 @@ int main() {
         canvas canva(500,500);
 
         auto render = [&]() {
+            static float t= 0;
+            t+=0.005;
             canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawRect(50, 50, 100, 100);
-            canva.drawRect(50, 100, 200, 200);
+            canva.drawRect(100, 100, 150, 150,
+                           mat3f::rotation(math::deg_to_rad(t), 25, 25));
+            canva.drawRect(250, 250, 500, 270,
+                           mat3f::rotation(math::deg_to_rad(t), 125, 10));
+//            canva.drawRect(50, 100, 200, 200);
         };
 
         example_run(canva, render);
