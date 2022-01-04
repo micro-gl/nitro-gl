@@ -25,7 +25,7 @@ namespace microgl {
                         right_bottom.y = current_vertex.y;
                 }
             }
-            // extend bbox 10 points
+            // extend bbox 10 pos
             left_top.x -= number(10);
             left_top.y -= number(10);
             right_bottom.x += number(10);
@@ -593,7 +593,7 @@ namespace microgl {
         template<typename number>
         auto planarize_division<number>::classify_conflict_against_two_faces(const half_edge* face_separator,
                                                                              const half_edge* edge) -> half_edge_face *{
-            // note:: edge's face always points to the face that lies to it's left.
+            // note:: edge's face always pos to the face that lies to it's left.
             // 1. if the first point lie completely to the left of the edge, then they belong to f1, other wise f2
             // 2. if they lie exactly on the edge, then we test the second end-point
             // 2.1 if the second lies completely in f1, then the first vertex is in f1, otherwise f2
@@ -605,7 +605,7 @@ namespace microgl {
             const int cls = classify_point(c, a, b);
 
             if(cls>0) // if strictly left of
-                return face_separator->face; // face points always to the face left of edge
+                return face_separator->face; // face pos always to the face left of edge
             else if(cls<0)// if strictly right of
                 return face_separator->twin->face;
             else { // is exactly on separator
@@ -737,7 +737,7 @@ namespace microgl {
                                                                             dynamic_pool& pool) {
             // given that (a) and (b) are on the boundary and edge (a,b) is co-linear with one of the 4 boundaries of the trapeze,
             // try inserting vertices on that boundary, update windings along their path/between them and return the
-            // corresponding start and end half edges whose start points are (a) and (b)
+            // corresponding start and end half edges whose start pos are (a) and (b)
             auto * edge_vertex_a =
                     try_insert_vertex_on_trapeze_boundary_at(a, trapeze, wall_class, pool);
             auto * edge_vertex_b =
@@ -862,7 +862,7 @@ namespace microgl {
             //    the vertical wall between them.
             // 3. infer the correct trapeze where "b" is in and perform roughly the same
             //    operation
-            // 4. connect the two points, so they again split a face (in case they are not vertical)
+            // 4. connect the two pos, so they again split a face (in case they are not vertical)
 
             const int winding = infer_edge_winding(a, b);
             // first, in order to avoid robust issues later, we insert the (b) vertex on the trapeze.
@@ -1570,7 +1570,7 @@ namespace microgl {
         planarize_division<number>::classify_point(const vertex & point, const vertex &a, const vertex & b) {
             // Use the sign of the determinant of vectors (AB,AM), where M(X,Y) is the query point:
             // position = sign((Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax))
-            //    Input:  three points p, a, b
+            //    Input:  three pos p, a, b
             //    Return: >0 for P left of the line through a and b
             //            =0 for P  on the line
             //            <0 for P  right of the line
@@ -1614,7 +1614,7 @@ namespace microgl {
                         right_bottom.y = current_vertex.y;
                 }
             }
-            // extend bbox 10 points
+            // extend bbox 10 pos
             left_top.x -= number(10);
             left_top.y -= number(10);
             right_bottom.x += number(10);
@@ -2161,7 +2161,7 @@ namespace microgl {
         template<typename number>
         auto planarize_division<number>::classify_conflict_against_two_faces(const half_edge* face_separator,
                                                                              const half_edge* edge) -> half_edge_face *{
-            // note:: edge's face always points to the face that lies to it's left.
+            // note:: edge's face always pos to the face that lies to it's left.
             // 1. if the first point lie completely to the left of the edge, then they belong to f1, other wise f2
             // 2. if they lie exactly on the edge, then we test the second end-point
             // 2.1 if the second lies completely in f1, then the first vertex is in f1, otherwise f2
@@ -2173,7 +2173,7 @@ namespace microgl {
             const int cls = classify_point(c, a, b);
 
             if(cls>0) // if strictly left of
-                return face_separator->face; // face points always to the face left of edge
+                return face_separator->face; // face pos always to the face left of edge
             else if(cls<0)// if strictly right of
                 return face_separator->twin->face;
             else { // is exactly on separator
@@ -2309,7 +2309,7 @@ namespace microgl {
                                                                             dynamic_pool& pool) {
             // given that (a) and (b) are on the boundary and edge (a,b) is co-linear with one of the 4 boundaries of the trapeze,
             // try inserting vertices on that boundary, update windings along their path/between them and return the
-            // corresponding start and end half edges whose start points are (a) and (b)
+            // corresponding start and end half edges whose start pos are (a) and (b)
             auto * edge_vertex_a =
                     try_insert_vertex_on_trapeze_boundary_at(a, trapeze, wall_class, pool);
             auto * edge_vertex_b =
@@ -2436,7 +2436,7 @@ namespace microgl {
             //    the vertical wall between them.
             // 3. infer the correct trapeze where "b" is in and perform roughly the same
             //    operation
-            // 4. connect the two points, so they again split a face (in case they are not vertical)
+            // 4. connect the two pos, so they again split a face (in case they are not vertical)
 
             const int winding = infer_edge_winding(a, b);
             // first, in order to avoid robust issues later, we insert the (b) vertex on the trapeze.
@@ -3173,7 +3173,7 @@ namespace microgl {
         planarize_division<number>::classify_point(const vertex & point, const vertex &a, const vertex & b) {
             // Use the sign of the determinant of vectors (AB,AM), where M(X,Y) is the query point:
             // position = sign((Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax))
-            //    Input:  three points p, a, b
+            //    Input:  three pos p, a, b
             //    Return: >0 for P left of the line through a and b
             //            =0 for P  on the line
             //            <0 for P  right of the line

@@ -84,7 +84,7 @@ namespace nitrogl {
          * @param sources array of char arrays, each is a source code for shader
          * @param count number of sources
          * @param length If length is NULL, each string is assumed to be null terminated. If length
-         * is a value other than NULL, it points to an array containing a string length for each of
+         * is a value other than NULL, it pos to an array containing a string length for each of
          * the corresponding elements of string. Each element in the length array may contain the length
          * of the corresponding string (the null character is not counted as part of the string length) or
          * a value less than 0 to indicate that the string is null terminated.

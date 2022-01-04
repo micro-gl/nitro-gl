@@ -252,7 +252,7 @@ namespace nitrogl {
             number two = number(2);
             number one = number(1);
             // set OpenGL like perspective projection matrix columns, we assume, that
-            // points that are projected with this matrix are right handed system.
+            // pos that are projected with this matrix are right handed system.
             // they are on the negative z-axis, mapping is done to the cube [-1,1]x[-1,1]x[-1,1]
             m(0,0) = two*n/(r-l); m(0,1) = 0;             m(0,2) = (r+l)/(r-l);  m(0,3) = 0;
             m(1,0) = 0;           m(1,1) = two*n/(t-b);   m(1,2) = (t+b)/(t-b);  m(1,3) = 0;

@@ -35,7 +35,7 @@ I witnessed 220 vs 25 fill rate
 ```
 
 ```
-optimize normalized decoders of float points to use fixed point
+optimize normalized decoders of float pos to use fixed point
 
 ```
 

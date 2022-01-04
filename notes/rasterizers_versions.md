@@ -434,7 +434,7 @@ void canvas<P, CODER>::drawTriangle_internal(const sampling::sampler<S> &sampler
     // Barycentric coordinates at minX/minY corner
     vertex2<l64> p = { minX, minY };
     vertex2<l64> p_fixed = { minX<<sub_pixel_precision, minY<<sub_pixel_precision };
-    // this can produce a 2P bits number if the points form a a perpendicular triangle
+    // this can produce a 2P bits number if the pos form a a perpendicular triangle
     l64 half= l64(1)<<(sub_pixel_precision-1);
     l64 w0_row = functions::orient2d(v0_x, v0_y, v1_x, v1_y, p_fixed.x, p_fixed.y, sub_pixel_precision) + bias_w0;
     l64 w1_row = functions::orient2d(v1_x, v1_y, v2_x, v2_y, p_fixed.x, p_fixed.y, sub_pixel_precision) + bias_w1;
@@ -767,7 +767,7 @@ void canvas<P, CODER>::drawTriangle_shader_homo_internal(shader_base<impl, verte
     vertex2<l64> p_fixed = { minX<<sub_pixel_precision, minY<<sub_pixel_precision };
     l64 half= (l64(1)<<(sub_pixel_precision))>>1;
     p_fixed = p_fixed + vertex2<l64> {half, half}; // we sample at the center
-    // this can produce a 2P bits number if the points form a a perpendicular triangle
+    // this can produce a 2P bits number if the pos form a a perpendicular triangle
     // this is my patent for correct fill rules without wasting bits, amazingly works and accurate,
     // I still need to explain to myself why it works so well :)
     l64 w0_row = functions::orient2d(v0_x, v0_y, v1_x, v1_y, p_fixed.x, p_fixed.y, 0) + bias_w0;
@@ -962,7 +962,7 @@ void canvas<bitmap_, options>::drawTriangle_internal(const sampling::sampler<S> 
         int xxx=0;;
     }; --bits_used; }
 
-    // this can produce a 2P bits number if the points form a a perpendicular triangle
+    // this can produce a 2P bits number if the pos form a a perpendicular triangle
     // this is my patent for correct fill rules without wasting bits, amazingly works and accurate,
     // I still need to exaplin to myself why it works so well :)
     l64 w0_row = functions::orient2d(v0_x, v0_y, v1_x, v1_y, p_fixed.x, p_fixed.y, 0) + bias_w0;
@@ -1371,7 +1371,7 @@ void canvas<bitmap_, options>::drawTriangle_shader_homo_internal(shader_base<imp
     vertex2<l64> p_fixed = { bbox.left<<sub_pixel_precision, bbox.top<<sub_pixel_precision };
     l64 half= (l64(1)<<(sub_pixel_precision))>>1;
     p_fixed = p_fixed + vertex2<l64> {half, half}; // we sample at the center
-    // this can produce a 2P bits number if the points form a a perpendicular triangle
+    // this can produce a 2P bits number if the pos form a a perpendicular triangle
     // this is my patent for correct fill rules without wasting bits, amazingly works and accurate,
     // I still need to explain to myself why it works so well :)
     l64 w0_row = functions::orient2d<int, l64>(v0_x, v0_y, v1_x, v1_y, p_fixed.x, p_fixed.y, 0) + bias_w0;

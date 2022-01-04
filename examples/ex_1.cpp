@@ -32,7 +32,8 @@ int main() {
 
         auto render = [&]() {
             canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawRect(1.0, 0.0, 1.0, 1.0);
+            canva.drawRect(50, 50, 100, 100);
+            canva.drawRect(50, 100, 200, 200);
         };
 
         example_run(canva, render);

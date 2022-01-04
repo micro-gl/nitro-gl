@@ -309,7 +309,7 @@ namespace microtess {
                     stack.push_back(u_j);
                 }
             }
-            // add diagonals from u_n to the rest of points remaining on the stack
+            // add diagonals from u_n to the rest of pos remaining on the stack
             if(stack.size()>=2) {
                 for (unsigned ix = 0; ix < stack.size()-1; ++ix) {
                     const node_t * a=stack[ix];
@@ -359,7 +359,7 @@ namespace microtess {
         static int classify_point(const vertex & point, const vertex &a, const vertex & b) {
             // Use the sign of the determinant of vectors (AB,AM), where M(X,Y) is the query point:
             // position = sign((Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax))
-            //    Input:  three points p, a, b
+            //    Input:  three pos p, a, b
             //    Return: >0 for P left of the line through a and b
             //            =0 for P  on the line
             //            <0 for P  right of the line

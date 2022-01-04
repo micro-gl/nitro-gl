@@ -215,9 +215,8 @@ namespace nitrogl {
                       opacity_t opacity = 255) {
             glViewport(0, 0, width(), height());
             _fbo.bind();
-            auto mat_proj = camera::orthographic<float>(0.0f, width(), 0., height(), -1, 1);
-//            auto mat_proj = camera::orthographic<float>(0.0f, width(), height(), 0, -1, 1);
-//            mat_proj.fill(0);
+//            auto mat_proj = camera::orthographic<float>(0.0f, width(), 0., height(), -1, 1);
+            auto mat_proj = camera::orthographic<float>(0.0f, width(), height(), 0, -1, 1);
 //            _node.updateModelMatrix(mat4f::rotation(0.785f, vec3f(0,0, 1)));
             _node.updateProjMatrix(mat_proj);
             // draw
@@ -235,7 +234,7 @@ namespace nitrogl {
             };
             main_render_node::data_type data = {
                     {0.0f, 0.3f, 0.3f, 1.0f},
-                    points, uvs_sampler
+                    points, uvs_sampler, 8, 8
             };
             _node.render(data);
 

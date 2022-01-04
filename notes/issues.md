@@ -1,14 +1,14 @@
 #### some notes
 
-#### float points
+#### float pos
 - integer divisions are slower than float point divisions by an order of 3 from_sampler my tests.
-- integers arithmetics are far accurate and float points are not so
+- integers arithmetics are far accurate and float pos are not so
 - integers multiplications are a bit faster (5-10%) than float point multiplications
 
 #### release vs debug of Q structs
 - release mode highly optmizes these data structures as opposed to debug mode, so§
 for example if I am doing higly intensive Q struct arithmetics, they will seem slower
-than raw fixed points arithmetics, BUT in release mode they will be optimized the same.
+than raw fixed pos arithmetics, BUT in release mode they will be optimized the same.
 
 - ona 500*500/2 triangle rasterization, the prescence of one division, takes approx 1ms per triangle
 - when testing, rasterization with many loops, amke sure, to alter coords in order to destroy cache.

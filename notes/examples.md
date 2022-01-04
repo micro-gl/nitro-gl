@@ -680,7 +680,7 @@ canvas<P, CODER>::drawTriangle_internal(const bitmap<P2, CODER2> & bmp,
         A20_q1 = fixed_mul_int(q1_fixed, (v2_y - v0_y))/area, B20_q1 = fixed_mul_int(q1_fixed, (v0_x - v2_x))/area; // w2
     }
 
-    // this can produce a 2P bits number if the points form a a perpendicular triangle
+    // this can produce a 2P bits number if the pos form a a perpendicular triangle
     fixed_signed area_v1_v2_p = orient2d({v1_x, v1_y}, {v2_x, v2_y}, p_fixed, sub_pixel_precision),
                 area_v2_v0_p = orient2d({v2_x, v2_y}, {v0_x, v0_y}, p_fixed, sub_pixel_precision),
                 area_v0_v1_p = orient2d({v0_x, v0_y}, {v1_x, v1_y}, p_fixed, sub_pixel_precision);
@@ -1244,7 +1244,7 @@ canvas<P, CODER>::drawTriangle2(const bitmap<P2, CODER2> & bmp,
         A20_q1 = fixed_mul_int(q1_fixed, (long)(v2_y - v0_y)<<BITS_Q_DIV_PREC)/area, B20_q1 = fixed_mul_int(q1_fixed, (long)(v0_x - v2_x)<<BITS_Q_DIV_PREC)/area; // w2
     }
 
-    // this can produce a 2P bits number if the points form a a perpendicular triangle
+    // this can produce a 2P bits number if the pos form a a perpendicular triangle
     fixed_signed area_v1_v2_p = orient2d({v1_x, v1_y}, {v2_x, v2_y}, p_fixed, sub_pixel_precision),
             area_v2_v0_p = orient2d({v2_x, v2_y}, {v0_x, v0_y}, p_fixed, sub_pixel_precision),
             area_v0_v1_p = orient2d({v0_x, v0_y}, {v1_x, v1_y}, p_fixed, sub_pixel_precision);
@@ -1573,7 +1573,7 @@ canvas<P, CODER>::drawTriangleFast(const bitmap<P2, CODER2> & bmp,
     int A12_block_m_1 = A12_block - A12, B12_block_m_1 = B12_block - B12;
     int A20_block_m_1 = A20_block - A20, B20_block_m_1 = B20_block - B20;
 
-    // this can produce a 2P bits number if the points form a a perpendicular triangle
+    // this can produce a 2P bits number if the pos form a a perpendicular triangle
     int w0_row = (functions::orient2d(vec2_32i{v0_x, v0_y},vec2_32i{v1_x, v1_y},
                                       p_fixed, sub_pixel_precision) + bias_w0);
     int w1_row = (functions::orient2d(vec2_32i{v1_x, v1_y}, vec2_32i{v2_x, v2_y},

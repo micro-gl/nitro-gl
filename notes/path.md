@@ -120,7 +120,7 @@ namespace tessellation {
     void path_tessellation<number>::compute(int stroke_size,
                                     bool closePath,
                                     const gravity gravity,
-                                    const microgl::vec2_32i *points,
+                                    const microgl::vec2_32i *pos,
                                     const index size,
                                     const precision precision,
                                     dynamic_array<index> &indices_buffer_tessellation,
@@ -154,8 +154,8 @@ namespace tessellation {
         vertex p0_out_next, p1_out_next;
         vec2_32i merge_out, merge_in;
 
-        comp_parallel_ray(points[0],
-                          points[1],
+        comp_parallel_ray(pos[0],
+                          pos[1],
                           p0_out_current,
                           p1_out_current,
                           stroke_size);
@@ -163,14 +163,14 @@ namespace tessellation {
         switch (gravity) {
             case gravity::center:
                 merge_in = p0_out_current;
-                merge_out = points[0] - (p0_out_current - points[0]);
+                merge_out = pos[0] - (p0_out_current - pos[0]);
                 break;
             case gravity::inward:
-                merge_in = points[0];
+                merge_in = pos[0];
                 merge_out = p0_out_current;
                 break;
             case gravity::outward:
-                merge_out = points[0];
+                merge_out = pos[0];
                 merge_in = p0_out_current;
                 break;
         }
@@ -183,8 +183,8 @@ namespace tessellation {
         bool even=true;
         for (index ix = 1; ix < size - 1; ++ix) {
 
-            comp_parallel_ray(points[ix],
-                              points[ix+1],
+            comp_parallel_ray(pos[ix],
+                              pos[ix+1],
                               p0_out_next,
                               p1_out_next,
                               stroke_size);
@@ -201,14 +201,14 @@ namespace tessellation {
             switch (gravity) {
                 case gravity::center:
                     merge_in = merge_out;
-                    merge_out = points[ix] - (merge_out - points[ix]);
+                    merge_out = pos[ix] - (merge_out - pos[ix]);
                     break;
                 case gravity::inward:
-                    merge_in = points[ix];
+                    merge_in = pos[ix];
                     break;
                 case gravity::outward:
                     merge_in = merge_out;
-                    merge_out = points[ix];
+                    merge_out = pos[ix];
                     break;
             }
 
@@ -229,8 +229,8 @@ namespace tessellation {
 
         // edge cases
         if(!closePath) {
-            comp_parallel_ray(points[size-2],
-                              points[size-1],
+            comp_parallel_ray(pos[size-2],
+                              pos[size-1],
                               p0_out_current,
                               p1_out_current,
                               stroke_size
@@ -240,15 +240,15 @@ namespace tessellation {
             switch (gravity) {
                 case gravity::center:
                     merge_in = p1_out_current;
-                    merge_out = points[size-1] - (p1_out_current - points[size-1]);
+                    merge_out = pos[size-1] - (p1_out_current - pos[size-1]);
                     break;
                 case gravity::inward:
-                    merge_in = points[size-1];
+                    merge_in = pos[size-1];
                     merge_out = p1_out_current;
                     break;
                 case gravity::outward:
                     merge_in = p1_out_current;
-                    merge_out = points[size-1];
+                    merge_out = pos[size-1];
                     break;
             }
 
@@ -267,15 +267,15 @@ namespace tessellation {
         }
         else {
             // last segment to first segment,
-            // patch first two points.
-            comp_parallel_ray(points[size-1],
-                              points[0],
+            // patch first two pos.
+            comp_parallel_ray(pos[size-1],
+                              pos[0],
                               p0_out_current,
                               p1_out_current,
                               stroke_size);
 
-            comp_parallel_ray(points[0],
-                              points[1],
+            comp_parallel_ray(pos[0],
+                              pos[1],
                               p0_out_next,
                               p1_out_next,
                               stroke_size);
@@ -292,14 +292,14 @@ namespace tessellation {
             switch (gravity) {
                 case gravity::center:
                     merge_in = merge_out;
-                    merge_out = points[0] - (merge_out - points[0]);
+                    merge_out = pos[0] - (merge_out - pos[0]);
                     break;
                 case gravity::inward:
-                    merge_in = points[0];
+                    merge_in = pos[0];
                     break;
                 case gravity::outward:
                     merge_in = merge_out;
-                    merge_out = points[0];
+                    merge_out = pos[0];
                     break;
             }
 
@@ -309,14 +309,14 @@ namespace tessellation {
             // before last and last segment,
             // create last two triangles that connect
             // the last point to the first.
-            comp_parallel_ray(points[size-2],
-                              points[size-1],
+            comp_parallel_ray(pos[size-2],
+                              pos[size-1],
                               p0_out_current,
                               p1_out_current,
                               stroke_size);
 
-            comp_parallel_ray(points[size-1],
-                              points[0],
+            comp_parallel_ray(pos[size-1],
+                              pos[0],
                               p0_out_next,
                               p1_out_next,
                               stroke_size);
@@ -333,14 +333,14 @@ namespace tessellation {
             switch (gravity) {
                 case gravity::center:
                     merge_in = merge_out;
-                    merge_out = points[size-1] - (merge_out - points[size-1]);
+                    merge_out = pos[size-1] - (merge_out - pos[size-1]);
                     break;
                 case gravity::inward:
-                    merge_in = points[size-1];
+                    merge_in = pos[size-1];
                     break;
                 case gravity::outward:
                     merge_in = merge_out;
-                    merge_out = points[size-1];
+                    merge_out = pos[size-1];
                     break;
             }
 

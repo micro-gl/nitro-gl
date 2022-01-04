@@ -29,11 +29,6 @@ GLenum glCheckError_(const char *file, int line)
 }
 #define glCheckError() glCheckError_(__FILE__, __LINE__)
 
-template<class canvas> int __get_width(canvas c) { return c.width(); }
-template<class canvas> int __get_height(canvas c) { return c.height(); }
-template<> int __get_width<decltype(nullptr)>(decltype(nullptr) c) { return 200; }
-template<> int __get_height<decltype(nullptr)>(decltype(nullptr) c) { return 200; }
-
 template<class on_init_callback>
 void example_init(const on_init_callback &on_init) {
     SDL_Window * window;
@@ -86,13 +81,13 @@ void example_init(const on_init_callback &on_init) {
 }
 
 template<class canvas_type=void, class render_callback>
-void example_run(canvas_type canvas, const render_callback &render) {
+void example_run(const canvas_type & canvas, const render_callback &render) {
     auto ctx = SDL_GL_GetCurrentContext();
     SDL_Window * window = SDL_GL_GetCurrentWindow();
     bool quit = false;
     SDL_Event event;
-    int w = __get_width(canvas);
-    int h = __get_height(canvas);
+    int w = canvas.width();
+    int h = canvas.height();
     SDL_SetWindowSize(window, w, h);
     while (!quit) {
         SDL_PollEvent(&event);

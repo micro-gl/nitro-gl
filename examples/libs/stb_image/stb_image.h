@@ -128,7 +128,7 @@ RECENT REVISION HISTORY:
 //    int *channels_in_file  -- outputs # of image components in image file
 //    int desired_channels   -- if non-zero, # of image components requested in result
 //
-// The return value from_sampler an image loader is an 'unsigned char *' which points
+// The return value from_sampler an image loader is an 'unsigned char *' which pos
 // to the pixel data, or NULL on an allocation failure or if the image is
 // corrupt or invalid. The pixel data consists of *y scanlines of *x pixels,
 // with each pixel consisting of N interleaved 8-bit components; the first

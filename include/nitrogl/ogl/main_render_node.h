@@ -25,8 +25,10 @@ namespace nitrogl {
     public:
         struct data_type {
             color_t color;
-            float * points;
+            float * pos;
             float * uvs_sampler;
+            int pos_size;
+            int uvs_sampler_size;
         };
 
         template<unsigned N>
@@ -64,26 +66,26 @@ namespace nitrogl {
             };
 
             // non interleaved vertices: index + pos + uv (counter clock-wise)
-            GLfloat pos[8] =  {
-                    10.0f, 10.0f, // Bottom-left
-                    250.0f, 10.0f, // Bottom-right
-                    250.0f, 250.0f, // Top-right
-                    10.0f, 250.0f, // Top-left
-            };
-
-            GLfloat pos3[8] =  {
-                    50.0f, 50.0f, // Bottom-left
-                    100.0f, 50.0f, // Bottom-right
-                    100.0f, 100.0f, // Top-right
-                    50.0f, 100.0f, // Top-left
-            };
-
-            GLfloat uv[12] =  {
-                    0.0f, 0.0f, 1.0f, // Bottom-left
-                    1.0f, 0.0f, 1.0f, // Bottom-right
-                    1.0f, 1.0f, 1.0f, // Top-right
-                    0.0f, 1.0f, 1.0f, // Top-left
-            };
+//            GLfloat pos[8] =  {
+//                    10.0f, 10.0f, // Bottom-left
+//                    250.0f, 10.0f, // Bottom-right
+//                    250.0f, 250.0f, // Top-right
+//                    10.0f, 250.0f, // Top-left
+//            };
+//
+//            GLfloat pos3[8] =  {
+//                    50.0f, 50.0f, // Bottom-left
+//                    100.0f, 50.0f, // Bottom-right
+//                    100.0f, 100.0f, // Top-right
+//                    50.0f, 100.0f, // Top-left
+//            };
+//
+//            GLfloat uv[12] =  {
+//                    0.0f, 0.0f, 1.0f, // Bottom-left
+//                    1.0f, 0.0f, 1.0f, // Bottom-right
+//                    1.0f, 1.0f, 1.0f, // Top-right
+//                    0.0f, 1.0f, 1.0f, // Top-left
+//            };
 
             // vertex attributes
 //            shader_program::vbo_and_shader_attr_t vertex_attributes[2] = {
@@ -115,13 +117,10 @@ namespace nitrogl {
             _vao.bind();
             _ebo.bind();
             _ebo.uploadData(e, sizeof(e));
+#ifdef SUPPORTS_VAO
             _program.pointVertexAtrributes(va.data, va.size());
-            _vao.unbind();
-
-            #ifndef SUPPORTS_VAO
-//            _vbo.unbind();
-//            _ebo.unbind();
-            #endif
+            vao_t::unbind();
+#endif
         }
 
         void render(const data_type & data) {
@@ -133,37 +132,47 @@ namespace nitrogl {
             _program.updateOpacity(1.0f);
             _program.updateColor(d.color.r, d.color.g, d.color.b, d.color.a);
             glCheckError();
-#ifdef SUPPORTS_VAO
-            _vao.bind();
 
-//            _vbo.uploadData(nullptr, sizeof(pos) + sizeof(uv) );
-//            _vbo.uploadSubData(0, d.points, 32);
-//            _vbo.uploadSubData(32, d.uvs_sampler, sizeof(uv));
+            // data
 
-            // draw
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
-
-            // unbind VAO
-            _vao.unbind();
-#else
-            // vertex attributes
-            shader_program::attr_t vertex_attributes[2] = {
-                    {"VS_pos",      1, GL_FLOAT,  2, OFFSET(0)},
-                    {"VS_uvs_sampler", 2, GL_FLOAT,  3, interleave ? OFFSET(8) : OFFSET(sizeof(pos))}
+            GLfloat pos[8] =  {
+                    10.0f, 10.0f, // Bottom-left
+                    250.0f, 10.0f, // Bottom-right
+                    250.0f, 250.0f, // Top-right
+                    10.0f, 250.0f, // Top-left
             };
 
-            _vbo.bind();
+            GLfloat pos3[8] =  {
+                    50.0f, 50.0f, // Bottom-left
+                    100.0f, 50.0f, // Bottom-right
+                    100.0f, 100.0f, // Top-right
+                    50.0f, 100.0f, // Top-left
+            };
+
+            GLfloat uv[12] =  {
+                    0.0f, 0.0f, 1.0f, // Bottom-left
+                    1.0f, 0.0f, 1.0f, // Bottom-right
+                    1.0f, 1.0f, 1.0f, // Top-right
+                    0.0f, 1.0f, 1.0f, // Top-left
+            };
+
+            _vbo_pos.uploadData(d.pos, d.pos_size*sizeof(float), GL_DYNAMIC_DRAW);
+            _vbo_uvs_sampler.uploadData(d.uvs_sampler, d.uvs_sampler_size*sizeof(float), GL_DYNAMIC_DRAW);
+
+#ifdef SUPPORTS_VAO
+            // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
+            _vao.bind();
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
+            vao_t::unbind();
+#else
             _ebo.bind();
-
-            _program.pointVertexAttributes(vertex_attributes, 2, interleave);
-
+            // this crates exccess 2 binds for vbos
+            _program.pointVertexAtrributes(va.data, va.size());
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-            _vbo.unbind();
-            _ebo.unbind();
+            _program.disableLocations(va.data, va.size());
 #endif
             // unuse shader
-            _program.unuse();
+            shader_program::unuse();
         }
 
     };

@@ -146,7 +146,7 @@ namespace microtess {
             number1 b3 = t * t * t;
 
             // first of all we will need to evaluate 4 curves in the u
-            // direction. The points from_sampler those will be stored in this
+            // direction. The pos from_sampler those will be stored in this
             // temporary array
             for (index ix = 0; ix < 4; ++ix) {
                 index idx=ix*4;
@@ -162,7 +162,7 @@ namespace microtess {
             b2 = number1(3) * t * t * it;
             b3 =  t*t*t;
 
-            // having got 4 points, we can use it as a bezier curve
+            // having got 4 pos, we can use it as a bezier curve
             // to calculate the v direction. This should give us our
             // final point
             result.x = b0*temp[0].x + b1*temp[1].x + b2*temp[2].x + b3*temp[3].x;
@@ -185,7 +185,7 @@ namespace microtess {
             number1 b2 = t * t;
 
             // first of all we will need to evaluate 4 curves in the u
-            // direction. The points from_sampler those will be stored in this
+            // direction. The pos from_sampler those will be stored in this
             // temporary array
             for (index ix = 0; ix < 3; ++ix) {
                 index idx=ix*3;
@@ -200,7 +200,7 @@ namespace microtess {
             b1 = number1(2) * t * it;
             b2 = t*t;
 
-            // having got 3 points, we can use it as a bezier curve
+            // having got 3 pos, we can use it as a bezier curve
             // to calculate the v direction. This should give us our
             // final point
             result.x = b0*temp[0].x + b1*temp[1].x + b2*temp[2].x;
