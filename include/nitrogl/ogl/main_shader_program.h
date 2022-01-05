@@ -63,10 +63,20 @@ void main()
 }
         )foo";
     public:
+        struct uniforms_type {
+            GLint mat_model=-1;
+            GLint mat_view=-1;
+            GLint mat_proj=-1;
+            GLint mat_transform_uvs=-1;
+            GLint opacity=-1;
+        };
+
+        uniforms_type uniforms;
 
         // ctor: init with empty shaders and attach which is legal
-        main_shader_program() :
+        main_shader_program() : uniforms(),
                 shader_program(shader::from_vertex(vert), shader::from_fragment(frag)) {
+            resolveUniformsNames();
         }
         main_shader_program(const main_shader_program & o) = default;
         main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)) {}
@@ -77,20 +87,27 @@ void main()
 
         ~main_shader_program() = default;
 
-        void updateModelMatrix(nitrogl::mat4f & matrix) const
-        { updateUniformMatrix4fv("mat_model", matrix.data()); }
-        void updateViewMatrix(nitrogl::mat4f & matrix) const
-        { updateUniformMatrix4fv("mat_view", matrix.data()); }
-        void updateProjectionMatrix(nitrogl::mat4f & matrix) const
-        { updateUniformMatrix4fv("mat_proj", matrix.data()); }
-        void updateUVsTransformMatrix(nitrogl::mat3f & matrix) const
-        { updateUniformMatrix3fv("mat_transform_uvs", matrix.data()); }
+        void resolveUniformsNames() {
+            if(!wasLastLinkSuccessful()) link();
+            uniforms.mat_model = uniformLocationByName("mat_model");
+            uniforms.mat_view = uniformLocationByName("mat_view");
+            uniforms.mat_proj = uniformLocationByName("mat_proj");
+            uniforms.mat_transform_uvs = uniformLocationByName("mat_transform_uvs");
+            uniforms.opacity = uniformLocationByName("opacity");
+        }
+
+        void updateModelMatrix(const nitrogl::mat4f & matrix) const
+        {  glUniformMatrix4fv(uniforms.mat_model, 1, GL_FALSE, matrix.data()); }
+        void updateViewMatrix(const nitrogl::mat4f & matrix) const
+        {  glUniformMatrix4fv(uniforms.mat_view, 1, GL_FALSE, matrix.data()); }
+        void updateProjectionMatrix(const nitrogl::mat4f & matrix) const
+        {  glUniformMatrix4fv(uniforms.mat_proj, 1, GL_FALSE, matrix.data()); }
+        void updateUVsTransformMatrix(const nitrogl::mat3f & matrix) const
+        {  glUniformMatrix3fv(uniforms.mat_transform_uvs, 1, GL_FALSE, matrix.data()); }
         void updateTextureSampler(const GLchar * name, GLint texture_index) const
         { updateUniform1i(name, texture_index); }
         void updateOpacity(GLfloat opacity) const
-        { updateUniform1f("opacity", opacity); }
-        void updateColor(GLfloat r, GLfloat g, GLfloat b, GLfloat a) const
-        { updateUniform4f("color", r, g, b, a); }
+        { glUniform1f(uniforms.opacity, opacity); }
 
     };
 

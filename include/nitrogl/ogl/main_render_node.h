@@ -12,56 +12,54 @@
 
 #include "shader_program.h"
 #include "main_shader_program.h"
-#include "render_node.h"
 #include "../color.h"
 #include <array>
 
 namespace nitrogl {
-    bool interleave=false;
 
-    class main_render_node : public render_node<main_shader_program> {
-        using base = render_node<main_shader_program>;
+    class main_render_node {
+
     public:
+        using size_type = nitrogl::size_t;
         struct data_type {
-            color_t color;
             float * pos;
             float * uvs_sampler;
-            int pos_size;
-            int uvs_sampler_size;
+            GLuint * indices;
+            size_type pos_size;
+            size_type uvs_sampler_size;
+            size_type indices_size;
+            GLenum triangles_type;
+            const mat4f & mat_model;
+            const mat4f & mat_view;
+            const mat4f & mat_proj;
+            const mat3f & mat_uvs_sampler;
         };
 
         template<unsigned N>
         struct VA {
+            VA()=default;
             shader_program::vbo_and_shader_attr_t data[N];
             constexpr unsigned size() const { return N; }
         };
 
         VA<2> va;
         vbo_t _vbo_pos, _vbo_uvs_sampler;
+        vao_t _vao;
+        ebo_t _ebo;
+        main_shader_program _program;
 
     public:
-
-        main_render_node() : main_render_node(main_shader_program()) {}
-        explicit main_render_node(const main_shader_program & program) : base(program),
-                    va(), _vbo_pos(), _vbo_uvs_sampler() {}
-        explicit main_render_node(main_shader_program && program ) noexcept :
-                base(nitrogl::traits::move(program)), va(), _vbo_pos(), _vbo_uvs_sampler() {
-        }
-        main_render_node(const main_render_node &)=delete;
-        main_render_node(main_render_node &&)=delete;
-        main_render_node & operator=(main_render_node &&)=delete;
-        main_render_node & operator=(const main_render_node &)=delete;
+        main_render_node()=default;
         ~main_render_node()=default;
 
         void init() {
-            base::init();
 
             va = {
                 {
                     {"VS_pos", 0, GL_FLOAT,
                      shader_program::shader_attribute_component_type::Float,
                      2, OFFSET(0), 0, _vbo_pos.id()},
-                    {"VS_uvs_sampler", 2, GL_FLOAT,
+                    {"VS_uvs_sampler", 1, GL_FLOAT,
                      shader_program::shader_attribute_component_type::Float,
                      2, OFFSET(0), 0, _vbo_uvs_sampler.id()}
                 }
@@ -70,53 +68,41 @@ namespace nitrogl {
             _program.queryOrBindVertexAttributesLocations(va.data, va.size());
 
             // elements buffer
-            GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
+//            GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
+//            _vao.bind();
+//            _ebo.bind();
+//            _ebo.uploadData(e, sizeof(e));
 
+#ifdef SUPPORTS_VAO
             _vao.bind();
             _ebo.bind();
-            _ebo.uploadData(e, sizeof(e));
-#ifdef SUPPORTS_VAO
             _program.pointVertexAtrributes(va.data, va.size());
             vao_t::unbind();
+#else
+
 #endif
         }
 
         void render(const data_type & data) {
             const auto & d = data;
             _program.use();
-            _program.updateModelMatrix(_mat_model);
-            _program.updateViewMatrix(_mat_view);
-            _program.updateProjectionMatrix(_mat_proj);
-            _program.updateUVsTransformMatrix(_mat_transform_uvs_sampler);
+            _program.updateModelMatrix(d.mat_model);
+            _program.updateViewMatrix(d.mat_view);
+            _program.updateProjectionMatrix(d.mat_proj);
+            _program.updateUVsTransformMatrix(d.mat_uvs_sampler);
             _program.updateOpacity(1.0f);
-            _program.updateColor(d.color.r, d.color.g, d.color.b, d.color.a);
             glCheckError();
 
-            // data
-
-            GLfloat pos[8] =  {
-                    10.0f, 10.0f, // Bottom-left
-                    250.0f, 10.0f, // Bottom-right
-                    250.0f, 250.0f, // Top-right
-                    10.0f, 250.0f, // Top-left
-            };
-
-            GLfloat pos3[8] =  {
-                    50.0f, 50.0f, // Bottom-left
-                    100.0f, 50.0f, // Bottom-right
-                    100.0f, 100.0f, // Top-right
-                    50.0f, 100.0f, // Top-left
-            };
-
-            GLfloat uv[12] =  {
-                    0.0f, 0.0f, 1.0f, // Bottom-left
-                    1.0f, 0.0f, 1.0f, // Bottom-right
-                    1.0f, 1.0f, 1.0f, // Top-right
-                    0.0f, 1.0f, 1.0f, // Top-left
-            };
-
-            _vbo_pos.uploadData(d.pos, d.pos_size*sizeof(float), GL_DYNAMIC_DRAW);
-            _vbo_uvs_sampler.uploadData(d.uvs_sampler, d.uvs_sampler_size*sizeof(float), GL_DYNAMIC_DRAW);
+            // upload data
+            _vbo_pos.uploadData(d.pos,
+                                d.pos_size*sizeof(float),
+                                GL_DYNAMIC_DRAW);
+            _vbo_uvs_sampler.uploadData(d.uvs_sampler,
+                                        d.uvs_sampler_size*sizeof(float),
+                                        GL_DYNAMIC_DRAW);
+            _ebo.uploadData(d.indices,
+                            sizeof(GLuint)*d.indices_size,
+                            GL_DYNAMIC_DRAW);
 
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
@@ -134,11 +120,6 @@ namespace nitrogl {
             shader_program::unuse();
         }
 
-        mat3f _mat_transform_uvs_sampler;
-
-        void updateUVsMatrix(mat3f val) {
-            _mat_transform_uvs_sampler=val;
-        }
     };
 
 }

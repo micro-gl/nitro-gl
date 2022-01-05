@@ -1,6 +1,6 @@
 # TODO
 3. plot sampling uvs = done
-4. transform uvs of sampler
+4. transform uvs of sampler = done
 5. 
 6. can make an optimized render node for rectangles
 7. render node for triangle batches

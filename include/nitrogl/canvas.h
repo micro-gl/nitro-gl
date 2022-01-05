@@ -218,12 +218,10 @@ namespace nitrogl {
             glViewport(0, 0, width(), height());
             _fbo.bind();
             // inverted y projection, canvas coords to opengl
-            auto mat_proj = camera::orthographic<float>(0.0f, width(), height(), 0, -1, 1);
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0, -1, 1);
             // make the transform about it's center of mass, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
-            _node.updateProjMatrix(mat_proj);
-            _node.updateModelMatrix(transform);
-            _node.updateUVsMatrix(transform_uv);
 
             // draw
             float points[8] = {
@@ -244,9 +242,16 @@ namespace nitrogl {
                     0.6, 0.6,
                     0.3, 0.6
             };
+
+            static GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
+
             main_render_node::data_type data = {
-                    {0.0f, 0.3f, 0.3f, 1.0f},
-                    points, uvs_sampler, 8, 8
+                    points, uvs_sampler, e,
+                    8, 8, 6, GL_TRIANGLES,
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv
             };
             _node.render(data);
 

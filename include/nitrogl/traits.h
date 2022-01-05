@@ -85,4 +85,19 @@ namespace nitrogl {
             return true;
         }
     }
+
+    using uintptr_type = typename traits::conditional<
+            sizeof(void *) == sizeof(unsigned short), unsigned short,
+                typename traits::conditional<
+                    sizeof(void *) == sizeof(unsigned int), unsigned int,
+                        typename traits::conditional<
+                            sizeof(void *) == sizeof(unsigned long), unsigned long, unsigned long long>::type>::type>::type;
+
+    using ptrdiff_type = typename traits::conditional<
+            sizeof(void *) == sizeof(unsigned short), short,
+                typename traits::conditional<sizeof(void *) == sizeof(unsigned int), int,
+                    typename traits::conditional<sizeof(void *)==sizeof(unsigned long), long, long long>::type>::type>::type;
+
+    using size_t = uintptr_type;
+    using ptrdiff_t = ptrdiff_type;
 }
