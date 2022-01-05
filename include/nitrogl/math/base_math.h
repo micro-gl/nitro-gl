@@ -33,7 +33,7 @@ namespace nitrogl {
         template<typename number>
         inline
         number deg_to_rad(const number &degrees) {
-            return ((degrees*number(nitrogl::math::pi<number>()))/number{180});
+            return ((degrees*number(nitrogl::math::pi<number>()))/number(180));
         }
 
         template<typename number>

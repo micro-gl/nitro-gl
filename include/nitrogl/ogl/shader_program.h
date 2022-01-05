@@ -186,7 +186,7 @@ namespace nitrogl {
             // the type of components in vertex attribute in shader.
             // vec3->float. ivec2->integer etc...
             shader_attribute_component_type shader_component_type;
-            GLuint size; // the number of elements in attribute (1,2,3,4)
+            GLuint size; // the number of components in attribute array vbo (1,2,3,4)
             // the attribute's first relative occurrence offset in the VBO
             const void * offset;
             // stride can be calculated automatically if the buffer is interleaved or non.

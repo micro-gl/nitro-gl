@@ -23,18 +23,19 @@ namespace nitrogl {
 uniform mat4 mat_model;
 uniform mat4 mat_view;
 uniform mat4 mat_proj;
+uniform mat3 mat_transform_uvs;
 
 // in = vertex attributes
 in vec2 VS_pos; // position of vertex
-in vec3 VS_uvs_sampler; // uv of vertex
+in vec4 VS_uvs_sampler; // uv of vertex, extras will be taken from (0, 0, 0, 1) if vbo input is smaller
 
 // out = varying
 out vec3 PS_uvs_sampler;
 
 void main()
 {
-//    mat3 aa(1.0f);
-    PS_uvs_sampler = VS_uvs_sampler;
+    PS_uvs_sampler = vec3((mat_transform_uvs * vec3(VS_uvs_sampler.st, 1.0)).st,
+                           VS_uvs_sampler.q); // remove 2nd component from VS_uvs_sampler
     gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
 }
 )foo";
@@ -45,12 +46,20 @@ void main()
 // uniforms
 uniform vec4 color; // color
 
+// in
+in vec3 PS_uvs_sampler;
+
 // out
 out vec4 FragColor;
 
+vec4 sample1(vec3 uv) {
+    return vec4(uv.x, uv.x, uv.x, 1.0);
+}
+
 void main()
 {
-    FragColor = color;
+    FragColor = sample1(PS_uvs_sampler);
+//    FragColor = color;
 }
         )foo";
     public:
@@ -59,11 +68,9 @@ void main()
         main_shader_program() :
                 shader_program(shader::from_vertex(vert), shader::from_fragment(frag)) {
         }
-        main_shader_program(const main_shader_program & o) : shader_program(o) {}
+        main_shader_program(const main_shader_program & o) = default;
         main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)) {}
-        main_shader_program & operator=(const main_shader_program & o) {
-            shader_program::operator=(o); return *this;
-        }
+        main_shader_program & operator=(const main_shader_program & o) = default;
         main_shader_program & operator=(main_shader_program && o)  noexcept {
             shader_program::operator=(nitrogl::traits::move(o)); return *this;
         }
@@ -76,6 +83,8 @@ void main()
         { updateUniformMatrix4fv("mat_view", matrix.data()); }
         void updateProjectionMatrix(nitrogl::mat4f & matrix) const
         { updateUniformMatrix4fv("mat_proj", matrix.data()); }
+        void updateUVsTransformMatrix(nitrogl::mat3f & matrix) const
+        { updateUniformMatrix3fv("mat_transform_uvs", matrix.data()); }
         void updateTextureSampler(const GLchar * name, GLint texture_index) const
         { updateUniform1i(name, texture_index); }
         void updateOpacity(GLfloat opacity) const

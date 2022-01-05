@@ -134,6 +134,7 @@ namespace nitrogl {
         template<typename number2>
         mat4(const mat3<number2> & mat) : base__() {
             fill_identity();
+            // todo:: optimize this to avoid (r,c) indexing = without multiplication
             for (int ix = 0; ix < 3; ++ix)
                 for (int jx = 0; jx < 3; ++jx)
                     this->operator()(ix, jx) = mat(ix, jx);

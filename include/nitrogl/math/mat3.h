@@ -163,6 +163,7 @@ namespace nitrogl {
                     this->_data[6]==zero && this->_data[7]==zero && this->_data[8]==one);
         }
 
+        // optimized pre/post multiplications
         template<class vertex> mat3 & post_translate(const vertex & v) {
             auto & m = (*this);
             constexpr bool c = column_major;

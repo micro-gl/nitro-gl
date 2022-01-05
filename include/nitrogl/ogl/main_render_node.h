@@ -21,7 +21,6 @@ namespace nitrogl {
 
     class main_render_node : public render_node<main_shader_program> {
         using base = render_node<main_shader_program>;
-
     public:
         struct data_type {
             color_t color;
@@ -64,7 +63,7 @@ namespace nitrogl {
                      2, OFFSET(0), 0, _vbo_pos.id()},
                     {"VS_uvs_sampler", 2, GL_FLOAT,
                      shader_program::shader_attribute_component_type::Float,
-                     3, OFFSET(0), 0, _vbo_uvs_sampler.id()}
+                     2, OFFSET(0), 0, _vbo_uvs_sampler.id()}
                 }
             };
             // enable and point vertex attributes
@@ -88,6 +87,7 @@ namespace nitrogl {
             _program.updateModelMatrix(_mat_model);
             _program.updateViewMatrix(_mat_view);
             _program.updateProjectionMatrix(_mat_proj);
+            _program.updateUVsTransformMatrix(_mat_transform_uvs_sampler);
             _program.updateOpacity(1.0f);
             _program.updateColor(d.color.r, d.color.g, d.color.b, d.color.a);
             glCheckError();
@@ -134,6 +134,11 @@ namespace nitrogl {
             shader_program::unuse();
         }
 
+        mat3f _mat_transform_uvs_sampler;
+
+        void updateUVsMatrix(mat3f val) {
+            _mat_transform_uvs_sampler=val;
+        }
     };
 
 }

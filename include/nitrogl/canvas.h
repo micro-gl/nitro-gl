@@ -213,14 +213,17 @@ namespace nitrogl {
                       float u0=0., float v0=0., float u1=1., float v1=1.,
                       mat3f transform_uv = mat3f::identity(),
                       opacity_t opacity = 255) {
+            static float t =0;
+            t+=0.01;
             glViewport(0, 0, width(), height());
             _fbo.bind();
             // inverted y projection, canvas coords to opengl
             auto mat_proj = camera::orthographic<float>(0.0f, width(), height(), 0, -1, 1);
+            // make the transform about it's center of mass, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
-            mat4f model = transform; // upgrade from 3x3 to 4x4
             _node.updateProjMatrix(mat_proj);
-            _node.updateModelMatrix(model);
+            _node.updateModelMatrix(transform);
+            _node.updateUVsMatrix(transform_uv);
 
             // draw
             float points[8] = {
@@ -230,10 +233,16 @@ namespace nitrogl {
                     left, top
             };
             float uvs_sampler[8] = {
-                    left, bottom,
-                    right, bottom,
-                    right, top,
-                    left, top
+                    u0, v0,
+                    u1, v0,
+                    u1, v1,
+                    u0, v1
+            };
+            float uvs_sampler2[8] = {
+                    0.3, 0.3,
+                    0.6, 0.3,
+                    0.6, 0.6,
+                    0.3, 0.6
             };
             main_render_node::data_type data = {
                     {0.0f, 0.3f, 0.3f, 1.0f},
@@ -241,11 +250,9 @@ namespace nitrogl {
             };
             _node.render(data);
 
-
             //
             copy_region_to_backdrop(int(left), int(top),
                                     int(right+0.5f), int(bottom+0.5f));
-
             fbo_t::unbind();
         }
 
