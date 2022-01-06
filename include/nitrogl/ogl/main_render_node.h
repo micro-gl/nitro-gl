@@ -35,14 +35,40 @@ namespace nitrogl {
             const mat3f & mat_uvs_sampler;
         };
 
+        struct vbo_and_shader_attr_t {
+            const GLchar * name; // name of vertex attribute
+            GLint location; // the index of the attribute in the vertex shader
+            // the type of element in VBO, this is important because opengl will know
+            // better how to convert it to the vertex shader processor
+            GLenum type;
+            // the type of components in vertex attribute in shader.
+            // vec3->float. ivec2->integer etc...
+            shader_program::shader_attribute_component_type shader_component_type;
+            GLuint size; // the number of components in attribute array vbo (1,2,3,4)
+            // the attribute's first relative occurrence offset in the VBO
+            const void * offset;
+            // stride can be calculated automatically if the buffer is interleaved or non.
+            GLsizei stride;
+            GLuint vbo; // corresponding vbo
+        };
+
+
         template<unsigned N>
-        struct VA {
-            VA()=default;
-            shader_program::vbo_and_shader_attr_t data[N];
+        struct VAS {
+            VAS()=default;
+            shader_program::vertex_attr_t data[N];
             constexpr unsigned size() const { return N; }
         };
 
-        VA<2> va;
+        template<unsigned N>
+        struct VBO_AS {
+            VBO_AS()=default;
+            shader_program::vbo_attr_t data[N];
+            constexpr unsigned size() const { return N; }
+        };
+
+        VAS<2> vas;
+        VBO_AS<2> vbo_as;
         vbo_t _vbo_pos, _vbo_uvs_sampler;
         vao_t _vao;
         ebo_t _ebo;
@@ -54,18 +80,17 @@ namespace nitrogl {
 
         void init() {
 
-            va = {
-                {
-                    {"VS_pos", 0, GL_FLOAT,
-                     shader_program::shader_attribute_component_type::Float,
-                     2, OFFSET(0), 0, _vbo_pos.id()},
-                    {"VS_uvs_sampler", 1, GL_FLOAT,
-                     shader_program::shader_attribute_component_type::Float,
-                     2, OFFSET(0), 0, _vbo_uvs_sampler.id()}
-                }
-            };
+            vas = {{
+                {"VS_pos", -1, shader_program::shader_attribute_component_type::Float},
+                {"VS_uvs_sampler", -1, shader_program::shader_attribute_component_type::Float}
+            }};
+            vbo_as = {{
+                { GL_FLOAT, 2, OFFSET(0), 0, _vbo_pos.id()},
+                { GL_FLOAT, 2, OFFSET(0), 0, _vbo_uvs_sampler.id()}
+            }};
+
             // enable and point vertex attributes
-            _program.queryOrBindVertexAttributesLocations(va.data, va.size());
+            _program.setOrGetVertexAttributesLocations(vas.data, vas.size());
 
             // elements buffer
 //            GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
@@ -76,7 +101,7 @@ namespace nitrogl {
 #ifdef SUPPORTS_VAO
             _vao.bind();
             _ebo.bind();
-            _program.pointVertexAtrributes(va.data, va.size());
+            _program.pointVertexAtrributes(vbo_as.data, vas.data, vbo_as.size());
             vao_t::unbind();
 #else
 

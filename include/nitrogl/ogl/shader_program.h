@@ -21,9 +21,13 @@ namespace nitrogl {
     private:
         shader _vertex, _fragment;
         GLuint _id;
+        GLint _last_link_status=GL_FALSE;
         bool owner;
 
     public:
+        // attributes are vec/1/2/3/4, they are vector made of elements of a single type.
+        // integer correspond to ivecn/uvecn/bvecn. Float to vecn. Double to dvecn
+        enum class shader_attribute_component_type { Float, Integer, Double };
         /**
          * NOTES about generic attribs to locations:
          * 1. After linking a program, every vertex attrib location is defined in the vertex
@@ -41,14 +45,12 @@ namespace nitrogl {
          * 6. stride for non-interleaved is per vertex attribute. stride((x,y,z))=sizeof((x,y,z))=3, stride((u,v))=2
          *
          */
-        struct attr_t {
+        struct vertex_attr_t {
             const GLchar * name; // name of vertex attribute
             GLint location; // the index of the attribute in the vertex shader
-            GLenum type; // the type of element in attribute
-            GLuint size; // the number of elements in attribute (1,2,3,4)
-            // the attribute's first relative occurrence offset in the buffer
-            const void * offset;
-            // stride can be calculated automatically if the buffer is interleaved or non.
+            // the type of components in vertex attribute in shader.
+            // vec3->float. ivec2->integer etc...
+            shader_attribute_component_type shader_component_type;
         };
 
         struct uniform_t {
@@ -64,11 +66,11 @@ namespace nitrogl {
         }
         // ctor: init with empty shaders
         shader_program() : _vertex(shader::null_shader), _fragment(shader::null_shader),
-                owner(true), _id(0) {
+                owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
         }
         shader_program(const shader & vertex, const shader & fragment) :
-        _vertex(vertex), _fragment(fragment), owner(true), _id(0) {
+                _vertex(vertex), _fragment(fragment), owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
             glAttachShader(_id, _vertex.id());
             glAttachShader(_id, _fragment.id());
@@ -76,13 +78,13 @@ namespace nitrogl {
         }
         shader_program(shader && vertex, shader && fragment) :
                     _vertex(nitrogl::traits::move(vertex)), _fragment(nitrogl::traits::move(fragment)),
-                    owner(true), _id(0) {
+                    owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
             glAttachShader(_id, _vertex.id());
             glAttachShader(_id, _fragment.id());
             link();
         }
-        shader_program(shader_program && o) noexcept : _id(o._id),
+        shader_program(shader_program && o) noexcept : _id(o._id), _last_link_status(o._last_link_status),
                         _vertex(nitrogl::traits::move(o._vertex)),
                         _fragment(nitrogl::traits::move(o._fragment)), owner(o.owner) {
             // we don't move vertex and fragment shades, we dont want to own them.
@@ -90,13 +92,14 @@ namespace nitrogl {
         }
         shader_program & operator=(shader_program && o) noexcept {
             if(this!=&o) {
-                _id=o._id; _vertex=nitrogl::traits::move(o._vertex);
+                _id=o._id; _last_link_status=o._last_link_status;
+                _vertex=nitrogl::traits::move(o._vertex);
                 _fragment=nitrogl::traits::move(o._fragment);
                 owner=o.owner; o.owner=false;
             }
             return *this;
         }
-        shader_program(const shader_program & o) : _id(o._id),
+        shader_program(const shader_program & o) : _id(o._id), _last_link_status(o._last_link_status),
             _vertex(o._vertex), _fragment(o._fragment), owner(false) {}
         shader_program& operator=(const shader_program & o) {
             if(this!=&o) {
@@ -130,12 +133,11 @@ namespace nitrogl {
         shader & fragment() { return _fragment; }
         void use() const { glUseProgram(_id); }
         static void unuse() { glUseProgram(0); }
-        bool link() const {
+        bool link() {
             glLinkProgram(_id);
-            GLint is_linked;
-            // Check the link status
-            glGetProgramiv(_id, GL_LINK_STATUS, &is_linked);
-            return is_linked;
+            // it is okay to have a get after a gl command
+            glGetProgramiv(_id, GL_LINK_STATUS, &_last_link_status);
+            return _last_link_status;
         }
 
         GLint info_log(char * log_buffer = nullptr, GLint log_buffer_size=0) const {
@@ -156,36 +158,23 @@ namespace nitrogl {
         // generic attributes
         //
         bool wasLastLinkSuccessful() const {
-            GLint stat; glGetProgramiv(_id, GL_LINK_STATUS, &stat); return stat;
+            return _last_link_status;
+//            GLint stat; glGetProgramiv(_id, GL_LINK_STATUS, &stat); return stat;
         }
         void bindAttribLocation(GLuint index, const GLchar *name) const {
             glBindAttribLocation(_id, index, name);
-            link(); // you have to link again
-        }
-        void bindAttribsLocations(const attr_t * attributes, const unsigned size) const {
-            for (int ix = 0; ix < size; ++ix) {
-                const auto loc = attributes[ix].location;
-                if(loc) glBindAttribLocation(_id, loc, attributes[ix].name);
-            }
-            link(); // you have to link again
+            // you have to link again
         }
         GLint attributeLocationByName(const GLchar * name) const {
             return glGetAttribLocation(_id, name);
         }
 
-        // attributes are vec/1/2/3/4, they are vector made of elements of a single type.
-        // integer correspond to ivecn/uvecn/bvecn. Float to vecn. Double to dvecn
-        enum class shader_attribute_component_type { Float, Integer, Double };
-
-        struct vbo_and_shader_attr_t {
-            const GLchar * name; // name of vertex attribute
-            GLint location; // the index of the attribute in the vertex shader
+        struct vbo_attr_t {
             // the type of element in VBO, this is important because opengl will know
             // better how to convert it to the vertex shader processor
             GLenum type;
             // the type of components in vertex attribute in shader.
             // vec3->float. ivec2->integer etc...
-            shader_attribute_component_type shader_component_type;
             GLuint size; // the number of components in attribute array vbo (1,2,3,4)
             // the attribute's first relative occurrence offset in the VBO
             const void * offset;
@@ -194,11 +183,11 @@ namespace nitrogl {
             GLuint vbo; // corresponding vbo
         };
 
-        void enableLocations(vbo_and_shader_attr_t * attrs, unsigned length) const {
+        void enableLocations(const vertex_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then this is part of VAO state
             for (; length!=0 ; --length, ++attrs) glEnableVertexAttribArray(attrs->location);
         };
-        void disableLocations(vbo_and_shader_attr_t * attrs, unsigned length) const {
+        void disableLocations(const vertex_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then don't run this method. Otherwise, do.
             for (; length!=0 ; --length, ++attrs) glDisableVertexAttribArray(attrs->location);
         };
@@ -214,32 +203,36 @@ namespace nitrogl {
          * @param length
          * @return
          */
-        bool queryOrBindVertexAttributesLocations(vbo_and_shader_attr_t * attrs, unsigned length) const {
-            bool has_user_defined_all_locations = true;
-            {
-                for (const auto * iter = attrs; iter < attrs+length; ++iter)
-                    if(iter->location<0) {
-                        has_user_defined_all_locations = false;
-                        break;
-                    }
-            }
-            // if user relies on auto-locations and querying them with names, we have to make
-            // sure, the program was linked at least once.
-            if(!has_user_defined_all_locations && !wasLastLinkSuccessful()) link();
+        bool setOrGetVertexAttributesLocations(vertex_attr_t * attrs, unsigned length) {
+            // let's deal with requested explicit locations bindings.
             bool binding_occured=false;
             for (auto * it = attrs; it < attrs + length; ++it) {
-                if(it->location<0) { // -1=user asks opengl for auto-location
-                    if(it->name==nullptr) return false; // must have name
-                    it->location = glGetAttribLocation(_id, it->name);
-                } else if(it->name) { // let's bind requested location to shader vertex's attribute name
-                    glBindAttribLocation(_id, it->location, it->name);
-                    binding_occured = true;
-                } else { // it->location>=0 and it->name==nullptr
-                    // We assume user has used (location=#) specifier in shader, so nothing to do here
-                }
+                if(it->location<0) continue;
+                glBindAttribLocation(_id, it->location, it->name);
+                binding_occured = true;
             }
-            // we must relink to make bind take effect, bind can happen before linking does.
-            if(binding_occured) link();
+            // we must relink to make bind take effect, bind can happen only before linking does.
+            if(binding_occured) {
+                link();
+                if(!wasLastLinkSuccessful()) return false;
+            }
+
+            // let's deal with automatic locations. program has to be linked
+            if(!wasLastLinkSuccessful()) link(); // in case no binding was requested
+
+            for (auto * it = attrs; it < attrs + length; ++it) {
+                if(it->location>=0) continue;
+                if(it->name==nullptr) return false; // must have name
+                it->location = glGetAttribLocation(_id, it->name);
+            }
+            return true;
+        };
+
+        bool setUniformLocations(uniform_t * attrs, unsigned length) {
+            if(!wasLastLinkSuccessful()) link(); // in case no binding was requested
+            for (auto * it = attrs; it < attrs + length; ++it) {
+                attrs->location= uniformLocationByName(attrs->name);
+            }
             return true;
         };
 
@@ -255,29 +248,30 @@ namespace nitrogl {
          * @param length
          * @return
          */
-        bool pointVertexAtrributes(vbo_and_shader_attr_t * attrs, unsigned length) const {
+        bool pointVertexAtrributes(const vbo_attr_t * attrs_vbo, const vertex_attr_t * attrs_vertex, unsigned length) const {
             bool uniform_vbo=true;
             { // for optimization, inspect if they use same VBO
-                const GLint vbo=attrs->vbo;
-                for (auto * it = attrs; it < attrs + length; ++it) {
+                const auto vbo=attrs_vbo->vbo;
+                for (auto * it = attrs_vbo; it < attrs_vbo + length; ++it) {
                     if(vbo!=it->vbo) { uniform_vbo=false; break; }
                 }
             }
             // this avoids extra bindings if all the vertex attributes are mapped
             // from the same vbo
-            if(uniform_vbo && attrs->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, attrs[0].vbo);
+            if(uniform_vbo && attrs_vbo->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, attrs_vbo->vbo);
 
-            for (auto * it = attrs; it < attrs + length; ++it) {
+            auto * it2 = attrs_vertex;
+            for (auto * it = attrs_vbo; it < attrs_vbo + length; ++it, ++it2) {
                 // so we have to bind the vbo where the vertex attributes will be at.
                 // then enable the location and then point the shader program. If using VAO,
                 // then those are part of its state (VBO binding is not, only the mapping from VBO
                 // to the vertex shader)
                 if(!uniform_vbo && it->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, it->vbo);
                 // enable generic vertex attrib for bound VBO
-                glEnableVertexAttribArray((GLuint)it->location);
-                switch (it->shader_component_type) {
+                glEnableVertexAttribArray((GLuint)it2->location);
+                switch (it2->shader_component_type) {
                     case shader_attribute_component_type::Float:
-                        glVertexAttribPointer((GLuint)it->location, GLint(it->size), it->type,
+                        glVertexAttribPointer((GLuint)it2->location, GLint(it->size), it->type,
                                                GL_FALSE, it->stride, it->offset);
                         break;
 #ifdef SUPPORTS_INT_ATTRIBUTES
@@ -305,195 +299,6 @@ namespace nitrogl {
             return glGetUniformLocation(_id, name);
         }
 
-        // matrices
-        GLint updateUniformMatrix2fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix2fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-        GLint updateUniformMatrix3fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix3fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-        GLint updateUniformMatrix4fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix4fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-
-#ifndef STRICT_ES2
-        GLint updateUniformMatrix2x3fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix2x3fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-        GLint updateUniformMatrix3x2fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix3x2fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-        GLint updateUniformMatrix2x4fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix2x4fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-        GLint updateUniformMatrix4x2fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix4x2fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-        GLint updateUniformMatrix3x4fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix3x4fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-        GLint updateUniformMatrix4x3fv(const GLchar * name, const GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniformMatrix4x3fv(location, 1, GL_FALSE, value);
-            return location;
-        }
-#endif
-
-        // uniform 1
-        GLint updateUniform1f(const GLchar * name, GLfloat x) const {
-            const auto location = uniformLocationByName(name);
-            glUniform1f(location, x);
-            return location;
-        }
-        GLint updateUniform1fv(const GLchar * name, GLsizei length, GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform1fv(location, length, value);
-            return location;
-        }
-        GLint updateUniform1i(const GLchar * name, GLint x) const {
-            const auto location = uniformLocationByName(name);
-            glUniform1i(location, x);
-            return location;
-        }
-        GLint updateUniform1iv(const GLchar * name, GLsizei length, GLint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform1iv(location, length, value);
-            return location;
-        }
-
-#ifndef STRICT_ES2
-        GLint updateUniform1ui(const GLchar * name, GLuint x) const {
-            const auto location = uniformLocationByName(name);
-            glUniform1ui(location, x);
-            return location;
-        }
-        GLint updateUniform1uiv(const GLchar * name, GLsizei length, GLuint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform1uiv(location, length, value);
-            return location;
-        }
-#endif
-
-        // uniform 2
-        GLint updateUniform2f(const GLchar * name, GLfloat x, GLfloat y) const {
-            const auto location = uniformLocationByName(name);
-            glUniform2f(location, x, y);
-            return location;
-        }
-        GLint updateUniform2fv(const GLchar * name, GLsizei length, GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform2fv(location, length, value);
-            return location;
-        }
-        GLint updateUniform2i(const GLchar * name, GLint x, GLint y) const {
-            const auto location = uniformLocationByName(name);
-            glUniform2i(location, x, y);
-            return location;
-        }
-        GLint updateUniform2iv(const GLchar * name, GLsizei length, GLint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform2iv(location, length, value);
-            return location;
-        }
-
-#ifndef STRICT_ES2
-        GLint updateUniform2ui(const GLchar * name, GLuint x, GLuint y) const {
-            const auto location = uniformLocationByName(name);
-            glUniform2ui(location, x, y);
-            return location;
-        }
-        GLint updateUniform2uiv(const GLchar * name, GLsizei length, GLuint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform2uiv(location, length, value);
-            return location;
-        }
-#endif
-
-        // uniform 3
-        GLint updateUniform3f(const GLchar * name, GLfloat x, GLfloat y, GLfloat z) const {
-            const auto location = uniformLocationByName(name);
-            glUniform3f(location, x, y, z);
-            return location;
-        }
-        GLint updateUniform3fv(const GLchar * name, GLsizei length, GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform3fv(location, length, value);
-            return location;
-        }
-        GLint updateUniform3i(const GLchar * name, GLint x, GLint y, GLint z) const {
-            const auto location = uniformLocationByName(name);
-            glUniform3i(location, x, y, z);
-            return location;
-        }
-        GLint updateUniform3iv(const GLchar * name, GLsizei length, GLint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform3iv(location, length, value);
-            return location;
-        }
-
-#ifndef STRICT_ES2
-        GLint updateUniform3ui(const GLchar * name, GLuint x, GLuint y, GLuint z) const {
-            const auto location = uniformLocationByName(name);
-            glUniform3ui(location, x, y, z);
-            return location;
-        }
-        GLint updateUniform3uiv(const GLchar * name, GLsizei length, GLuint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform3uiv(location, length, value);
-            return location;
-        }
-#endif
-
-        // uniform 4
-        GLint updateUniform4f(const GLchar * name, GLfloat x, GLfloat y, GLfloat z, GLfloat w) const {
-            const auto location = uniformLocationByName(name);
-            glUniform4f(location, x, y, z, w);
-            return location;
-        }
-        GLint updateUniform4fv(const GLchar * name, GLsizei length, GLfloat *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform4fv(location, length, value);
-            return location;
-        }
-        GLint updateUniform4i(const GLchar * name, GLint x, GLint y, GLint z, GLint w) const {
-            const auto location = uniformLocationByName(name);
-            glUniform4i(location, x, y, z, w);
-            return location;
-        }
-        GLint updateUniform4iv(const GLchar * name, GLsizei length, GLint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform4iv(location, length, value);
-            return location;
-        }
-
-#ifndef STRICT_ES2
-        GLint updateUniform4ui(const GLchar * name, GLuint x, GLuint y, GLuint z, GLuint w) const {
-            const auto location = uniformLocationByName(name);
-            glUniform4ui(location, x, y, z, w);
-            return location;
-        }
-        GLint updateUniform4uiv(const GLchar * name, GLsizei length, GLuint *value) const {
-            const auto location = uniformLocationByName(name);
-            glUniform4uiv(location, length, value);
-            return location;
-        }
-#endif
     };
 
 }

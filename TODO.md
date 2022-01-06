@@ -2,7 +2,7 @@
 3. plot sampling uvs = done
 4. transform uvs of sampler = done
 5. 
-6. can make an optimized render node for rectangles
+6. can make an optimized render node for rectangles: interleaved(one upload call) and constant ebo
 7. render node for triangle batches
 8. test idea with backdrop sampling read
 9. basic blending

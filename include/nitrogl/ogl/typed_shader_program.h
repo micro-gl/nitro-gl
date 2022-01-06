@@ -15,53 +15,8 @@
 
 namespace nitrogl {
 
-    class main_shader_program : public shader_program {
-        static constexpr const char * const vert = R"foo(
-#version 330 core
-
-// uniforms
-uniform mat4 mat_model;
-uniform mat4 mat_view;
-uniform mat4 mat_proj;
-uniform mat3 mat_transform_uvs;
-
-// in = vertex attributes
-in vec2 VS_pos; // position of vertex
-in vec4 VS_uvs_sampler; // uv of vertex, extras will be taken from (0, 0, 0, 1) if vbo input is smaller
-
-// out = varying
-out vec3 PS_uvs_sampler;
-
-void main()
-{
-    PS_uvs_sampler = vec3((mat_transform_uvs * vec3(VS_uvs_sampler.st, 1.0)).st,
-                           VS_uvs_sampler.q); // remove 2nd component from VS_uvs_sampler
-    gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
-}
-)foo";
-
-        constexpr static const char * const frag = R"foo(
-#version 330 core
-
-// uniforms
-uniform vec4 color; // color
-
-// in
-in vec3 PS_uvs_sampler;
-
-// out
-out vec4 FragColor;
-
-vec4 sample1(vec3 uv) {
-    return vec4(uv.x, uv.x, uv.x, 1.0);
-}
-
-void main()
-{
-    FragColor = sample1(PS_uvs_sampler);
-//    FragColor = color;
-}
-        )foo";
+    template<unsigned UNIFORMS_COUNT, unsigned VAS_COUNT>
+    class typed_shader_program : public shader_program {
     public:
 
         template<unsigned N>
@@ -71,20 +26,19 @@ void main()
             constexpr unsigned size() const { return N; }
         };
 
-        struct uniforms_type {
-            GLint mat_model=-1;
-            GLint mat_view=-1;
-            GLint mat_proj=-1;
-            GLint mat_transform_uvs=-1;
-            GLint opacity=-1;
+        template<unsigned N>
+        struct VAS {
+            VAS()=default;
+            attr_t data[N];
+            constexpr unsigned size() const { return N; }
         };
 
-        uniforms_type uniforms;
+        UNIFORMS<UNIFORMS_COUNT> uniforms;
+        VAS<VAS_COUNT> vas;
 
         // ctor: init with empty shaders and attach which is legal
-        main_shader_program() : uniforms(),
-                shader_program(shader::from_vertex(vert), shader::from_fragment(frag)) {
-            resolveUniformsLocations();
+        typed_shader_program() : shader_program(), uniforms(), vas() {
+            resolveUniformsNames();
         }
         main_shader_program(const main_shader_program & o) = default;
         main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)) {}
@@ -95,7 +49,7 @@ void main()
 
         ~main_shader_program() = default;
 
-        void resolveUniformsLocations() {
+        void resolveUniformsNames() {
             if(!wasLastLinkSuccessful()) link();
             uniforms.mat_model = uniformLocationByName("mat_model");
             uniforms.mat_view = uniformLocationByName("mat_view");
@@ -112,8 +66,8 @@ void main()
         {  glUniformMatrix4fv(uniforms.mat_proj, 1, GL_FALSE, matrix.data()); }
         void updateUVsTransformMatrix(const nitrogl::mat3f & matrix) const
         {  glUniformMatrix3fv(uniforms.mat_transform_uvs, 1, GL_FALSE, matrix.data()); }
-//        void updateTextureSampler(const GLchar * name, GLint texture_index) const
-//        { glUniform1i(name, texture_index); }
+        void updateTextureSampler(const GLchar * name, GLint texture_index) const
+        { updateUniform1i(name, texture_index); }
         void updateOpacity(GLfloat opacity) const
         { glUniform1f(uniforms.opacity, opacity); }
 

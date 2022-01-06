@@ -12,6 +12,7 @@
 #include <nitrogl/ogl/shader_program.h>
 #include <nitrogl/ogl/main_shader_program.h>
 #include <nitrogl/ogl/main_render_node.h>
+//#include <nitrogl/ogl/typed_shader_program.h>
 #include <nitrogl/canvas.h>
 
 using namespace nitrogl;
