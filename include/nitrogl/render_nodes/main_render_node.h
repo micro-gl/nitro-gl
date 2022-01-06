@@ -10,9 +10,9 @@
 ========================================================================================*/
 #pragma once
 
-#include "shader_program.h"
-#include "main_shader_program.h"
-#include "../color.h"
+#include "nitrogl/ogl/shader_program.h"
+#include "nitrogl/_internal/main_shader_program.h"
+#include "nitrogl/color.h"
 #include <array>
 
 namespace nitrogl {

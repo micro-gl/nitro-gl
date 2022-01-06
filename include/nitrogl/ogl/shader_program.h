@@ -45,6 +45,7 @@ namespace nitrogl {
          * 6. stride for non-interleaved is per vertex attribute. stride((x,y,z))=sizeof((x,y,z))=3, stride((u,v))=2
          *
          */
+        // this describes a vertex shader sttribute
         struct vertex_attr_t {
             const GLchar * name; // name of vertex attribute
             GLint location; // the index of the attribute in the vertex shader
@@ -53,15 +54,31 @@ namespace nitrogl {
             shader_attribute_component_type shader_component_type;
         };
 
+        // this describes a single uniform attribute
         struct uniform_t {
             const GLchar * name=nullptr; // name of uniform
             GLint location=0; // the location
         };
 
-        static shader_program from_shaders(const shader & vertex, const shader & fragment) {
+        // this describes attributes in VBO buffer
+        struct vbo_attr_t {
+            // the type of element in VBO, this is important because opengl will know
+            // better how to convert it to the vertex shader processor
+            GLenum type;
+            // the type of components in vertex attribute in shader.
+            // vec3->float. ivec2->integer etc...
+            GLuint size; // the number of components in attribute array vbo (1,2,3,4)
+            // the attribute's first relative occurrence offset in the VBO
+            const void * offset;
+            // stride can be calculated automatically if the buffer is interleaved or non.
+            GLsizei stride;
+            GLuint vbo; // corresponding vbo
+        };
+
+        static shader_program from_shaders(const shader & vertex, const shader & fragment, bool link=false) {
             shader_program prog;
             prog.attach_shaders(vertex, fragment);
-            prog.link();
+            if(link) prog.link();
             return prog;
         }
         // ctor: init with empty shaders
@@ -69,20 +86,20 @@ namespace nitrogl {
                 owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
         }
-        shader_program(const shader & vertex, const shader & fragment) :
+        shader_program(const shader & vertex, const shader & fragment, bool $link=false) :
                 _vertex(vertex), _fragment(fragment), owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
             glAttachShader(_id, _vertex.id());
             glAttachShader(_id, _fragment.id());
-            link();
+            if($link) link();
         }
-        shader_program(shader && vertex, shader && fragment) :
+        shader_program(shader && vertex, shader && fragment, bool $link=false) :
                     _vertex(nitrogl::traits::move(vertex)), _fragment(nitrogl::traits::move(fragment)),
                     owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
             glAttachShader(_id, _vertex.id());
             glAttachShader(_id, _fragment.id());
-            link();
+            if($link) link();
         }
         shader_program(shader_program && o) noexcept : _id(o._id), _last_link_status(o._last_link_status),
                         _vertex(nitrogl::traits::move(o._vertex)),
@@ -169,20 +186,6 @@ namespace nitrogl {
             return glGetAttribLocation(_id, name);
         }
 
-        struct vbo_attr_t {
-            // the type of element in VBO, this is important because opengl will know
-            // better how to convert it to the vertex shader processor
-            GLenum type;
-            // the type of components in vertex attribute in shader.
-            // vec3->float. ivec2->integer etc...
-            GLuint size; // the number of components in attribute array vbo (1,2,3,4)
-            // the attribute's first relative occurrence offset in the VBO
-            const void * offset;
-            // stride can be calculated automatically if the buffer is interleaved or non.
-            GLsizei stride;
-            GLuint vbo; // corresponding vbo
-        };
-
         void enableLocations(const vertex_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then this is part of VAO state
             for (; length!=0 ; --length, ++attrs) glEnableVertexAttribArray(attrs->location);
@@ -228,7 +231,14 @@ namespace nitrogl {
             return true;
         };
 
-        bool setUniformLocations(uniform_t * attrs, unsigned length) {
+        /**
+         * get uniforms locations, fill array of uniforms with partial data about string names.
+         * Use it once and then cache it.
+         * @param attrs
+         * @param length
+         * @return
+         */
+        bool getUniformsLocations(uniform_t * attrs, unsigned length) {
             if(!wasLastLinkSuccessful()) link(); // in case no binding was requested
             for (auto * it = attrs; it < attrs + length; ++it) {
                 attrs->location= uniformLocationByName(attrs->name);

@@ -49,8 +49,8 @@
 #include "ogl/fbo.h"
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
-#include "ogl/main_shader_program.h"
-#include "ogl/main_render_node.h"
+#include "nitrogl/_internal/main_shader_program.h"
+#include "nitrogl/render_nodes/main_render_node.h"
 #include "camera.h"
 
 using namespace microtess::triangles;

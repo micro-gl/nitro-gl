@@ -131,8 +131,10 @@ namespace nitrogl {
             glGetShaderInfoLog(_id, log_buffer_size, &copied_length, log_buffer);
             return copied_length;
         }
-        void del() { if(_id && owner) {
-            glDeleteShader(_id); _is_compiled=false; _id=0; _type=type::unknown; }
+        void del() {
+            if(_id && owner) {
+                glDeleteShader(_id); _is_compiled=false; _id=0; _type=type::unknown;
+            }
         }
     };
 

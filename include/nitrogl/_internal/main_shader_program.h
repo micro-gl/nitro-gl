@@ -10,8 +10,8 @@
 ========================================================================================*/
 #pragma once
 
-#include "shader_program.h"
-#include "../math/mat4.h"
+#include "nitrogl/ogl/shader_program.h"
+#include "nitrogl/math/mat4.h"
 
 namespace nitrogl {
 
@@ -40,7 +40,7 @@ void main()
 }
 )foo";
 
-        constexpr static const char * const frag = R"foo(
+        constexpr static const char * const frag1 = R"foo(
 #version 330 core
 
 // uniforms
@@ -55,7 +55,9 @@ out vec4 FragColor;
 vec4 sample1(vec3 uv) {
     return vec4(uv.x, uv.x, uv.x, 1.0);
 }
+)foo";
 
+        constexpr static const char * const frag2 = R"foo(
 void main()
 {
     FragColor = sample1(PS_uvs_sampler);
@@ -82,15 +84,19 @@ void main()
         uniforms_type uniforms;
 
         // ctor: init with empty shaders and attach which is legal
-        main_shader_program() : uniforms(),
-                shader_program(shader::from_vertex(vert), shader::from_fragment(frag)) {
+        main_shader_program() : uniforms(), shader_program() {
+            const GLchar * frag_shards[2] = { frag1, frag2 };
+            auto v = shader::from_vertex(vert);
+            auto f = shader::from_fragment(frag_shards, 2, nullptr);
+            attach_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
             resolveUniformsLocations();
         }
         main_shader_program(const main_shader_program & o) = default;
-        main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)) {}
+        main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)), uniforms(o.uniforms) {}
         main_shader_program & operator=(const main_shader_program & o) = default;
         main_shader_program & operator=(main_shader_program && o)  noexcept {
-            shader_program::operator=(nitrogl::traits::move(o)); return *this;
+            shader_program::operator=(nitrogl::traits::move(o));
+            uniforms=o.uniforms;return *this;
         }
 
         ~main_shader_program() = default;
