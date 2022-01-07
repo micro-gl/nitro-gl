@@ -16,6 +16,7 @@
 namespace nitrogl {
 
     class main_shader_program : public shader_program {
+    public:
         static constexpr const char * const vert = R"foo(
 #version 330 core
 
@@ -40,8 +41,10 @@ void main()
 }
 )foo";
 
+        constexpr static const char * const frag0 = "#version 330 core\n";
+
         constexpr static const char * const frag1 = R"foo(
-#version 330 core
+//#version 330 core
 
 // uniforms
 uniform vec4 color; // color
@@ -60,36 +63,48 @@ vec4 sample1(vec3 uv) {
         constexpr static const char * const frag2 = R"foo(
 void main()
 {
-    FragColor = sample1(PS_uvs_sampler);
+    FragColor = __internal_sample(PS_uvs_sampler);
 //    FragColor = color;
 }
         )foo";
     public:
 
-        template<unsigned N>
-        struct UNIFORMS {
-            UNIFORMS()=default;
-            uniform_t data[N];
-            constexpr unsigned size() const { return N; }
+        struct VAS {
+            VAS()=default;
+            shader_program::vertex_attr_t data[2];
+            static constexpr unsigned size() { return 2; }
         };
 
+        // I have to have this uniform location cache. It is different
+        // from shader to shader instance, so I have no way around saving it.
         struct uniforms_type {
-            GLint mat_model=-1;
-            GLint mat_view=-1;
-            GLint mat_proj=-1;
-            GLint mat_transform_uvs=-1;
-            GLint opacity=-1;
+            GLint mat_model=-1, mat_view=-1, mat_proj=-1, mat_transform_uvs=-1, opacity=-1;
         };
 
         uniforms_type uniforms;
+        constexpr static VAS vas = {{
+            {"VS_pos", 0,
+             shader_program::shader_attribute_component_type::Float},
+            {"VS_uvs_sampler", 1,
+             shader_program::shader_attribute_component_type::Float}
+        }};
+
+        const uniforms_type & uniforms_locations() const { return uniforms; }
+        // this is static because we know their locations is const and predictable,
+        // so it does not change between instances of this shader
+        const VAS & vertex_attributes() const { return vas; }
 
         // ctor: init with empty shaders and attach which is legal
         main_shader_program() : uniforms(), shader_program() {
-            const GLchar * frag_shards[2] = { frag1, frag2 };
+            resolveVertexAttributesAndUniformsLocations();
+            // program is linked now
+        }
+        main_shader_program(bool test) : uniforms(), shader_program() {
+            const GLchar * frag_shards[3] = { frag0, frag1, frag2 };
             auto v = shader::from_vertex(vert);
-            auto f = shader::from_fragment(frag_shards, 2, nullptr);
+            auto f = shader::from_fragment(frag_shards, 3, nullptr);
             attach_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
-            resolveUniformsLocations();
+            resolveVertexAttributesAndUniformsLocations();
         }
         main_shader_program(const main_shader_program & o) = default;
         main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)), uniforms(o.uniforms) {}
@@ -101,8 +116,11 @@ void main()
 
         ~main_shader_program() = default;
 
-        void resolveUniformsLocations() {
-            if(!wasLastLinkSuccessful()) link();
+    private:
+        void resolveVertexAttributesAndUniformsLocations() {
+            // first set vertex attributes locations via binding, in case we are not using location qualifiers
+            setVertexAttributesLocations(vas.data, vas.size());
+            // program should be linked by previous call to set
             uniforms.mat_model = uniformLocationByName("mat_model");
             uniforms.mat_view = uniformLocationByName("mat_view");
             uniforms.mat_proj = uniformLocationByName("mat_proj");
@@ -110,6 +128,7 @@ void main()
             uniforms.opacity = uniformLocationByName("opacity");
         }
 
+    public:
         void updateModelMatrix(const nitrogl::mat4f & matrix) const
         {  glUniformMatrix4fv(uniforms.mat_model, 1, GL_FALSE, matrix.data()); }
         void updateViewMatrix(const nitrogl::mat4f & matrix) const

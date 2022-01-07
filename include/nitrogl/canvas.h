@@ -49,8 +49,10 @@
 #include "ogl/fbo.h"
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
-#include "nitrogl/_internal/main_shader_program.h"
-#include "nitrogl/render_nodes/main_render_node.h"
+#include "render_nodes/main_render_node.h"
+#include "samplers/test_sampler.h"
+#include "_internal/main_shader_program.h"
+#include "_internal/shader_compositor.h"
 #include "camera.h"
 
 using namespace microtess::triangles;
@@ -202,8 +204,8 @@ namespace nitrogl {
             texture.use();
             glCopyTexSubImage2D(GL_TEXTURE_2D, 0, textureLeft, y_texture,
                                 c.left, y_canvas, c.width(), c.height());
-            texture.unuse();
-            _fbo.unbind();
+            gl_texture::unuse();
+            fbo_t::unbind();
         }
 
     public:
@@ -211,7 +213,7 @@ namespace nitrogl {
         void drawRect(float left, float top, float right, float bottom,
                       mat3f transform = mat3f::identity(),
                       float u0=0., float v0=0., float u1=1., float v1=1.,
-                      mat3f transform_uv = mat3f::identity(),
+                      const mat3f & transform_uv = mat3f::identity(),
                       opacity_t opacity = 255) {
             static float t =0;
             t+=0.01;

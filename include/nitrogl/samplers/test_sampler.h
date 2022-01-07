@@ -19,7 +19,7 @@ namespace nitrogl {
             return "test_sampler";
         }
 
-        static const char * other_functions() {
+        static const char * other() {
             return R"foo(
 vec4 other_function(float t) {
     return vec4(t);

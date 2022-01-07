@@ -196,18 +196,27 @@ namespace nitrogl {
         };
 
         /**
-         * Helper method, this should run only once, depends only on shader
+         * Helper method, this should run only once, depends only on shader. This will :
+         * a. request location binding for attributes, that have specified a specific location
+         * b. record assigned binding for attributes, that have NOT specified a specific location
+         * has the following effects:
+         * 1. (a) requires post-linking (re link)
+         * 2. (b) requires pre linking
+         * I try to accomplish it optimally with smart(i hope) logic
+         *
          * three modes:
          * 1. { location<0, name!=nullptr } --> first link if hasn't, then query glGetAttribLocation
          * 1. { location>=0, name!=nullptr } --> first glBindAttribLocation, and re-link at end so it will affect shader
          * 1. { location>=0, name==nullptr } --> we assume user used (location=#) specifier in shader, nothing to do
          * 1. { location<0, name==nullptr } --> error
+         *
+         * you can use setVertexAttributesLocations and getVertexAttributesLocations separately
          * @param attrs
          * @param length
          * @return
          */
         bool setOrGetVertexAttributesLocations(vertex_attr_t * attrs, unsigned length) {
-            // let's deal with requested explicit locations bindings.
+            // let's deal with requested explicit locations bindings. they require a link later
             bool binding_occured=false;
             for (auto * it = attrs; it < attrs + length; ++it) {
                 if(it->location<0) continue;
@@ -220,6 +229,48 @@ namespace nitrogl {
                 if(!wasLastLinkSuccessful()) return false;
             }
 
+            // let's deal with automatic locations. program has to be linked
+            if(!wasLastLinkSuccessful()) link(); // in case no binding was requested
+
+            for (auto * it = attrs; it < attrs + length; ++it) {
+                if(it->location>=0) continue;
+                if(it->name==nullptr) return false; // must have name
+                it->location = glGetAttribLocation(_id, it->name);
+            }
+            return true;
+        };
+
+        /**
+         * this will only set explicit locations on the gpu vertex attribute
+         */
+        bool setVertexAttributesLocations(const vertex_attr_t * attrs, unsigned length) {
+            // let's deal with requested explicit locations bindings. they require a link later
+            bool binding_occured=false;
+            for (auto * it = attrs; it < attrs + length; ++it) {
+                if(it->location<0) continue;
+                glBindAttribLocation(_id, it->location, it->name);
+                binding_occured = true;
+            }
+            // we must relink to make bind take effect, bind can happen only before linking does.
+            if(binding_occured) {
+                link();
+                if(!wasLastLinkSuccessful()) return false;
+            }
+            return true;
+        };
+
+        // this will query/store the locations that were auto generated for vertex attributes in the gpu.
+        // every member that has (-1) location.
+        bool getVertexAttributesLocations(vertex_attr_t * attrs, unsigned length) {
+            // let's deal with requested explicit locations bindings. they require a link later
+            bool has_automatic_locations=false;
+            {
+                for (auto * it = attrs; it < attrs + length; ++it) {
+                    if(it->location<0) { has_automatic_locations=true; break; }
+                }
+            }
+            // no indication of missing locations, let's bail out
+            if(!has_automatic_locations) return false;
             // let's deal with automatic locations. program has to be linked
             if(!wasLastLinkSuccessful()) link(); // in case no binding was requested
 
@@ -254,11 +305,12 @@ namespace nitrogl {
          *      THIS METHOD SHOULD RUN ONCE AT INIT WHILE VAO IS BOUND. THEN REUSE VAO BY BINDING AT DRAW PHASE.
          *    - If VBO is NOT PREDICTABLE (non-interleaved multiple attributes, that change in size), THIS SHOULD RUN EVERYTIME things change
          * 2. If no VAO support, then ALWAYS RUN this method before draw.
+         * 3. attrs_vbo and attrs_vertex should be the same length and are considered a mapping pair
          * @param attrs
          * @param length
          * @return
          */
-        bool pointVertexAtrributes(const vbo_attr_t * attrs_vbo, const vertex_attr_t * attrs_vertex, unsigned length) const {
+        static bool point_vbos_to_generic_vertex_attributes(const vbo_attr_t * attrs_vbo, const vertex_attr_t * attrs_vertex, unsigned length) {
             bool uniform_vbo=true;
             { // for optimization, inspect if they use same VBO
                 const auto vbo=attrs_vbo->vbo;
@@ -273,14 +325,15 @@ namespace nitrogl {
             auto * it2 = attrs_vertex;
             for (auto * it = attrs_vbo; it < attrs_vbo + length; ++it, ++it2) {
                 // so we have to bind the vbo where the vertex attributes will be at.
-                // then enable the location and then point the shader program. If using VAO,
+                // then enable the location and then point the shader program via generic vertex attributes. If using VAO,
                 // then those are part of its state (VBO binding is not, only the mapping from VBO
                 // to the vertex shader)
                 if(!uniform_vbo && it->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, it->vbo);
-                // enable generic vertex attrib for bound VBO
+                // enable generic vertex attrib for bound VAO or global state if you dont support VAO
                 glEnableVertexAttribArray((GLuint)it2->location);
                 switch (it2->shader_component_type) {
                     case shader_attribute_component_type::Float:
+
                         glVertexAttribPointer((GLuint)it2->location, GLint(it->size), it->type,
                                                GL_FALSE, it->stride, it->offset);
                         break;

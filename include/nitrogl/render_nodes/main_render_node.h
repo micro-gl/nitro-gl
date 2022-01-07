@@ -53,12 +53,12 @@ namespace nitrogl {
         };
 
 
-        template<unsigned N>
-        struct VAS {
-            VAS()=default;
-            shader_program::vertex_attr_t data[N];
-            constexpr unsigned size() const { return N; }
-        };
+//        template<unsigned N>
+//        struct VAS {
+//            VAS()=default;
+//            shader_program::vertex_attr_t data[N];
+//            constexpr unsigned size() const { return N; }
+//        };
 
         template<unsigned N>
         struct VBO_AS {
@@ -67,7 +67,6 @@ namespace nitrogl {
             constexpr unsigned size() const { return N; }
         };
 
-        VAS<2> vas;
         VBO_AS<2> vbo_as;
         vbo_t _vbo_pos, _vbo_uvs_sampler;
         vao_t _vao;
@@ -101,7 +100,7 @@ namespace nitrogl {
 #ifdef SUPPORTS_VAO
             _vao.bind();
             _ebo.bind();
-            _program.pointVertexAtrributes(vbo_as.data, vas.data, vbo_as.size());
+            _program.point_vbos_to_generic_vertex_attributes(vbo_as.data, vas.data, vbo_as.size());
             vao_t::unbind();
 #else
 
@@ -137,7 +136,7 @@ namespace nitrogl {
 #else
             _ebo.bind();
             // this crates exccess 2 binds for vbos
-            _program.pointVertexAtrributes(va.data, va.size());
+            _program.pointGenericVertexAtrributes(va.data, va.size());
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             _program.disableLocations(va.data, va.size());
 #endif
