@@ -19,6 +19,8 @@ namespace nitrogl {
     class shader_compositor {
     public:
         shader_compositor()=delete;
+        shader_compositor & operator=(const shader_compositor &)=delete;
+        shader_compositor operator=(shader_compositor &&)=delete;
         ~shader_compositor()=delete;
 
         /**
@@ -32,15 +34,19 @@ namespace nitrogl {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
-            const GLchar * sources[6] = { main_shader_program::frag0,
-                                         sampler.other(),
-                                         "vec4 __internal_sample",
+            const auto * sampler_main = sampler.main();
+            if(*sampler_main=='\n') ++sampler_main;
+            const GLchar * sources[7] = { main_shader_program::frag_version,
+                                          main_shader_program::frag_other, // uniforms/atrribs/functions
+                                          sampler.uniforms(),
+                                          sampler.other_functions(),
+                                         "vec4 __internal_sample", // main sample function
                                          sampler.main(),
-                                         main_shader_program::frag1,
-                                         main_shader_program::frag2 };
-            auto fragment = shader::from_fragment(sources, 6, nullptr);
+                                         main_shader_program::frag_main};
+            auto fragment = shader::from_fragment(sources, 7, nullptr);
             prog.attach_shaders(nitrogl::traits::move(vertex),
                                 nitrogl::traits::move(fragment));
+            prog.resolve_vertex_attributes_and_uniforms_and_link();
             return prog;
         }
 

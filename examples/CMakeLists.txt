@@ -33,7 +33,7 @@ if(DEFINED SDL2_FOUND)
             libs/stb_image/stb_image.cpp
             src/Resources.cpp
             src/Resources.cpp
-            src/example.cpp src/example.h
+            src/example.cpp
             )
 
     foreach( testsourcefile ${SOURCES} )

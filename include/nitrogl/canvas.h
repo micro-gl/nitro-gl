@@ -225,7 +225,7 @@ namespace nitrogl {
             // make the transform about it's center of mass, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
 
-            // draw
+            // buffers
             float points[8] = {
                     left, bottom,
                     right, bottom,
@@ -247,6 +247,12 @@ namespace nitrogl {
 
             static GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
 
+            // get shader from cache
+            test_sampler sampler;
+            main_shader_program program =
+                    shader_compositor::composite_program_from_sampler(sampler);
+
+            // data
             main_render_node::data_type data = {
                     points, uvs_sampler, e,
                     8, 8, 6, GL_TRIANGLES,
@@ -255,7 +261,7 @@ namespace nitrogl {
                     mat_proj,
                     transform_uv
             };
-            _node.render(data);
+            _node.render(program, data);
 
             //
             copy_region_to_backdrop(int(left), int(top),

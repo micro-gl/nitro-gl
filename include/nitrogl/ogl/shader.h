@@ -49,7 +49,7 @@ namespace nitrogl {
         owner(true), _type(shader_type), _is_compiled(false), _id(0) {
             create();
         }
-        static shader null_shader;
+        static shader null_shader() { return shader(); }
 
         shader(shader && o)  noexcept :
                 owner(o.owner), _id(o._id), _type(o._type), _is_compiled(o._is_compiled) {
@@ -138,5 +138,4 @@ namespace nitrogl {
         }
     };
 
-    shader shader::null_shader = shader();
 }

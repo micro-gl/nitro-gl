@@ -68,7 +68,7 @@ namespace nitrogl {
             return prog;
         }
         // ctor: init with empty shaders
-        shader_program() : _vertex(shader::null_shader), _fragment(shader::null_shader),
+        shader_program() : _vertex(shader::null_shader()), _fragment(shader::null_shader()),
                 owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
         }

@@ -41,9 +41,9 @@ void main()
 }
 )foo";
 
-        constexpr static const char * const frag0 = "#version 330 core\n";
+        constexpr static const char * const frag_version = "#version 330 core\n";
 
-        constexpr static const char * const frag1 = R"foo(
+        constexpr static const char * const frag_other = R"foo(
 //#version 330 core
 
 // uniforms
@@ -60,17 +60,16 @@ vec4 sample1(vec3 uv) {
 }
 )foo";
 
-        constexpr static const char * const frag2 = R"foo(
+        constexpr static const char * const frag_main = R"foo(
 void main()
 {
-    FragColor = __internal_sample(PS_uvs_sampler);
+    FragColor = __internal_sample(PS_uvs_sampler, 0);
 //    FragColor = color;
 }
         )foo";
     public:
 
         struct VAS {
-            VAS()=default;
             shader_program::shader_vertex_attr_t data[2];
             static constexpr unsigned size() { return 2; }
         };
@@ -83,23 +82,27 @@ void main()
 
         uniforms_type uniforms;
 
-        // this is static because we know their locations is const and predictable,
-        // so it does not change between instances of this shader. This saves on memory
-        // requirements of this class so this is a win win.
-        constexpr static VAS vas = {{
-            {"VS_pos", 0,
-             shader_program::shader_attribute_component_type::Float},
-            {"VS_uvs_sampler", 1,
-             shader_program::shader_attribute_component_type::Float}
-        }};
-
-        const uniforms_type & uniforms_locations() const { return uniforms; }
-        static const VAS & vertex_attributes() { return vas; }
+        const uniforms_type & uniforms_locations() const {
+            return uniforms;
+        }
+        static const VAS & shader_vertex_attributes() {
+            // this is static because we know their locations is const and predictable,
+            // so it does not change between instances of this shader. This saves on memory
+            // requirements of this class so this is a win-win. putting this as static inside
+            // a method is atrick to avoid define it once in a separate cpp file
+            constexpr static VAS vas = {{
+                {"VS_pos", 0,
+                 shader_program::shader_attribute_component_type::Float},
+                 {"VS_uvs_sampler", 1,
+                  shader_program::shader_attribute_component_type::Float}
+            }};
+            return vas;
+        }
 
         // ctor: init with empty shaders and attach which is legal
         main_shader_program() : uniforms(), shader_program() {}
         main_shader_program(bool test) : uniforms(), shader_program() {
-            const GLchar * frag_shards[3] = { frag0, frag1, frag2 };
+            const GLchar * frag_shards[3] = { frag_version, frag_other, frag_main };
             auto v = shader::from_vertex(vert);
             auto f = shader::from_fragment(frag_shards, 3, nullptr);
             attach_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
@@ -115,10 +118,9 @@ void main()
 
         ~main_shader_program() = default;
 
-    private:
         void resolve_vertex_attributes_and_uniforms_and_link() {
             // first set vertex attributes locations via binding, in case we are not using location qualifiers
-            setVertexAttributesLocations(vas.data, vas.size());
+            setVertexAttributesLocations(shader_vertex_attributes().data, shader_vertex_attributes().size());
             // program should be linked by previous call to set, but in case we have zero attributes, make sure
             if(!wasLastLinkSuccessful()) link();
             // cache uniform locations after link

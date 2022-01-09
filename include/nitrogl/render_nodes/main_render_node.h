@@ -20,6 +20,7 @@ namespace nitrogl {
     class main_render_node {
 
     public:
+        using program_type = main_shader_program;
         using size_type = nitrogl::size_t;
         struct data_type {
             float * pos;
@@ -35,36 +36,27 @@ namespace nitrogl {
             const mat3f & mat_uvs_sampler;
         };
 
-        template<unsigned N>
-        struct VBO_AS {
-            VBO_AS()=default;
-            nitrogl::generic_vertex_attrib_t data[N];
-            constexpr unsigned size() const { return N; }
+        struct GVA {
+            GVA()=default;
+            nitrogl::generic_vertex_attrib_t data[2];
+            constexpr unsigned size() const { return 2; }
         };
 
-        VBO_AS<2> vbo_as;
+        GVA gva{};
         vbo_t _vbo_pos, _vbo_uvs_sampler;
         vao_t _vao;
         ebo_t _ebo;
-        main_shader_program _program;
 
     public:
         main_render_node()=default;
         ~main_render_node()=default;
 
         void init() {
-
-//            vas = {{
-//                {"VS_pos", -1, shader_program::shader_attribute_component_type::Float},
-//                {"VS_uvs_sampler", -1, shader_program::shader_attribute_component_type::Float}
-//            }};
-            vbo_as = {{
+            // configure the vao, vbo, generic vertex attribs
+            gva = {{
                 { 0, GL_FLOAT, 2, OFFSET(0), 0, _vbo_pos.id()},
                 { 1, GL_FLOAT, 2, OFFSET(0), 0, _vbo_uvs_sampler.id()}
             }};
-
-            // enable and point vertex attributes
-//            _program.setOrGetVertexAttributesLocations(vas.data, vas.size());
 
             // elements buffer
 //            GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
@@ -75,23 +67,22 @@ namespace nitrogl {
 #ifdef SUPPORTS_VAO
             _vao.bind();
             _ebo.bind();
-            main_shader_program::point_generic_vertex_attributes(vbo_as.data,
-                                                                 main_shader_program::vertex_attributes().data,
-                                                                 vbo_as.size());
+            program_type::point_generic_vertex_attributes(gva.data,
+                     program_type::shader_vertex_attributes().data, gva.size());
             vao_t::unbind();
 #else
 
 #endif
         }
 
-        void render(const data_type & data) {
+        void render(const program_type & program, const data_type & data) {
             const auto & d = data;
-            _program.use();
-            _program.updateModelMatrix(d.mat_model);
-            _program.updateViewMatrix(d.mat_view);
-            _program.updateProjectionMatrix(d.mat_proj);
-            _program.updateUVsTransformMatrix(d.mat_uvs_sampler);
-            _program.updateOpacity(1.0f);
+            program.use();
+            program.updateModelMatrix(d.mat_model);
+            program.updateViewMatrix(d.mat_view);
+            program.updateProjectionMatrix(d.mat_proj);
+            program.updateUVsTransformMatrix(d.mat_uvs_sampler);
+            program.updateOpacity(1.0f);
             glCheckError();
 
             // upload data
@@ -108,12 +99,13 @@ namespace nitrogl {
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
+            glDrawElements(GL_TRIANGLES, d.indices_size, GL_UNSIGNED_INT, OFFSET(0));
             vao_t::unbind();
 #else
             _ebo.bind();
             // this crates exccess 2 binds for vbos
-            _program.pointGenericVertexAtrributes(va.data, va.size());
+            main_shader_program::point_generic_vertex_attributes(gva.data,
+                    main_shader_program::vertex_attributes().data, gva.size());
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
             _program.disableLocations(va.data, va.size());
 #endif

@@ -15,11 +15,14 @@
 namespace nitrogl {
 
     struct test_sampler {
-        static const char * name() {
-            return "test_sampler";
+        static const char * name() { return "test_sampler"; }
+
+        static const char * uniforms() {
+            return R"foo(
+            )foo";
         }
 
-        static const char * other() {
+        static const char * other_functions() {
             return R"foo(
 vec4 other_function(float t) {
     return vec4(t);
