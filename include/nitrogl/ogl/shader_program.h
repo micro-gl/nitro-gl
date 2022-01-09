@@ -11,6 +11,7 @@
 #pragma once
 
 #include "shader.h"
+#include "gva.h"
 #include "../traits.h"
 
 namespace nitrogl {
@@ -45,10 +46,10 @@ namespace nitrogl {
          * 6. stride for non-interleaved is per vertex attribute. stride((x,y,z))=sizeof((x,y,z))=3, stride((u,v))=2
          *
          */
-        // this describes a vertex shader sttribute
-        struct vertex_attr_t {
-            const GLchar * name; // name of vertex attribute
-            GLint location; // the index of the attribute in the vertex shader
+        // this describes a vertex shader attribute
+        struct shader_vertex_attr_t {
+            const GLchar * name; // name of vertex attribute in vertex shader
+            GLint location; // the index of the generic vertex attribute it maps to
             // the type of components in vertex attribute in shader.
             // vec3->float. ivec2->integer etc...
             shader_attribute_component_type shader_component_type;
@@ -56,23 +57,8 @@ namespace nitrogl {
 
         // this describes a single uniform attribute
         struct uniform_t {
-            const GLchar * name=nullptr; // name of uniform
-            GLint location=0; // the location
-        };
-
-        // this describes attributes in VBO buffer
-        struct vbo_attr_t {
-            // the type of element in VBO, this is important because opengl will know
-            // better how to convert it to the vertex shader processor
-            GLenum type;
-            // the type of components in vertex attribute in shader.
-            // vec3->float. ivec2->integer etc...
-            GLuint size; // the number of components in attribute array vbo (1,2,3,4)
-            // the attribute's first relative occurrence offset in the VBO
-            const void * offset;
-            // stride can be calculated automatically if the buffer is interleaved or non.
-            GLsizei stride;
-            GLuint vbo; // corresponding vbo
+            const GLchar * name=nullptr; // name of uniform in shader
+            GLint location=-1; // the location
         };
 
         static shader_program from_shaders(const shader & vertex, const shader & fragment, bool link=false) {
@@ -186,11 +172,11 @@ namespace nitrogl {
             return glGetAttribLocation(_id, name);
         }
 
-        void enableLocations(const vertex_attr_t * attrs, unsigned length) const {
+        void enableLocations(const shader_vertex_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then this is part of VAO state
             for (; length!=0 ; --length, ++attrs) glEnableVertexAttribArray(attrs->location);
         };
-        void disableLocations(const vertex_attr_t * attrs, unsigned length) const {
+        void disableLocations(const shader_vertex_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then don't run this method. Otherwise, do.
             for (; length!=0 ; --length, ++attrs) glDisableVertexAttribArray(attrs->location);
         };
@@ -215,7 +201,7 @@ namespace nitrogl {
          * @param length
          * @return
          */
-        bool setOrGetVertexAttributesLocations(vertex_attr_t * attrs, unsigned length) {
+        bool setOrGetVertexAttributesLocations(shader_vertex_attr_t * attrs, unsigned length) {
             // let's deal with requested explicit locations bindings. they require a link later
             bool binding_occured=false;
             for (auto * it = attrs; it < attrs + length; ++it) {
@@ -243,7 +229,7 @@ namespace nitrogl {
         /**
          * this will only set explicit locations on the gpu vertex attribute
          */
-        bool setVertexAttributesLocations(const vertex_attr_t * attrs, unsigned length) {
+        bool setVertexAttributesLocations(const shader_vertex_attr_t * attrs, unsigned length) {
             // let's deal with requested explicit locations bindings. they require a link later
             bool binding_occured=false;
             for (auto * it = attrs; it < attrs + length; ++it) {
@@ -261,7 +247,7 @@ namespace nitrogl {
 
         // this will query/store the locations that were auto generated for vertex attributes in the gpu.
         // every member that has (-1) location.
-        bool getVertexAttributesLocations(vertex_attr_t * attrs, unsigned length) {
+        bool getVertexAttributesLocations(shader_vertex_attr_t * attrs, unsigned length) {
             // let's deal with requested explicit locations bindings. they require a link later
             bool has_automatic_locations=false;
             {
@@ -305,36 +291,40 @@ namespace nitrogl {
          *      THIS METHOD SHOULD RUN ONCE AT INIT WHILE VAO IS BOUND. THEN REUSE VAO BY BINDING AT DRAW PHASE.
          *    - If VBO is NOT PREDICTABLE (non-interleaved multiple attributes, that change in size), THIS SHOULD RUN EVERYTIME things change
          * 2. If no VAO support, then ALWAYS RUN this method before draw.
-         * 3. attrs_vbo and attrs_vertex should be the same length and are considered a mapping pair
+         * 3. gva and sva should be the same length and are considered a mapping pair
          * @param attrs
          * @param length
          * @return
          */
-        static bool point_vbos_to_generic_vertex_attributes(const vbo_attr_t * attrs_vbo, const vertex_attr_t * attrs_vertex, unsigned length) {
+        static bool point_generic_vertex_attributes(const generic_vertex_attrib_t * gva,
+                                                    const shader_vertex_attr_t * sva,
+                                                    unsigned length) {
             bool uniform_vbo=true;
             { // for optimization, inspect if they use same VBO
-                const auto vbo=attrs_vbo->vbo;
-                for (auto * it = attrs_vbo; it < attrs_vbo + length; ++it) {
+                const auto vbo=gva->vbo;
+                for (auto * it = gva; it < gva + length; ++it) {
                     if(vbo!=it->vbo) { uniform_vbo=false; break; }
                 }
             }
             // this avoids extra bindings if all the vertex attributes are mapped
             // from the same vbo
-            if(uniform_vbo && attrs_vbo->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, attrs_vbo->vbo);
+            if(uniform_vbo && gva->vbo >= 0) glBindBuffer(GL_ARRAY_BUFFER, gva->vbo);
 
-            auto * it2 = attrs_vertex;
-            for (auto * it = attrs_vbo; it < attrs_vbo + length; ++it, ++it2) {
+            auto * it2 = sva;
+            for (auto * it = gva; it < gva + length; ++it, ++it2) {
+                // sanity check
+                if(it->index!=it2->location) return false;
                 // so we have to bind the vbo where the vertex attributes will be at.
                 // then enable the location and then point the shader program via generic vertex attributes. If using VAO,
                 // then those are part of its state (VBO binding is not, only the mapping from VBO
                 // to the vertex shader)
                 if(!uniform_vbo && it->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, it->vbo);
                 // enable generic vertex attrib for bound VAO or global state if you dont support VAO
-                glEnableVertexAttribArray((GLuint)it2->location);
+                glEnableVertexAttribArray((GLuint)it->index);
                 switch (it2->shader_component_type) {
                     case shader_attribute_component_type::Float:
 
-                        glVertexAttribPointer((GLuint)it2->location, GLint(it->size), it->type,
+                        glVertexAttribPointer((GLuint)it->index, GLint(it->size), it->type,
                                                GL_FALSE, it->stride, it->offset);
                         break;
 #ifdef SUPPORTS_INT_ATTRIBUTES

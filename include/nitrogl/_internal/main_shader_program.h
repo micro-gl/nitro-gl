@@ -71,7 +71,7 @@ void main()
 
         struct VAS {
             VAS()=default;
-            shader_program::vertex_attr_t data[2];
+            shader_program::shader_vertex_attr_t data[2];
             static constexpr unsigned size() { return 2; }
         };
 
@@ -82,6 +82,10 @@ void main()
         };
 
         uniforms_type uniforms;
+
+        // this is static because we know their locations is const and predictable,
+        // so it does not change between instances of this shader. This saves on memory
+        // requirements of this class so this is a win win.
         constexpr static VAS vas = {{
             {"VS_pos", 0,
              shader_program::shader_attribute_component_type::Float},
@@ -90,21 +94,16 @@ void main()
         }};
 
         const uniforms_type & uniforms_locations() const { return uniforms; }
-        // this is static because we know their locations is const and predictable,
-        // so it does not change between instances of this shader
-        const VAS & vertex_attributes() const { return vas; }
+        static const VAS & vertex_attributes() { return vas; }
 
         // ctor: init with empty shaders and attach which is legal
-        main_shader_program() : uniforms(), shader_program() {
-            resolveVertexAttributesAndUniformsLocations();
-            // program is linked now
-        }
+        main_shader_program() : uniforms(), shader_program() {}
         main_shader_program(bool test) : uniforms(), shader_program() {
             const GLchar * frag_shards[3] = { frag0, frag1, frag2 };
             auto v = shader::from_vertex(vert);
             auto f = shader::from_fragment(frag_shards, 3, nullptr);
             attach_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
-            resolveVertexAttributesAndUniformsLocations();
+            resolve_vertex_attributes_and_uniforms_and_link();
         }
         main_shader_program(const main_shader_program & o) = default;
         main_shader_program(main_shader_program && o) noexcept : shader_program(nitrogl::traits::move(o)), uniforms(o.uniforms) {}
@@ -117,10 +116,12 @@ void main()
         ~main_shader_program() = default;
 
     private:
-        void resolveVertexAttributesAndUniformsLocations() {
+        void resolve_vertex_attributes_and_uniforms_and_link() {
             // first set vertex attributes locations via binding, in case we are not using location qualifiers
             setVertexAttributesLocations(vas.data, vas.size());
-            // program should be linked by previous call to set
+            // program should be linked by previous call to set, but in case we have zero attributes, make sure
+            if(!wasLastLinkSuccessful()) link();
+            // cache uniform locations after link
             uniforms.mat_model = uniformLocationByName("mat_model");
             uniforms.mat_view = uniformLocationByName("mat_view");
             uniforms.mat_proj = uniformLocationByName("mat_proj");

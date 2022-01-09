@@ -21,8 +21,14 @@ namespace nitrogl {
         shader_compositor()=delete;
         ~shader_compositor()=delete;
 
+        /**
+         * compose a linked main_shader_program with shader with sampler
+         * @tparam Sampler a sampler object type
+         * @param sampler sampler reference
+         * @return a linked program
+         */
         template<class Sampler>
-        static main_shader_program composite_un_linked_shader_from_sampler(const Sampler & sampler) {
+        static main_shader_program composite_program_from_sampler(const Sampler & sampler) {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
