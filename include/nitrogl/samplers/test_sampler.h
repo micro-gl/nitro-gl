@@ -18,24 +18,24 @@ namespace nitrogl {
         static const char * name() { return "test_sampler"; }
 
         static const char * uniforms() {
-            return R"foo(
-            )foo";
+            return R"(
+            )";
         }
 
         static const char * other_functions() {
-            return R"foo(
+            return R"(
 vec4 other_function(float t) {
     return vec4(t);
 }
-)foo";
+)";
         }
 
         static const char * main() {
-            return R"foo(
+            return R"(
 (vec3 uv, float time) {
     return vec4(uv.x, uv.x, uv.x, 1.0);
 }
-)foo";
+)";
         }
 
 

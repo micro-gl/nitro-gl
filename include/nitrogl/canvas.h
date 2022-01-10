@@ -49,7 +49,8 @@
 #include "ogl/fbo.h"
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
-#include "render_nodes/main_render_node.h"
+#include "render_nodes/multi_render_node.h"
+#include "render_nodes/p4_render_node.h"
 #include "samplers/test_sampler.h"
 #include "_internal/main_shader_program.h"
 #include "_internal/shader_compositor.h"
@@ -79,7 +80,9 @@ namespace nitrogl {
 //        gl_texture _tex;
         gl_texture _tex_backdrop;
         fbo_t _fbo;
-        main_render_node _node;
+        multi_render_node _node_multi;
+        p4_render_node _node_p4;
+//        p4_ _node_multi;
 
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
@@ -89,25 +92,28 @@ namespace nitrogl {
         // if you are given texture, then draw into it
         explicit canvas(const gl_texture & tex) :
                 _tex_backdrop(gl_texture::empty(tex.width(), tex.height(), tex.internalFormat())),
-                _fbo(), _node(), _window() {
+                _fbo(), _node_multi(), _node_p4(), _window() {
             glCheckError();
             updateClipRect(0, 0, tex.width(), tex.height());
             updateCanvasWindow(0, 0, tex.width(), tex.height());
             _fbo.attachTexture(tex);
-            _node.init();
+            _node_p4.init();
+            _node_multi.init();
             copy_to_backdrop();
             glCheckError();
         }
 
         // if you got nothing, draw to bound fbo
         canvas(int width, int height) :
-            _tex_backdrop(gl_texture::empty(width, height, GL_RGBA)), _fbo(fbo_t::from_current()), _node(), _window() {
+                _tex_backdrop(gl_texture::empty(width, height, GL_RGBA)),
+                _fbo(fbo_t::from_current()), _node_multi(), _node_p4(), _window() {
             updateClipRect(0, 0, width, height);
             updateCanvasWindow(0, 0, width, height);
             _fbo.bind();
             copy_to_backdrop();
             _fbo.unbind();
-            _node.init();
+            _node_p4.init();
+            _node_multi.init();
         }
 
         /**
@@ -226,6 +232,50 @@ namespace nitrogl {
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
 
             // buffers
+            float puvs[24] = {
+                    left,  bottom, u0, v0, 0.0, 1.0, // xyuvpq
+                    right, bottom, u1, v0, 0.0, 1.0,
+                    right, top,    u1, v1, 0.0, 1.0,
+                    left,  top,    u0, v1, 0.0, 1.0,
+            };
+
+            // get shader from cache
+            test_sampler sampler;
+            main_shader_program program =
+                    shader_compositor::composite_program_from_sampler(sampler);
+
+            // data
+            p4_render_node::data_type data = {
+                    puvs, 24,
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv
+            };
+            _node_p4.render(program, data);
+
+            //
+            copy_region_to_backdrop(int(left), int(top),
+                                    int(right+0.5f), int(bottom+0.5f));
+            fbo_t::unbind();
+        }
+
+        void drawRect_multi_node(float left, float top, float right, float bottom,
+                      mat3f transform = mat3f::identity(),
+                      float u0=0., float v0=0., float u1=1., float v1=1.,
+                      const mat3f & transform_uv = mat3f::identity(),
+                      opacity_t opacity = 255) {
+            static float t =0;
+            t+=0.01;
+            glViewport(0, 0, width(), height());
+            _fbo.bind();
+            // inverted y projection, canvas coords to opengl
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0, -1, 1);
+            // make the transform about it's center of mass, a nice feature
+            transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
+
+            // buffers
             float points[8] = {
                     left, bottom,
                     right, bottom,
@@ -253,7 +303,7 @@ namespace nitrogl {
                     shader_compositor::composite_program_from_sampler(sampler);
 
             // data
-            main_render_node::data_type data = {
+            multi_render_node::data_type data = {
                     points, uvs_sampler, e,
                     8, 8, 6, GL_TRIANGLES,
                     mat4f(transform), // promote it to mat4x4
@@ -261,7 +311,7 @@ namespace nitrogl {
                     mat_proj,
                     transform_uv
             };
-            _node.render(program, data);
+            _node_multi.render(program, data);
 
             //
             copy_region_to_backdrop(int(left), int(top),

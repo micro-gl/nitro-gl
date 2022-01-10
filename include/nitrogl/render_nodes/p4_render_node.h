@@ -17,19 +17,17 @@
 
 namespace nitrogl {
 
-    class main_render_node {
+    /**
+     * optimized node for 4 point meshes. saves uploads for ebo, and uses interleaving
+     */
+    class p4_render_node {
 
     public:
         using program_type = main_shader_program;
         using size_type = nitrogl::size_t;
         struct data_type {
-            float * pos;
-            float * uvs_sampler;
-            GLuint * indices;
-            size_type pos_size;
-            size_type uvs_sampler_size;
-            size_type indices_size;
-            GLenum triangles_type;
+            float * pos_and_uvs_interleaved; //{(x,y,u,v,p,q), (x,y,u,v,p,q), ....}
+            size_type size;
             const mat4f & mat_model;
             const mat4f & mat_view;
             const mat4f & mat_proj;
@@ -43,35 +41,33 @@ namespace nitrogl {
         };
 
         GVA gva{};
-        vbo_t _vbo_pos, _vbo_uvs_sampler;
+        vbo_t _vbo_pos_uvs;
         vao_t _vao;
         ebo_t _ebo;
 
     public:
-        main_render_node()=default;
-        ~main_render_node()=default;
+        p4_render_node()=default;
+        ~p4_render_node()=default;
 
         void init() {
             // configure the vao, vbo, generic vertex attribs
             gva = {{
-                { 0, GL_FLOAT, 2, OFFSET(0), 0, _vbo_pos.id()},
-                { 1, GL_FLOAT, 2, OFFSET(0), 0, _vbo_uvs_sampler.id()}
+                { 0, GL_FLOAT, 2, OFFSET(0),
+                  6*sizeof (GLfloat),_vbo_pos_uvs.id()},
+                { 1, GL_FLOAT, 4, OFFSET(2*sizeof (GLfloat)),
+                  6*sizeof (GLfloat), _vbo_pos_uvs.id()}
             }};
 
             // elements buffer
-//            GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
-//            _vao.bind();
-//            _ebo.bind();
-//            _ebo.uploadData(e, sizeof(e));
-
-#ifdef SUPPORTS_VAO
+            GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
             _vao.bind();
             _ebo.bind();
+            _ebo.uploadData(e, sizeof(e), GL_STATIC_DRAW);
+
+#ifdef SUPPORTS_VAO
             program_type::point_generic_vertex_attributes(gva.data,
                      program_type::shader_vertex_attributes().data, gva.size());
             vao_t::unbind();
-#else
-
 #endif
         }
 
@@ -86,27 +82,21 @@ namespace nitrogl {
             glCheckError();
 
             // upload data
-            _vbo_pos.uploadData(d.pos,
-                                d.pos_size*sizeof(float),
+            _vbo_pos_uvs.uploadData(d.pos_and_uvs_interleaved,
+                                d.size*sizeof(float),
                                 GL_DYNAMIC_DRAW);
-            _vbo_uvs_sampler.uploadData(d.uvs_sampler,
-                                        d.uvs_sampler_size*sizeof(float),
-                                        GL_DYNAMIC_DRAW);
-            _ebo.uploadData(d.indices,
-                            sizeof(GLuint)*d.indices_size,
-                            GL_DYNAMIC_DRAW);
 
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
-            glDrawElements(GL_TRIANGLES, d.indices_size, GL_UNSIGNED_INT, OFFSET(0));
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
             vao_t::unbind();
 #else
             _ebo.bind();
             // this crates exccess 2 binds for vbos
-            main_shader_program::point_generic_vertex_attributes(gva.data,
-                    main_shader_program::vertex_attributes().data, gva.size());
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            program_type::point_generic_vertex_attributes(gva.data,
+                    program_type::shader_vertex_attributes().data, gva.size());
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
             _program.disableLocations(va.data, va.size());
 #endif
             // unuse shader
