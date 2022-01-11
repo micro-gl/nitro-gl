@@ -71,7 +71,7 @@ namespace nitrogl {
 #endif
         }
 
-        void render(const program_type & program, const data_type & data) {
+        void render(const program_type & program, sampler_t & sampler, const data_type & data) {
             const auto & d = data;
             program.use();
             program.updateModelMatrix(d.mat_model);
@@ -79,6 +79,8 @@ namespace nitrogl {
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
             program.updateOpacity(1.0f);
+            sampler.on_upload_uniforms();
+
             glCheckError();
 
             // upload data

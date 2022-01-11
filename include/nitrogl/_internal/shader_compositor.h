@@ -13,6 +13,7 @@
 #include "nitrogl/ogl/shader_program.h"
 #include "nitrogl/math/mat4.h"
 #include "nitrogl/_internal/main_shader_program.h"
+#include "nitrogl/samplers/sampler.h"
 
 namespace nitrogl {
 
@@ -24,13 +25,12 @@ namespace nitrogl {
         ~shader_compositor()=delete;
 
         /**
-         * compose a linked main_shader_program with shader with sampler
-         * @tparam Sampler a sampler object type
-         * @param sampler sampler reference
+         * compose a linked main_shader_program with shader with sampler_t
+         * @tparam Sampler a sampler_t object type
+         * @param sampler sampler_t reference
          * @return a linked program
          */
-        template<class Sampler>
-        static main_shader_program composite_program_from_sampler(const Sampler & sampler) {
+        static main_shader_program composite_main_program_from_sampler(sampler_t & sampler) {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
@@ -47,6 +47,8 @@ namespace nitrogl {
             prog.attach_shaders(nitrogl::traits::move(vertex),
                                 nitrogl::traits::move(fragment));
             prog.resolve_vertex_attributes_and_uniforms_and_link();
+            // sampler_t can now cache uniforms variables
+            sampler.on_cache_uniforms_locations(prog.id());
             return prog;
         }
 

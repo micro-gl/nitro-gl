@@ -328,7 +328,7 @@ void canvas<P, CODER>::drawTriangle_internal(const color_f_t &color,
 ```c++
 template<typename P, typename CODER>
 template <typename BlendMode, typename PorterDuff, typename S>
-void canvas<P, CODER>::drawRect_internal(const sampling::sampler<S> & sampler,
+void canvas<P, CODER>::drawRect_internal(const sampling::sampler_t<S> & sampler_t,
                                 const int left, const int top,
                                 const int right, const int bottom,
                                 int u0, int v0,
@@ -361,7 +361,7 @@ void canvas<P, CODER>::drawRect_internal(const sampling::sampler<S> & sampler,
     int index=top_*_width;
     for (int y=top_, v=v0_; y<=bottom_; y++, v+=dv, index+=_width) {
         for (int x=left_, u=u0_; x<=right_; x++, u+=du) {
-            sampler.sample(u, v, uv_precision, col_bmp);
+            sampler_t.sample(u, v, uv_precision, col_bmp);
             blendColor<BlendMode, PorterDuff>(col_bmp, index + x, opacity);
         }
     }
@@ -372,7 +372,7 @@ void canvas<P, CODER>::drawRect_internal(const sampling::sampler<S> & sampler,
 
 template<typename P, typename CODER>
 template<typename BlendMode, typename PorterDuff, bool antialias, bool perspective_correct, typename S>
-void canvas<P, CODER>::drawTriangle_internal(const sampling::sampler<S> &sampler,
+void canvas<P, CODER>::drawTriangle_internal(const sampling::sampler_t<S> &sampler_t,
                                     int v0_x, int v0_y, int u0, int v0, int q0,
                                     int v1_x, int v1_y, int u1, int v1, int q1,
                                     int v2_x, int v2_y, int u2, int v2, int q2,
@@ -516,7 +516,7 @@ void canvas<P, CODER>::drawTriangle_internal(const sampling::sampler<S> &sampler
                     v_i = functions::clamp<int>(v_i, 0, 1<<BITS_UV_COORDS);
                 }
                 color_t col_bmp;
-                sampler.sample(u_i, v_i, BITS_UV_COORDS, col_bmp);
+                sampler_t.sample(u_i, v_i, BITS_UV_COORDS, col_bmp);
                 blendColor<BlendMode, PorterDuff>(col_bmp, index + p.x, blend);
             }
 
@@ -544,8 +544,8 @@ void canvas<P, CODER>::drawTriangle_internal(const sampling::sampler<S> &sampler
 ```c++
 template<typename P, typename CODER>
 template<typename BlendMode, typename PorterDuff, bool antialias, typename S1, typename S2>
-void canvas<P, CODER>::drawRoundedRect_internal(const sampling::sampler<S1> & sampler_fill,
-                                       const sampling::sampler<S2> & sampler_stroke,
+void canvas<P, CODER>::drawRoundedRect_internal(const sampling::sampler_t<S1> & sampler_fill,
+                                       const sampling::sampler_t<S2> & sampler_stroke,
                                        int left, int top,
                                        int right, int bottom,
                                        int radius, int stroke_size,
@@ -895,7 +895,7 @@ void canvas<P, CODER>::drawTriangle_shader_homo_internal(shader_base<impl, verte
 ```c++
 template<typename bitmap_, uint8_t options>
 template<typename BlendMode, typename PorterDuff, bool antialias, bool perspective_correct, typename S>
-void canvas<bitmap_, options>::drawTriangle_internal(const sampling::sampler<S> &sampler,
+void canvas<bitmap_, options>::drawTriangle_internal(const sampling::sampler_t<S> &sampler_t,
                                   int v0_x, int v0_y, int u0, int v0, int q0,
                                   int v1_x, int v1_y, int u1, int v1, int q1,
                                   int v2_x, int v2_y, int u2, int v2, int q2,
@@ -1053,7 +1053,7 @@ void canvas<bitmap_, options>::drawTriangle_internal(const sampling::sampler<S> 
                     v_i = functions::clamp<l64>(v_i, 0, (1ll<<BITS_UV_COORDS));
                 }
                 color_t col_bmp;
-                sampler.sample(u_i, v_i, BITS_UV_COORDS, col_bmp);
+                sampler_t.sample(u_i, v_i, BITS_UV_COORDS, col_bmp);
                 blendColor<BlendMode, PorterDuff>(col_bmp, index + p.x, blend);
             }
 
@@ -1081,7 +1081,7 @@ void canvas<bitmap_, options>::drawTriangle_internal(const sampling::sampler<S> 
 ```c++
 template<typename bitmap_, uint8_t options>
 template <typename BlendMode, typename PorterDuff, bool antialias, typename S>
-void canvas<bitmap_, options>::drawRect_internal(const sampling::sampler<S> & sampler,
+void canvas<bitmap_, options>::drawRect_internal(const sampling::sampler_t<S> & sampler_t,
                               int left, int top,
                               int right, int bottom,
                               int u0, int v0,
@@ -1146,7 +1146,7 @@ void canvas<bitmap_, options>::drawRect_internal(const sampling::sampler<S> & sa
                 else if(y==bbox_r_c.bottom && !clipped_bottom)
                     blend= blend_bottom;
 
-                sampler.sample(u, v, uv_precision, col_bmp);
+                sampler_t.sample(u, v, uv_precision, col_bmp);
                 blendColor<BlendMode, PorterDuff>(col_bmp, index + x, blend);
             }
         }
@@ -1155,7 +1155,7 @@ void canvas<bitmap_, options>::drawRect_internal(const sampling::sampler<S> & sa
         int index= bbox_r_c.top * pitch;
         for (int y=bbox_r_c.top, v=v0+dy*dv; y<bbox_r_c.bottom; y++, v+=dv, index+=pitch) {
             for (int x=bbox_r_c.left, u=u_start; x<bbox_r_c.right; x++, u+=du) {
-                sampler.sample(u, v, uv_precision, col_bmp);
+                sampler_t.sample(u, v, uv_precision, col_bmp);
                 blendColor<BlendMode, PorterDuff>(col_bmp, index + x, opacity);
             }
         }
@@ -1167,8 +1167,8 @@ void canvas<bitmap_, options>::drawRect_internal(const sampling::sampler<S> & sa
 ```c++
 template<typename bitmap_, uint8_t options>
 template<typename BlendMode, typename PorterDuff, bool antialias, typename S1, typename S2>
-void canvas<bitmap_, options>::drawRoundedRect_internal(const sampling::sampler<S1> & sampler_fill,
-                                     const sampling::sampler<S2> & sampler_stroke,
+void canvas<bitmap_, options>::drawRoundedRect_internal(const sampling::sampler_t<S1> & sampler_fill,
+                                     const sampling::sampler_t<S2> & sampler_stroke,
                                      int left, int top,
                                      int right, int bottom,
                                      int radius, int stroke_size,

@@ -2149,8 +2149,8 @@ void canvas<P, CODER>::drawCircleOLD(const color_f_t & color,
 
 template<typename P, typename CODER>
 template<typename BlendMode, typename PorterDuff, bool antialias, typename S1, typename S2>
-void canvas<P, CODER>::drawRoundedRect_internal(const sampling::sampler<S1> & sampler_fill,
-                                       const sampling::sampler<S2> & sampler_stroke,
+void canvas<P, CODER>::drawRoundedRect_internal(const sampling::sampler_t<S1> & sampler_fill,
+                                       const sampling::sampler_t<S2> & sampler_stroke,
                                        int left, int top,
                                        int right, int bottom,
                                        int radius, int stroke_size,

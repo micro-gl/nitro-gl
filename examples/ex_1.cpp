@@ -13,6 +13,7 @@
 #include <nitrogl/_internal/main_shader_program.h>
 #include <nitrogl/render_nodes/multi_render_node.h>
 #include <nitrogl/samplers/test_sampler.h>
+#include <nitrogl/samplers/color_sampler.h>
 #include <nitrogl/_internal/shader_compositor.h>
 //#include <nitrogl/ogl/typed_shader_program.h>
 #include <nitrogl/canvas.h>
@@ -23,7 +24,6 @@ struct CC {
     int width() { return 600; }
     int height() { return 600; }
 };
-
 
 int main() {
 

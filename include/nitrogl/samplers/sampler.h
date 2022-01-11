@@ -11,33 +11,16 @@
 #pragma once
 
 #include "../traits.h"
-#include "sampler.h"
 
 namespace nitrogl {
 
-    struct test_sampler : public sampler_t {
-        const char * name() override { return "test_sampler"; }
-        const char * uniforms() override {
-            return R"(
-            )";
-        }
-
-        const char * other_functions() override {
-            return R"(
-vec4 other_function(float t) {
-    return vec4(t);
-}
-)";
-        }
-
-        const char * main() override {
-            return R"(
-(vec3 uv, float time) {
-    return vec4(uv.y, uv.y, uv.y, 1.0);
-}
-)";
-        }
-
+    struct sampler_t {
+        virtual const char * name() = 0;
+        virtual const char * uniforms() { return "\n"; }
+        virtual const char * other_functions() { return "\n"; }
+        virtual const char * main() = 0;
+        virtual void on_cache_uniforms_locations(GLuint program) {};
+        virtual void on_upload_uniforms() {}
+        virtual ~sampler_t()=default;
     };
-
 }

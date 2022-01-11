@@ -227,7 +227,7 @@ namespace nitrogl {
             _fbo.bind();
             // inverted y projection, canvas coords to opengl
             auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
-                                                        float(height()), 0, -1, 1);
+                                    float(height()), 0, -1, 1);
             // make the transform about it's center of mass, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
 
@@ -240,9 +240,10 @@ namespace nitrogl {
             };
 
             // get shader from cache
+//            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
             test_sampler sampler;
             main_shader_program program =
-                    shader_compositor::composite_program_from_sampler(sampler);
+                    shader_compositor::composite_main_program_from_sampler(sampler);
 
             // data
             p4_render_node::data_type data = {
@@ -252,11 +253,11 @@ namespace nitrogl {
                     mat_proj,
                     transform_uv
             };
-            _node_p4.render(program, data);
+            _node_p4.render(program, sampler, data);
 
             //
             copy_region_to_backdrop(int(left), int(top),
-                                    int(right+0.5f), int(bottom+0.5f));
+                            int(right+0.5f), int(bottom+0.5f));
             fbo_t::unbind();
         }
 
@@ -300,7 +301,7 @@ namespace nitrogl {
             // get shader from cache
             test_sampler sampler;
             main_shader_program program =
-                    shader_compositor::composite_program_from_sampler(sampler);
+                    shader_compositor::composite_main_program_from_sampler(sampler);
 
             // data
             multi_render_node::data_type data = {

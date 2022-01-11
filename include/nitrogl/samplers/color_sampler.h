@@ -10,16 +10,17 @@
 ========================================================================================*/
 #pragma once
 
-#include "../traits.h"
 #include "sampler.h"
+#include "../traits.h"
 
 namespace nitrogl {
 
-    struct test_sampler : public sampler_t {
-        const char * name() override { return "test_sampler"; }
+    struct color_sampler : public sampler_t {
+        const char * name() override { return "color_sampler"; }
         const char * uniforms() override {
             return R"(
-            )";
+uniform vec4 color_sampler_color; // color
+)";
         }
 
         const char * other_functions() override {
@@ -33,11 +34,27 @@ vec4 other_function(float t) {
         const char * main() override {
             return R"(
 (vec3 uv, float time) {
-    return vec4(uv.y, uv.y, uv.y, 1.0);
+    return color_sampler_color;
 }
 )";
         }
 
-    };
+        void on_cache_uniforms_locations(GLuint program) override {
+            _uni_color_loc = glGetUniformLocation(program,
+                                    "color_sampler_color");
+        }
 
+        void on_upload_uniforms() override {
+            glUniform4f(_uni_color_loc, color.r, color.g,
+                        color.b, color.a);
+        }
+
+    private:
+        GLint _uni_color_loc = -1;
+
+    public:
+        color_t color;
+        color_sampler() : color{1.0, 1.0, 1.0, 1.0} {}
+        explicit color_sampler(color_t $color) : color($color) {}
+        color_sampler(float r, float g, float b, float a) : color{r, g, b, a} {}};
 }

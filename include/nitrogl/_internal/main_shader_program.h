@@ -47,7 +47,7 @@ void main()
 //#version 330 core
 
 // uniforms
-uniform vec4 color; // color
+//uniform vec4 color; // color
 
 // in
 in vec3 PS_uvs_sampler;
