@@ -231,6 +231,7 @@ namespace nitrogl {
             // make the transform about it's center of mass, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
 
+
             // buffers
             float puvs[24] = {
                     left,  bottom, u0, v0, 0.0, 1.0, // xyuvpq
