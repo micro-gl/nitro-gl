@@ -11,7 +11,13 @@
 12. test idea of missing uvs coords for triangle batches
 13. basic blending
 14. basic compositing
-15. a simple texture sampler_t
-16. general texture sampler_t
-17. AA with rbos or filter shader
-18. implement many samplers
+15. copy shader and node
+16. a simple texture sampler_t
+17. clipping
+18. general texture sampler_t
+19. AA with rbos or filter shader
+20. implement many samplers
+
+optimizations:
+1. lazy back buffers. also, if taregt is requested as premul alpha,
+   normal blending and any of the porter-duff, we can use opengl blending.

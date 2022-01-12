@@ -14,6 +14,7 @@
 #include <nitrogl/render_nodes/multi_render_node.h>
 #include <nitrogl/samplers/test_sampler.h>
 #include <nitrogl/samplers/color_sampler.h>
+#include <nitrogl/samplers/mix_sampler.h>
 #include <nitrogl/_internal/shader_compositor.h>
 //#include <nitrogl/ogl/typed_shader_program.h>
 #include <nitrogl/canvas.h>
@@ -33,6 +34,8 @@ int main() {
 //        canvas canva(tex);
         canvas canva(500,500);
 
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         auto render = [&]() {
             static float t= 0;
             t+=0.005;

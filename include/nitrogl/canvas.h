@@ -84,6 +84,8 @@ namespace nitrogl {
         p4_render_node _node_p4;
 //        p4_ _node_multi;
 
+        bool _pre_mul_alpha=false;
+
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
     public:
@@ -111,7 +113,7 @@ namespace nitrogl {
             updateCanvasWindow(0, 0, width, height);
             _fbo.bind();
             copy_to_backdrop();
-            _fbo.unbind();
+            fbo_t::unbind();
             _node_p4.init();
             _node_multi.init();
         }
@@ -197,6 +199,7 @@ namespace nitrogl {
         void copy_region_to_texture(const gl_texture &texture,
                             int textureLeft, int textureTop,
                             int left, int top, int right, int bottom) const {
+            // should take 1ms per copy
             rect t = rect(textureLeft, textureTop, texture.width(), texture.height());
             rect c = rect(left, top, right, bottom)
                         .translate(textureLeft, textureTop)
@@ -227,10 +230,9 @@ namespace nitrogl {
             _fbo.bind();
             // inverted y projection, canvas coords to opengl
             auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
-                                    float(height()), 0, -1, 1);
+                                                        float(height()), 0, -1, 1);
             // make the transform about it's center of mass, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
-
 
             // buffers
             float puvs[24] = {
@@ -238,10 +240,55 @@ namespace nitrogl {
                     right, bottom, u1, v0, 0.0, 1.0,
                     right, top,    u1, v1, 0.0, 1.0,
                     left,  top,    u0, v1, 0.0, 1.0,
-            };
+                    };
 
             // get shader from cache
-//            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
+            //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
+            mix_sampler sampler;
+            main_shader_program program =
+                    shader_compositor::composite_main_program_from_sampler_v2(sampler);
+
+            // data
+            p4_render_node::data_type data = {
+                    puvs, 24,
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv
+            };
+            _node_p4.render(program, sampler, data);
+
+            //
+            copy_region_to_backdrop(int(left), int(top),
+                                    int(right+0.5f), int(bottom+0.5f));
+            fbo_t::unbind();
+        }
+
+        void drawRect_old(float left, float top, float right, float bottom,
+                      mat3f transform = mat3f::identity(),
+                      float u0=0., float v0=0., float u1=1., float v1=1.,
+                      const mat3f & transform_uv = mat3f::identity(),
+                      opacity_t opacity = 255) {
+            static float t =0;
+            t+=0.01;
+            glViewport(0, 0, width(), height());
+            _fbo.bind();
+            // inverted y projection, canvas coords to opengl
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0, -1, 1);
+            // make the transform about it's center of mass, a nice feature
+            transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
+
+            // buffers
+            float puvs[24] = {
+                    left,  bottom, u0, v0, 0.0, 1.0, // xyuvpq
+                    right, bottom, u1, v0, 0.0, 1.0,
+                    right, top,    u1, v1, 0.0, 1.0,
+                    left,  top,    u0, v1, 0.0, 1.0,
+                    };
+
+            // get shader from cache
+            //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
             test_sampler sampler;
             main_shader_program program =
                     shader_compositor::composite_main_program_from_sampler(sampler);
@@ -258,7 +305,7 @@ namespace nitrogl {
 
             //
             copy_region_to_backdrop(int(left), int(top),
-                            int(right+0.5f), int(bottom+0.5f));
+                                    int(right+0.5f), int(bottom+0.5f));
             fbo_t::unbind();
         }
 

@@ -60,13 +60,24 @@ vec4 sample1(vec3 uv) {
 }
 )foo";
 
+        constexpr static const char * const frag_blend = "vec3 __blend_color";
+        constexpr static const char * const frag_composite = "vec4 __composite_alpha";
+
         constexpr static const char * const frag_main = R"foo(
+uniform struct DATA { float aa; } tomer_0;
+
 void main()
 {
+//    TTT tomer_0;
+//    tomer_0.aa=2.0;
+//    vec4 source = __internal_sample(PS_uvs_sampler, 0);
+//    vec4 target = __internal_sample(PS_uvs_sampler, 0);
+//    vec3 _blend = __blend_color
     FragColor = __internal_sample(PS_uvs_sampler, 0);
 //    FragColor = color;
 }
         )foo";
+
     public:
 
         struct VAS {
