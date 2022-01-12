@@ -31,52 +31,88 @@ namespace nitrogl {
         static constexpr const GLchar * const struct_1 = "data_";
         static constexpr const GLchar comma = ';';
         static constexpr const GLchar * const sampler_pre = "vec4 sampler_";
+        static constexpr const GLchar * const sampler = "sampler_";
+        static constexpr const GLchar * const data = "data.";
 
-        static uint32_t digits10(uint64_t v) {
-            uint32_t result = 1;
-            for (;;) {
-                if (v < 10) return result;
-                if (v < 100) return result + 1;
-                if (v < 1000) return result + 2;
-                if (v < 10000) return result + 3;
-                // Skip ahead by 4 orders of magnitude
-                v /= 10000U;
-                result += 4;
-            }
-        }
+        template<int N>
+        struct linear_buffer {
+            char data[N];
+            int head;
 
-        static size_t facebook_uint32_to_str(uint32_t value, char *dst)
-        {
-            static const char digits[201] =
-                    "0001020304050607080910111213141516171819"
-                    "2021222324252627282930313233343536373839"
-                    "4041424344454647484950515253545556575859"
-                    "6061626364656667686970717273747576777879"
-                    "8081828384858687888990919293949596979899";
-            size_t const length = digits10(value);
-            size_t next = length - 1;
-            while (value >= 100) {
-                auto const i = (value % 100) * 2;
-                value /= 100;
-                dst[next] = digits[i + 1];
-                dst[next - 1] = digits[i];
-                next -= 2;
+            linear_buffer() : data(), head(0) {}
+
+            int write_int(int v) {
+                int len = facebook_uint32_to_str(v, data);
+                data+=len;
+                return len;
             }
-            // Handle last 1-2 digits
-            if (value < 10) {
-                dst[next] = '0' + uint32_t(value);
-            } else {
-                auto i = uint32_t(value) * 2;
-                dst[next] = digits[i + 1];
-                dst[next - 1] = digits[i];
+
+            int write_char_array(char * arr) {
+                int ix = 0;
+                for (; (ix < N-head) and *arr; ++ix, *(data++)=*(arr++)) {
+                }
+                return ix;
             }
-            return length;
-        }
+
+            int write_range(const char * begin, const char * end) {
+                int ix = 0;
+                for (; (ix < N-head) and begin<end; ++ix, *(data++)=*(begin++)) {
+                }
+                return ix;
+            }
+
+            int write_null_terminate() { *(data++)=0; }
+            int write_comma() { *(data++)=';'; }
+            int write_new_line() { *(data++)='\n'; }
+            int write_space() { *(data++)=' '; }
+            int write_under_score() { *(data++)='_'; }
+
+
+        private:
+            static uint32_t digits10(uint64_t v) {
+                uint32_t result = 1;
+                for (;; v /= 10000U, result+=4) {
+                    if (v < 10) return result;
+                    if (v < 100) return result + 1;
+                    if (v < 1000) return result + 2;
+                    if (v < 10000) return result + 3;
+                }
+            }
+
+            static size_t facebook_uint32_to_str(uint32_t value, char *dst)
+            {
+                static const char digits[201] =
+                        "0001020304050607080910111213141516171819"
+                        "2021222324252627282930313233343536373839"
+                        "4041424344454647484950515253545556575859"
+                        "6061626364656667686970717273747576777879"
+                        "8081828384858687888990919293949596979899";
+                size_t const length = digits10(value);
+                size_t next = length - 1;
+                while (value >= 100) {
+                    auto const i = (value % 100) * 2;
+                    value /= 100;
+                    dst[next] = digits[i + 1];
+                    dst[next - 1] = digits[i];
+                    next -= 2;
+                }
+                // Handle last 1-2 digits
+                if (value < 10) {
+                    dst[next] = '0' + uint32_t(value);
+                } else {
+                    auto i = uint32_t(value) * 2;
+                    dst[next] = digits[i + 1];
+                    dst[next - 1] = digits[i];
+                }
+                return length;
+            }
+
+        };
 
         static unsigned _internal_composite_v2(sampler_t * sampler,
                                                const GLchar ** sources,
                                                GLint * lengths,
-                                               GLchar * storage) {
+                                               linear_buffer<4000> & storage) {
             const GLchar ** start = sources;
             const auto sub_samplers_count = sampler->sub_samplers_count();
             for (int ix = 0; ix < sub_samplers_count; ++ix) {
@@ -108,17 +144,28 @@ namespace nitrogl {
             *(sources++) = sampler_pre; *(lengths++) = id_str_len;
 
             // now starts function body of sampler
-            int indices[sub_samplers_count + 1];
+            int indices[sub_samplers_count + 1]; // sub samplers and data object
             for (int ix = 0; ix < sub_samplers_count + 1; ++ix) {
-                indices[ix]=-1;
+                indices[ix]=0;
             }
+
 
 
             return sources-start;
         }
 
-        static int next_location_of(char * of, char * in) {
+        static int index_of_in(const char * a, const char * b, int max_length) {
+            for (int ix=0; *b!='\0' and ix<max_length; ++b, ++ix) {
+                const bool is_ = is_equal(a, b+ix, max_length);
+                if(is_) return ix;
+            }
+            return -1;
+        }
 
+        static bool is_equal(const char * a, const char * b, int max_length) {
+            for (; *a==*b and *a!='\0' and *b!='\0' and max_length; ++a, ++b, --max_length) {}
+            if(*a=='\0' or max_length==0) return true;
+            return false;
         }
 
         static main_shader_program composite_main_program_from_sampler_v2(sampler_t & sampler) {
