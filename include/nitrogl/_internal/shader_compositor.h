@@ -159,7 +159,7 @@ namespace nitrogl {
         template<class number> static number max(number a, number b) { return a<b?b:a;}
 
         template<unsigned N, unsigned M>
-        static unsigned _internal_composite_v2(sampler_t * sampler,
+        static void _internal_composite_v2(sampler_t * sampler,
                                                sources_buffer<N, M> & buffer,
                                                typename sources_buffer<N, M>::write_storage_info_t & sampler_string_id_lookup) {
             using wi = typename sources_buffer<N, M>::write_storage_info_t;
@@ -196,7 +196,7 @@ namespace nitrogl {
                 switch (race.id) {
                     case 0: { // sampler_{sub_sampler_local_id} -> sampler_{sub_sampler_global_id}
                         auto begin_0 = from; // latest end loose
-                        auto end_0 = race.latest_pos+race.name_len; // end of sampler_
+                        auto end_0 = race.next + race.name_len; // end of sampler_
                         buffer.write_range_pointer(begin_0, end_0); // stitch [main, sampler_)
                         // parse local_id
                         auto begin_1 = index_of_in("(", end_0, 1); // ptr to (
@@ -208,7 +208,7 @@ namespace nitrogl {
                     }
                     case 1: { // data. --> data_{current_sampler_global_id}
                         auto begin_0 = from; // latest end loose
-                        auto end_0 = race.latest_pos+race.name_len-1; // end of '...data'
+                        auto end_0 = race.next + race.name_len - 1; // end of '...data'
                         buffer.write_range_pointer(begin_0, end_0); // stitch [main, data)
                         //
                         buffer.write_under_score(); // stitch _
@@ -220,17 +220,25 @@ namespace nitrogl {
                 return nullptr;
             };
             race_t races[2] = {
-                    {0, "sampler_", 8, nullptr, false},
-                    {1, "data.", 5, nullptr, false},
+                    {0, "sampler_", 8, nullptr, true},
+                    {1, "data.", 5, nullptr, true},
             };
-            races[0].latest_pos = index_of_in("sampler_", main, 8);
-            races[1].latest_pos = index_of_in("data.", main, 5);
-            auto non_handled_arg_min_ = non_handled_arg_min(races, 2);
-            // handle this guy
+            const auto * latest_main = main;
 
-
-
-            return sources-start;
+            for(int arg_min=0; arg_min!=-1; latest_main=handle(races[arg_min], latest_main), arg_min=-1) {
+                // pick next index of handled and argmin
+                for (int ix = 0; ix < 2; ++ix) {
+                    auto & race = races[ix];
+                    if(race.handled) {
+                        race.next = index_of_in(race.name, latest_main, race.name_len);
+                        if(race.next==nullptr) continue;
+                        race.handled=false;
+                        if(arg_min==-1 or race.next<races[arg_min].next) arg_min=ix;
+                    }
+                }
+            }
+            buffer.write_char_array_pointer(latest_main, -1); // stitch [latest_main, end)
+            buffer.write_new_line(); // stitch [latest_main, end)
         }
 
         static int s2i(const char *c, int len) {
@@ -245,21 +253,21 @@ namespace nitrogl {
         struct race_t {
             int id; // this dictates behaviour
             const char * name; int name_len;
-            const char * latest_pos;
+            const char * next;
             bool handled;
         };
 
-        static int non_handled_arg_min(race_t * races, const int length) {
+        static int handled_arg_min(race_t * races, const int length) {
             // find first non handled
             int arg=-1;
             for (int ix = 0; ix < length; ++ix) {
-                if(!races[ix].handled) arg=ix;
+                if(races[ix].handled) arg=ix;
             }
             if(arg==-1) return -1;
 
             for (int ix = arg; ix < length; ++ix) {
-                if(races[ix].latest_pos && !races[ix].handled &&
-                   (races[ix].latest_pos < races[arg].latest_pos) )
+                if(races[ix].next && races[ix].handled &&
+                   (races[ix].next < races[arg].next) )
                     arg=ix;
             }
             return arg;
