@@ -30,42 +30,89 @@ namespace nitrogl {
         static constexpr const GLchar * const struct_0 = "uniform struct DATA_";
         static constexpr const GLchar * const struct_1 = "data_";
         static constexpr const GLchar comma = ';';
+        static constexpr const GLchar lcp = '{';
+        static constexpr const GLchar rcp = '}';
         static constexpr const GLchar * const sampler_pre = "vec4 sampler_";
         static constexpr const GLchar * const sampler = "sampler_";
         static constexpr const GLchar * const data = "data.";
 
-        template<int N>
-        struct linear_buffer {
-            char data[N];
-            int head;
+        template<unsigned N, unsigned M>
+        struct sources_buffer {
+            static const char char_comma = ';';
+            static const char char_space = ' ';
+            static const char char_under_score = '_';
+            static const char char_null_term = '\0';
+            static const char char_new_line = '\n';
+            char * const sources[N];
+            int const lengths[N];
+            char const extra_storage[M];
+            char ** head_sources;
+            char * head_storage;
+            int * head_lengths;
 
-            linear_buffer() : data(), head(0) {}
-
-            int write_int(int v) {
-                int len = facebook_uint32_to_str(v, data);
-                data+=len;
-                return len;
+            sources_buffer() : head_sources(sources), head_storage(extra_storage),
+                            head_lengths(lengths), sources(nullptr), lengths(-1),
+                            extra_storage(0) {
             }
 
-            int write_char_array(char * arr) {
-                int ix = 0;
-                for (; (ix < N-head) and *arr; ++ix, *(data++)=*(arr++)) {
+            void reset() { head_sources=sources; head_storage=extra_storage; }
+            unsigned len_sources() const { return head_sources-sources; }
+            unsigned len_lengths() const { return head_lengths-lengths; }
+            unsigned len_storage() const { return head_storage-extra_storage; }
+            struct write_storage_info_t { char * ptr; int len; };
+            write_storage_info_t write_int(int v) {
+                // converts int to char array in storage and then copies the pointer
+                *(head_sources++)=head_storage;
+                unsigned len = facebook_uint32_to_str(v, head_storage);
+                head_storage+=len;
+                *(head_lengths++)=len;
+                return { head_storage-len, len };
+            }
+
+            void write_char_array_pointer(char * arr, int len=-1) {
+                // write a pointer(a bit dangerous), len=-1 means it is null-terminated
+                *(head_sources++)=arr;
+                *(head_lengths++)=len;
+            }
+            void write_range_pointer(char * begin, const char * end) {
+                // write a pointer(a bit dangerous), len=-1 means it is null-terminated
+                *(head_sources++)=begin;
+                *(head_lengths++)=end-begin;
+            }
+            write_storage_info_t write_char_array(char * arr) {
+                // copy null-terminated array into storage and then write to sources
+                unsigned ix = 0;
+                const auto available = N-len_storage();
+                for (; (ix < available) and *arr; ++ix, *(head_storage++)=*(arr++)) {
                 }
-                return ix;
+                write_char_array_pointer(head_storage-ix, ix);
+                return {head_storage-ix, ix};
             }
 
-            int write_range(const char * begin, const char * end) {
-                int ix = 0;
-                for (; (ix < N-head) and begin<end; ++ix, *(data++)=*(begin++)) {
+            write_storage_info_t write_range(const char * begin, const char * end) {
+                // range does not contain null-term
+                unsigned ix = 0;
+                const auto available = N-len_storage();
+                for (; (ix < available) and begin<end; ++ix, *(head_storage++)=*(begin++)) {
                 }
-                return ix;
+                write_char_array_pointer(head_storage-ix, ix);
+                return {head_storage-ix, ix};
             }
 
-            int write_null_terminate() { *(data++)=0; }
-            int write_comma() { *(data++)=';'; }
-            int write_new_line() { *(data++)='\n'; }
-            int write_space() { *(data++)=' '; }
-            int write_under_score() { *(data++)='_'; }
+            write_storage_info_t write_char(char v) {
+                *(head_storage++) = v;
+                *(head_sources++) = head_storage-1;
+                *(lengths++) = 1;
+                return { head_storage-1, 1 };
+            }
+
+            int write_null_terminate() { write_char_array_pointer(&char_null_term, 1); }
+            int write_comma() { write_char_array_pointer(&char_comma, 1); }
+            int write_new_line() { write_char_array_pointer(&char_new_line, 1); }
+            int write_space() { write_char_array_pointer(&char_space, 1); }
+            int write_under_score() { write_char_array_pointer(&char_under_score, 1); }
+            int write_lcp() { write_char_array_pointer(&lcp, 1); }
+            int write_rcp() { write_char_array_pointer(&rcp, 1); }
 
 
         private:
@@ -79,8 +126,7 @@ namespace nitrogl {
                 }
             }
 
-            static size_t facebook_uint32_to_str(uint32_t value, char *dst)
-            {
+            static size_t facebook_uint32_to_str(uint32_t value, char *dst) {
                 static const char digits[201] =
                         "0001020304050607080910111213141516171819"
                         "2021222324252627282930313233343536373839"
@@ -109,61 +155,126 @@ namespace nitrogl {
 
         };
 
+        template<class number> static number min(number a, number b) { return a<b?a:b;}
+        template<class number> static number max(number a, number b) { return a<b?b:a;}
+
+        template<unsigned N, unsigned M>
         static unsigned _internal_composite_v2(sampler_t * sampler,
-                                               const GLchar ** sources,
-                                               GLint * lengths,
-                                               linear_buffer<4000> & storage) {
-            const GLchar ** start = sources;
+                                               sources_buffer<N, M> & buffer,
+                                               typename sources_buffer<N, M>::write_storage_info_t & sampler_string_id_lookup) {
+            using wi = typename sources_buffer<N, M>::write_storage_info_t;
             const auto sub_samplers_count = sampler->sub_samplers_count();
+            wi sub_sampler_string_ids_lookup[sub_samplers_count];
             for (int ix = 0; ix < sub_samplers_count; ++ix) {
                 auto how_much = _internal_composite_v2(
-                        sampler->sub_sampler(ix), sources, lengths, storage);
-                sources+=how_much; lengths+=how_much;
+                        sampler->sub_sampler(ix), buffer, sub_sampler_string_ids_lookup+ix);
             }
 
             // uniform struct DATA_ID { float a;  vec2 b; } data_ID;
             const auto id = sampler->id;
-            *(sources++) = struct_0;
-            *(lengths++) = -1; // null terminated
-            // _ID
-            auto * id_str = storage;
-            auto id_str_len = facebook_uint32_to_str(id, storage);
-            *(sources++) = id_str;
-            *(lengths++) = id_str_len;
-            // uniforms of sampler
-            *(sources++) = sampler->uniforms();
-            *(lengths++) = -1; // null-terminated but also has \n. might be buggy
-            // _ID
-            *(sources++) = id_str; *(lengths++) = id_str_len;
-            // ;
-            *(sources++) = &comma; *(lengths++) = 1;
+            buffer.write_char_array_pointer("uniform struct DATA_", -1);
+            auto info_id = buffer.write_int(id);
+            sampler_string_id_lookup = info_id; // record for parent, so he will have quick lookup
+            buffer.write_char_array_pointer(sampler->uniforms(), -1);
+            buffer.write_char_array_pointer("data_", -1);
+            buffer.write_char_array_pointer(info_id.ptr, info_id.len); // ID from previous stored value
+            buffer.write_comma();
+            buffer.write_new_line();
 
             // vec4 sampler_ID
-            *(sources++) = sampler_pre; *(lengths++) = -1;
-            // ID
-            *(sources++) = sampler_pre; *(lengths++) = id_str_len;
+            buffer.write_char_array_pointer("vec4 sampler_", -1);
+            buffer.write_char_array_pointer(info_id.ptr, info_id.len);
 
-            // now starts function body of sampler
-            int indices[sub_samplers_count + 1]; // sub samplers and data object
-            for (int ix = 0; ix < sub_samplers_count + 1; ++ix) {
-                indices[ix]=0;
-            }
+            // now the tough part starts function body of sampler. Our goal
+            // is to track 'data.' and 'sampler_' strings and to stitch:
+            // data. --> data_{SAMPLER_ID}
+            // sampler_ --> data_{SAMPLER_ID}
+            // strategy is to make them race for the next one
+            const auto * main = sampler->main();
+            const auto handle = [&](race_t & race, char * from) -> const char * {
+                race.handled=true;
+                switch (race.id) {
+                    case 0: { // sampler_{sub_sampler_local_id} -> sampler_{sub_sampler_global_id}
+                        auto begin_0 = from; // latest end loose
+                        auto end_0 = race.latest_pos+race.name_len; // end of sampler_
+                        buffer.write_range_pointer(begin_0, end_0); // stitch [main, sampler_)
+                        // parse local_id
+                        auto begin_1 = index_of_in("(", end_0, 1); // ptr to (
+                        auto local_id = s2i(end_0, begin_1-end_0); // local_id to int , todo:: remove white space and 005 etc..
+                        const auto global_id = sub_sampler_string_ids_lookup[local_id]; // global-id
+                        buffer.write_char_array_pointer(global_id.ptr, global_id.len); // stitch {global_id}
+                        race.handled=true;
+                        return begin_1;
+                    }
+                    case 1: { // data. --> data_{current_sampler_global_id}
+                        auto begin_0 = from; // latest end loose
+                        auto end_0 = race.latest_pos+race.name_len-1; // end of '...data'
+                        buffer.write_range_pointer(begin_0, end_0); // stitch [main, data)
+                        //
+                        buffer.write_under_score(); // stitch _
+                        buffer.write_char_array_pointer(info_id.ptr, info_id.len); // stitch {current_sampler_id}
+                        race.handled=true;
+                        return end_0;
+                    }
+                }
+                return nullptr;
+            };
+            race_t races[2] = {
+                    {0, "sampler_", 8, nullptr, false},
+                    {1, "data.", 5, nullptr, false},
+            };
+            races[0].latest_pos = index_of_in("sampler_", main, 8);
+            races[1].latest_pos = index_of_in("data.", main, 5);
+            auto non_handled_arg_min_ = non_handled_arg_min(races, 2);
+            // handle this guy
 
 
 
             return sources-start;
         }
 
-        static int index_of_in(const char * a, const char * b, int max_length) {
-            for (int ix=0; *b!='\0' and ix<max_length; ++b, ++ix) {
-                const bool is_ = is_equal(a, b+ix, max_length);
-                if(is_) return ix;
+        static int s2i(const char *c, int len) {
+            int s = 1, res = 0;
+            if (c[0] == '-') { s = -1; ++c; }
+            for (; len and *c ; --len, ++c) {
+                res = res*10 + (*c - '0');
             }
-            return -1;
+            return res*s;
+        }
+
+        struct race_t {
+            int id; // this dictates behaviour
+            const char * name; int name_len;
+            const char * latest_pos;
+            bool handled;
+        };
+
+        static int non_handled_arg_min(race_t * races, const int length) {
+            // find first non handled
+            int arg=-1;
+            for (int ix = 0; ix < length; ++ix) {
+                if(!races[ix].handled) arg=ix;
+            }
+            if(arg==-1) return -1;
+
+            for (int ix = arg; ix < length; ++ix) {
+                if(races[ix].latest_pos && !races[ix].handled &&
+                   (races[ix].latest_pos < races[arg].latest_pos) )
+                    arg=ix;
+            }
+            return arg;
+        }
+
+        static const char * index_of_in(const char * a, const char * b, int max_length_of_a) {
+            for (int ix=0; *b and ix<max_length_of_a; ++b, ++ix) {
+                const bool is_ = is_equal(a, b+ix, max_length_of_a);
+                if(is_) return (b+ix);
+            }
+            return  nullptr;
         }
 
         static bool is_equal(const char * a, const char * b, int max_length) {
-            for (; *a==*b and *a!='\0' and *b!='\0' and max_length; ++a, ++b, --max_length) {}
+            for (; *a==*b and *a and *b and max_length; ++a, ++b, --max_length) {}
             if(*a=='\0' or max_length==0) return true;
             return false;
         }
