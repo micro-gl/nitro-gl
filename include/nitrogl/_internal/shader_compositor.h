@@ -43,19 +43,20 @@ namespace nitrogl {
             static const char char_under_score = '_';
             static const char char_null_term = '\0';
             static const char char_new_line = '\n';
-            char * const sources[N];
-            int const lengths[N];
-            char const extra_storage[M];
-            char ** head_sources;
+            const char * sources[N]; // array with pointers to const chars
+            int lengths[N];
+            char extra_storage[M]; // writable area
+            const char* * head_sources; // pointer to array with pointers to const chars
             char * head_storage;
             int * head_lengths;
 
             sources_buffer() : head_sources(sources), head_storage(extra_storage),
-                            head_lengths(lengths), sources(nullptr), lengths(-1),
-                            extra_storage(0) {
+                            head_lengths(lengths), sources{nullptr}, lengths{0},
+                            extra_storage{0} {
             }
 
             void reset() { head_sources=sources; head_storage=extra_storage; }
+            unsigned size() const { return head_sources-sources; }
             unsigned len_sources() const { return head_sources-sources; }
             unsigned len_lengths() const { return head_lengths-lengths; }
             unsigned len_storage() const { return head_storage-extra_storage; }
@@ -66,15 +67,15 @@ namespace nitrogl {
                 unsigned len = facebook_uint32_to_str(v, head_storage);
                 head_storage+=len;
                 *(head_lengths++)=len;
-                return { head_storage-len, len };
+                return { head_storage-len, int(len) };
             }
 
-            void write_char_array_pointer(char * arr, int len=-1) {
+            void write_char_array_pointer(const char * arr, int len=-1) {
                 // write a pointer(a bit dangerous), len=-1 means it is null-terminated
                 *(head_sources++)=arr;
                 *(head_lengths++)=len;
             }
-            void write_range_pointer(char * begin, const char * end) {
+            void write_range_pointer(const char * begin, const char * end) {
                 // write a pointer(a bit dangerous), len=-1 means it is null-terminated
                 *(head_sources++)=begin;
                 *(head_lengths++)=end-begin;
@@ -160,14 +161,14 @@ namespace nitrogl {
 
         template<unsigned N, unsigned M>
         static void _internal_composite_v2(sampler_t * sampler,
-                                               sources_buffer<N, M> & buffer,
-                                               typename sources_buffer<N, M>::write_storage_info_t & sampler_string_id_lookup) {
+                                           sources_buffer<N, M> & buffer,
+                                           typename sources_buffer<N, M>::write_storage_info_t & sampler_string_id_lookup) {
             using wi = typename sources_buffer<N, M>::write_storage_info_t;
             const auto sub_samplers_count = sampler->sub_samplers_count();
             wi sub_sampler_string_ids_lookup[sub_samplers_count];
             for (int ix = 0; ix < sub_samplers_count; ++ix) {
-                auto how_much = _internal_composite_v2(
-                        sampler->sub_sampler(ix), buffer, sub_sampler_string_ids_lookup+ix);
+                _internal_composite_v2(
+                        sampler->sub_sampler(ix), buffer, sub_sampler_string_ids_lookup[ix]);
             }
 
             // uniform struct DATA_ID { float a;  vec2 b; } data_ID;
@@ -191,7 +192,7 @@ namespace nitrogl {
             // sampler_ --> data_{SAMPLER_ID}
             // strategy is to make them race for the next one
             const auto * main = sampler->main();
-            const auto handle = [&](race_t & race, char * from) -> const char * {
+            const auto handle = [&](race_t & race, const char * from) -> const char * {
                 race.handled=true;
                 switch (race.id) {
                     case 0: { // sampler_{sub_sampler_local_id} -> sampler_{sub_sampler_global_id}
@@ -220,8 +221,8 @@ namespace nitrogl {
                 return nullptr;
             };
             race_t races[2] = {
-                    {0, "sampler_", 8, nullptr, true},
-                    {1, "data.", 5, nullptr, true},
+                    {0, "sampler_", 8, main, true},
+                    {1, "data.", 5, main, true},
             };
             const auto * latest_main = main;
 
@@ -229,9 +230,9 @@ namespace nitrogl {
                 // pick next index of handled and argmin
                 for (int ix = 0; ix < 2; ++ix) {
                     auto & race = races[ix];
-                    if(race.handled) {
+                    if(race.handled and race.next) {
                         race.next = index_of_in(race.name, latest_main, race.name_len);
-                        if(race.next==nullptr) continue;
+                        if(race.next==nullptr) continue; // did not find
                         race.handled=false;
                         if(arg_min==-1 or race.next<races[arg_min].next) arg_min=ix;
                     }
@@ -278,7 +279,7 @@ namespace nitrogl {
                 const bool is_ = is_equal(a, b+ix, max_length_of_a);
                 if(is_) return (b+ix);
             }
-            return  nullptr;
+            return nullptr;
         }
 
         static bool is_equal(const char * a, const char * b, int max_length) {
@@ -291,6 +292,19 @@ namespace nitrogl {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
+            using buffers = sources_buffer<1000, 500>;
+            using write_storage_info_t = buffers::write_storage_info_t;
+            buffers sources;
+            write_storage_info_t id_info;
+            sources.reset();
+            // write version
+            sources.write_char_array_pointer(main_shader_program::frag_version);
+            // write version
+            sources.write_char_array_pointer(main_shader_program::frag_other);
+            // add sampler stuff
+            _internal_composite_v2(&sampler, sources, id_info);
+
+
             const auto * sampler_main = sampler.main();
             if(*sampler_main=='\n') ++sampler_main;
             const GLchar * sources[7] = { main_shader_program::frag_version,
@@ -301,6 +315,7 @@ namespace nitrogl {
                                           sampler_main,
                                           main_shader_program::frag_main};
             auto fragment = shader::from_fragment(sources, 7, nullptr);
+            // attach shaders
             prog.attach_shaders(nitrogl::traits::move(vertex),
                                 nitrogl::traits::move(fragment));
             prog.resolve_vertex_attributes_and_uniforms_and_link();
