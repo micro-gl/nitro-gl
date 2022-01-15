@@ -19,5 +19,5 @@
 20. implement many samplers
 
 optimizations:
-1. lazy back buffers. also, if taregt is requested as premul alpha,
+1. lazy back buffers_type. also, if taregt is requested as premul alpha,
    normal blending and any of the porter-duff, we can use opengl blending.

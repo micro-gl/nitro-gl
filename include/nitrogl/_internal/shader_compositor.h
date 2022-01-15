@@ -27,17 +27,19 @@ namespace nitrogl {
         /**
          * uniform struct DATA_XXX { float a;  vec2 b; } data_XXX;
          */
+        static constexpr const GLchar * const define_ = "#define";
         static constexpr const GLchar * const struct_0 = "uniform struct DATA_";
         static constexpr const GLchar * const struct_1 = "data_";
-        static constexpr const GLchar comma = ';';
-        static constexpr const GLchar lcp = '{';
-        static constexpr const GLchar rcp = '}';
         static constexpr const GLchar * const sampler_pre = "vec4 sampler_";
-        static constexpr const GLchar * const sampler = "sampler_";
+        static constexpr const GLchar * const sampler_ = "sampler_";
         static constexpr const GLchar * const data = "data.";
 
         template<unsigned N, unsigned M>
         struct sources_buffer {
+            static constexpr const GLchar * const comma_and_new_line = ";\n";
+            static constexpr const GLchar comma = ';';
+            static constexpr const GLchar lcp = '{';
+            static constexpr const GLchar rcp = '}';
             static const char char_comma = ';';
             static const char char_space = ' ';
             static const char char_under_score = '_';
@@ -114,6 +116,7 @@ namespace nitrogl {
             int write_under_score() { write_char_array_pointer(&char_under_score, 1); }
             int write_lcp() { write_char_array_pointer(&lcp, 1); }
             int write_rcp() { write_char_array_pointer(&rcp, 1); }
+            int write_comma_and_newline() { write_char_array_pointer(comma_and_new_line, 2); }
 
 
         private:
@@ -292,29 +295,26 @@ namespace nitrogl {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
-            using buffers = sources_buffer<1000, 500>;
-            using write_storage_info_t = buffers::write_storage_info_t;
-            buffers sources;
+            using buffers_type = sources_buffer<1000, 500>;
+            using write_storage_info_t = buffers_type::write_storage_info_t;
+            buffers_type buffers;
             write_storage_info_t id_info;
-            sources.reset();
+            buffers.reset();
             // write version
-            sources.write_char_array_pointer(main_shader_program::frag_version);
-            // write version
-            sources.write_char_array_pointer(main_shader_program::frag_other);
-            // add sampler stuff
-            _internal_composite_v2(&sampler, sources, id_info);
+            buffers.write_char_array_pointer(main_shader_program::frag_version);
+            // write frag variables
+            buffers.write_char_array_pointer(main_shader_program::frag_other);
+            // add samplers tree recursively
+            _internal_composite_v2(&sampler, buffers, id_info);
+            // add define (#define __SAMPLER_MAIN sampler_{id})
+            buffers.write_char_array_pointer(main_shader_program::define_sampler);
+            buffers.write_char_array_pointer(id_info.ptr, id_info.len);
+            buffers.write_comma_and_newline();
+            // write main shader
+            buffers.write_char_array_pointer(main_shader_program::frag_main);
+            // create shader
+            auto fragment = shader::from_fragment(buffers.sources, buffers.size(), buffers.lengths);
 
-
-            const auto * sampler_main = sampler.main();
-            if(*sampler_main=='\n') ++sampler_main;
-            const GLchar * sources[7] = { main_shader_program::frag_version,
-                                          main_shader_program::frag_other, // uniforms/atrribs/functions
-                                          sampler.uniforms(),
-                                          sampler.other_functions(),
-                                          "vec4 __internal_sample", // main sample function
-                                          sampler_main,
-                                          main_shader_program::frag_main};
-            auto fragment = shader::from_fragment(sources, 7, nullptr);
             // attach shaders
             prog.attach_shaders(nitrogl::traits::move(vertex),
                                 nitrogl::traits::move(fragment));

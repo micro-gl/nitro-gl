@@ -43,6 +43,8 @@ void main()
 
         constexpr static const char * const frag_version = "#version 330 core\n";
 
+        constexpr static const char * const define_sampler = "#define __SAMPLER_MAIN ";
+
         constexpr static const char * const frag_other = R"foo(
 //#version 330 core
 
@@ -73,7 +75,7 @@ void main()
 //    vec4 source = __internal_sample(PS_uvs_sampler, 0);
 //    vec4 target = __internal_sample(PS_uvs_sampler, 0);
 //    vec3 _blend = __blend_color
-    FragColor = __internal_sample(PS_uvs_sampler, 0);
+    FragColor = __SAMPLER_MAIN(PS_uvs_sampler, 0);
 //    FragColor = color;
 }
         )foo";
