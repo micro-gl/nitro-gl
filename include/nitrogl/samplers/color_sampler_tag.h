@@ -36,7 +36,7 @@ vec4 other_function(float t) {
         const char * main() override {
             return R"(
 (vec3 uv, float time) {
-    return color_sampler_color;
+    return data.color;
 }
 )";
         }

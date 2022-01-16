@@ -37,14 +37,14 @@ namespace nitrogl {
         template<unsigned N, unsigned M>
         struct sources_buffer {
             static constexpr const GLchar * const comma_and_new_line = ";\n";
-            static constexpr const GLchar comma = ';';
-            static constexpr const GLchar lcp = '{';
-            static constexpr const GLchar rcp = '}';
-            static const char char_comma = ';';
-            static const char char_space = ' ';
-            static const char char_under_score = '_';
-            static const char char_null_term = '\0';
-            static const char char_new_line = '\n';
+            static constexpr const GLchar * comma = ";";
+            static constexpr const GLchar * lcp = "{";
+            static constexpr const GLchar * rcp = "}";
+            static constexpr const GLchar * char_comma = ";";
+            static constexpr const GLchar * char_space = " ";
+            static constexpr const GLchar * char_under_score = "_";
+            static constexpr const GLchar * char_null_term = "\0";
+            static constexpr const GLchar * char_new_line = "\n";
             const char * sources[N]; // array with pointers to const chars
             int lengths[N];
             char extra_storage[M]; // writable area
@@ -63,14 +63,6 @@ namespace nitrogl {
             unsigned len_lengths() const { return head_lengths-lengths; }
             unsigned len_storage() const { return head_storage-extra_storage; }
             struct write_storage_info_t { char * ptr; int len; };
-            write_storage_info_t write_int(int v) {
-                // converts int to char array in storage and then copies the pointer
-                *(head_sources++)=head_storage;
-                unsigned len = facebook_uint32_to_str(v, head_storage);
-                head_storage+=len;
-                *(head_lengths++)=len;
-                return { head_storage-len, int(len) };
-            }
 
             void write_char_array_pointer(const char * arr, int len=-1) {
                 // write a pointer(a bit dangerous), len=-1 means it is null-terminated
@@ -82,6 +74,21 @@ namespace nitrogl {
                 *(head_sources++)=begin;
                 *(head_lengths++)=end-begin;
             }
+
+            write_storage_info_t write_int(int v) {
+                // converts int to char array in storage and then copies the pointer
+                *(head_sources++)=head_storage;
+                unsigned len = facebook_uint32_to_str(v, head_storage);
+                head_storage+=len;
+                *(head_lengths++)=len;
+                return { head_storage-len, int(len) };
+            }
+            write_storage_info_t write_int_to_storage(int v) {
+                // converts int to char array in storage and then copies the pointer
+                unsigned len = facebook_uint32_to_str(v, head_storage);
+                head_storage+=len;
+                return { head_storage-len, int(len) };
+            }
             write_storage_info_t write_char_array(char * arr) {
                 // copy null-terminated array into storage and then write to sources
                 unsigned ix = 0;
@@ -91,7 +98,6 @@ namespace nitrogl {
                 write_char_array_pointer(head_storage-ix, ix);
                 return {head_storage-ix, ix};
             }
-
             write_storage_info_t write_range(const char * begin, const char * end) {
                 // range does not contain null-term
                 unsigned ix = 0;
@@ -101,7 +107,6 @@ namespace nitrogl {
                 write_char_array_pointer(head_storage-ix, ix);
                 return {head_storage-ix, ix};
             }
-
             write_storage_info_t write_char(char v) {
                 *(head_storage++) = v;
                 *(head_sources++) = head_storage-1;
@@ -109,14 +114,14 @@ namespace nitrogl {
                 return { head_storage-1, 1 };
             }
 
-            int write_null_terminate() { write_char_array_pointer(&char_null_term, 1); }
-            int write_comma() { write_char_array_pointer(&char_comma, 1); }
-            int write_new_line() { write_char_array_pointer(&char_new_line, 1); }
-            int write_space() { write_char_array_pointer(&char_space, 1); }
-            int write_under_score() { write_char_array_pointer(&char_under_score, 1); }
-            int write_lcp() { write_char_array_pointer(&lcp, 1); }
-            int write_rcp() { write_char_array_pointer(&rcp, 1); }
-            int write_comma_and_newline() { write_char_array_pointer(comma_and_new_line, 2); }
+            void write_null_terminate() { write_char_array_pointer(char_null_term, 1); }
+            void write_comma() { write_char_array_pointer(char_comma, 1); }
+            void write_new_line() { write_char_array_pointer(char_new_line, 1); }
+            void write_space() { write_char_array_pointer(char_space, 1); }
+            void write_under_score() { write_char_array_pointer(char_under_score, 1); }
+            void write_lcp() { write_char_array_pointer(lcp, 1); }
+            void write_rcp() { write_char_array_pointer(rcp, 1); }
+            void write_comma_and_newline() { write_char_array_pointer(comma_and_new_line, 2); }
 
 
         private:
@@ -174,16 +179,21 @@ namespace nitrogl {
                         sampler->sub_sampler(ix), buffer, sub_sampler_string_ids_lookup[ix]);
             }
 
-            // uniform struct DATA_ID { float a;  vec2 b; } data_ID;
-            const auto id = sampler->id;
-            buffer.write_char_array_pointer("uniform struct DATA_", -1);
-            auto info_id = buffer.write_int(id);
+//            const auto id = sampler->id;
+            auto info_id = buffer.write_int_to_storage(sampler->id);
             sampler_string_id_lookup = info_id; // record for parent, so he will have quick lookup
-            buffer.write_char_array_pointer(sampler->uniforms(), -1);
-            buffer.write_char_array_pointer("data_", -1);
-            buffer.write_char_array_pointer(info_id.ptr, info_id.len); // ID from previous stored value
-            buffer.write_comma();
-            buffer.write_new_line();
+
+            // uniform struct DATA_ID { float a;  vec2 b; } data_ID;
+            const bool has_uniforms_data = sampler->uniforms();
+            if(has_uniforms_data) {
+                buffer.write_char_array_pointer("uniform struct DATA_", -1);
+                buffer.write_char_array_pointer(info_id.ptr, info_id.len); // ID from previous stored value
+                buffer.write_char_array_pointer(sampler->uniforms(), -1);
+                buffer.write_char_array_pointer("data_", -1);
+                buffer.write_char_array_pointer(info_id.ptr, info_id.len); // ID from previous stored value
+                buffer.write_comma();
+                buffer.write_new_line();
+            }
 
             // vec4 sampler_ID
             buffer.write_char_array_pointer("vec4 sampler_", -1);
@@ -195,6 +205,7 @@ namespace nitrogl {
             // sampler_ --> data_{SAMPLER_ID}
             // strategy is to make them race for the next one
             const auto * main = sampler->main();
+            while(*main=='\n') { ++main; }
             const auto handle = [&](race_t & race, const char * from) -> const char * {
                 race.handled=true;
                 switch (race.id) {
@@ -228,8 +239,11 @@ namespace nitrogl {
                     {1, "data.", 5, main, true},
             };
             const auto * latest_main = main;
-
-            for(int arg_min=0; arg_min!=-1; latest_main=handle(races[arg_min], latest_main), arg_min=-1) {
+            if(sub_samplers_count==0) races[0].handled=false; // disable 0
+            if(!has_uniforms_data) races[1].handled=false; // disable 1
+            int arg_min=0;
+            for(; arg_min!=-1; ) {
+                arg_min=-1;
                 // pick next index of handled and argmin
                 for (int ix = 0; ix < 2; ++ix) {
                     auto & race = races[ix];
@@ -237,9 +251,11 @@ namespace nitrogl {
                         race.next = index_of_in(race.name, latest_main, race.name_len);
                         if(race.next==nullptr) continue; // did not find
                         race.handled=false;
-                        if(arg_min==-1 or race.next<races[arg_min].next) arg_min=ix;
+                        if(arg_min==-1 or races[arg_min].next==nullptr or race.next<races[arg_min].next) arg_min=ix;
                     }
                 }
+                if(arg_min!=-1)
+                    latest_main=handle(races[arg_min], latest_main);
             }
             buffer.write_char_array_pointer(latest_main, -1); // stitch [latest_main, end)
             buffer.write_new_line(); // stitch [latest_main, end)
@@ -278,9 +294,9 @@ namespace nitrogl {
         }
 
         static const char * index_of_in(const char * a, const char * b, int max_length_of_a) {
-            for (int ix=0; *b and ix<max_length_of_a; ++b, ++ix) {
-                const bool is_ = is_equal(a, b+ix, max_length_of_a);
-                if(is_) return (b+ix);
+            for (int ix=0; *(b+max_length_of_a); ++b, ++ix) {
+                const bool is_ = is_equal(a, b+0, max_length_of_a);
+                if(is_) return (b+0);
             }
             return nullptr;
         }
@@ -309,7 +325,7 @@ namespace nitrogl {
             // add define (#define __SAMPLER_MAIN sampler_{id})
             buffers.write_char_array_pointer(main_shader_program::define_sampler);
             buffers.write_char_array_pointer(id_info.ptr, id_info.len);
-            buffers.write_comma_and_newline();
+            buffers.write_new_line();
             // write main shader
             buffers.write_char_array_pointer(main_shader_program::frag_main);
             // create shader

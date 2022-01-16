@@ -43,7 +43,7 @@ void main()
 
         constexpr static const char * const frag_version = "#version 330 core\n";
 
-        constexpr static const char * const define_sampler = "#define __SAMPLER_MAIN ";
+        constexpr static const char * const define_sampler = "#define __SAMPLER_MAIN sampler_";
 
         constexpr static const char * const frag_other = R"foo(
 //#version 330 core
@@ -66,6 +66,14 @@ vec4 sample1(vec3 uv) {
         constexpr static const char * const frag_composite = "vec4 __composite_alpha";
 
         constexpr static const char * const frag_main = R"foo(
+
+void main()
+{
+    FragColor = __SAMPLER_MAIN(PS_uvs_sampler, 0);
+}
+        )foo";
+
+        constexpr static const char * const frag_main3 = R"foo(
 uniform struct DATA { float aa; } tomer_0;
 
 void main()
@@ -136,7 +144,7 @@ void main()
             setVertexAttributesLocations(shader_vertex_attributes().data, shader_vertex_attributes().size());
             // program should be linked by previous call to set, but in case we have zero attributes, make sure
             if(!wasLastLinkSuccessful()) link();
-            // cache uniform locations after link
+            // cache base uniform locations after link
             uniforms.mat_model = uniformLocationByName("mat_model");
             uniforms.mat_view = uniformLocationByName("mat_view");
             uniforms.mat_proj = uniformLocationByName("mat_proj");

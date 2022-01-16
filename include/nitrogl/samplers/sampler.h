@@ -55,7 +55,7 @@ namespace nitrogl {
     public:
         multi_sampler() : _sub_samplers{nullptr}, sampler_t() {}
 
-        bool add_sub_sampler(sampler_t * sampler) {
+        void add_sub_sampler(sampler_t * sampler) {
             _sub_samplers[_sub_samplers_count++] = sampler;
         }
 

@@ -19,9 +19,7 @@ namespace nitrogl {
     struct mix_sampler : public multi_sampler<2> {
         const char * name() override { return "color_sampler"; }
         const char * uniforms() override {
-            return R"(
-uniform vec4 color_sampler_color; // color
-            )";
+            return nullptr;
         }
 
         const char * other_functions() override {
