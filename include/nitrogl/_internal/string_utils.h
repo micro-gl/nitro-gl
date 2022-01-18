@@ -22,7 +22,7 @@ namespace nitrogl {
      */
     inline bool is_empty(const char * a, int max_length=-1) {
         if(a==nullptr) return true;
-        for (; max_length and *a; ++a, --max_length) {
+        for (; max_length; ++a, --max_length) {
             const auto c = *a;
             if(c=='\0') break;
             if(c>=' ' and c<='~') return false;

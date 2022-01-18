@@ -32,8 +32,8 @@ vec4 other_function(float t) {
 
         const char * main() override {
             return R"(
-(vec3 uv, float time) {
-    return (sampler_0(uv, 0) + sampler_1(uv, 0))/2.0;
+(vec3 uv) {
+    return (sampler_0(uv) + sampler_1(uv))/2.0;
 }
             )";
         }
@@ -48,7 +48,6 @@ vec4 other_function(float t) {
 
         color_sampler_tag sampler_1{1.0,0.0,0.0,1.0};
         color_sampler_tag sampler_2{0.0,1.0,0.0,1.0};
-        color_sampler_tag * samplers[2] = {nullptr, nullptr};
 
     private:
 

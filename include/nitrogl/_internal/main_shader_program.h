@@ -36,7 +36,7 @@ out vec3 PS_uvs_sampler;
 void main()
 {
     PS_uvs_sampler = vec3((mat_transform_uvs * vec3(VS_uvs_sampler.st, 1.0)).st,
-                           VS_uvs_sampler.q); // remove 2nd component from VS_uvs_sampler
+                           VS_uvs_sampler.q); // remove 3rd component from VS_uvs_sampler
     gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
 }
 )foo";
@@ -46,10 +46,8 @@ void main()
         constexpr static const char * const define_sampler = "#define __SAMPLER_MAIN sampler_";
 
         constexpr static const char * const frag_other = R"foo(
-//#version 330 core
-
 // uniforms
-//uniform vec4 color; // color
+uniform uint time;
 
 // in
 in vec3 PS_uvs_sampler;
@@ -69,22 +67,7 @@ vec4 sample1(vec3 uv) {
 
 void main()
 {
-    FragColor = __SAMPLER_MAIN(PS_uvs_sampler, 0);
-}
-        )foo";
-
-        constexpr static const char * const frag_main3 = R"foo(
-uniform struct DATA { float aa; } tomer_0;
-
-void main()
-{
-//    TTT tomer_0;
-//    tomer_0.aa=2.0;
-//    vec4 source = __internal_sample(PS_uvs_sampler, 0);
-//    vec4 target = __internal_sample(PS_uvs_sampler, 0);
-//    vec3 _blend = __blend_color
-    FragColor = __SAMPLER_MAIN(PS_uvs_sampler, 0);
-//    FragColor = color;
+    FragColor = __SAMPLER_MAIN(PS_uvs_sampler);
 }
         )foo";
 
@@ -98,7 +81,7 @@ void main()
         // I have to have this uniform location cache. It is different
         // from shader to shader instance, so I have no way around saving it.
         struct uniforms_type {
-            GLint mat_model=-1, mat_view=-1, mat_proj=-1, mat_transform_uvs=-1, opacity=-1;
+            GLint mat_model=-1, mat_view=-1, mat_proj=-1, mat_transform_uvs=-1, opacity=-1, time=-1;
         };
 
         uniforms_type uniforms;
@@ -150,6 +133,7 @@ void main()
             uniforms.mat_proj = uniformLocationByName("mat_proj");
             uniforms.mat_transform_uvs = uniformLocationByName("mat_transform_uvs");
             uniforms.opacity = uniformLocationByName("opacity");
+            uniforms.time = uniformLocationByName("time");
         }
 
     public:
@@ -165,6 +149,8 @@ void main()
 //        { glUniform1i(name, texture_index); }
         void updateOpacity(GLfloat opacity) const
         { glUniform1f(uniforms.opacity, opacity); }
+        void update_time(GLuint value) const
+        { glUniform1ui(uniforms.time, value); }
 
     };
 

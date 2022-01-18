@@ -31,7 +31,7 @@ namespace nitrogl {
          * @tparam N size of sources pointers array
          * @tparam M size of optional storage
          */
-        template<unsigned N, unsigned M>
+        template<unsigned N, unsigned M=1>
         struct sources_buffer {
             static constexpr const GLchar * const comma_and_new_line = ";\n";
             static constexpr const GLchar * const comma_and_2_new_line = ";\n\n";
@@ -134,7 +134,7 @@ namespace nitrogl {
                 _internal_composite(sampler->sub_sampler(ix), buffer);
 
             // uniform struct DATA_ID { float a;  vec2 b; } data_ID;
-            const bool has_uniforms_data = nitrogl::is_empty(sampler->uniforms());
+            const bool has_uniforms_data = !nitrogl::is_empty(sampler->uniforms());
             if(has_uniforms_data) {
                 buffer.write_char_array_pointer("uniform struct DATA_", -1);
                 buffer.write_char_array_pointer(sampler->id_string()); // ID from previous stored value
@@ -224,7 +224,7 @@ namespace nitrogl {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
-            using buffers_type = sources_buffer<1000, 500>;
+            using buffers_type = sources_buffer<1000, 1>;
             static buffers_type buffers{};
             buffers.reset();
             // write version
