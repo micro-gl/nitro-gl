@@ -246,7 +246,7 @@ namespace nitrogl {
             //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
             mix_sampler sampler;
             main_shader_program program =
-                    shader_compositor::composite_main_program_from_sampler_v2(sampler);
+                    shader_compositor::composite_main_program_from_sampler(sampler);
 
             // data
             p4_render_node::data_type data = {

@@ -56,7 +56,8 @@ vec4 other_function(float t) {
 
     public:
         color_t color;
-        color_sampler_tag() : color{1.0, 1.0, 1.0, 1.0} {}
-        explicit color_sampler_tag(color_t $color) : color($color) {}
-        color_sampler_tag(float r, float g, float b, float a) : color{r, g, b, a} {}};
+        color_sampler_tag() : color{1.0, 1.0, 1.0, 1.0}, sampler_t() {}
+        explicit color_sampler_tag(color_t $color) : color($color), sampler_t() {}
+        color_sampler_tag(float r, float g, float b, float a) : color{r, g, b, a}, sampler_t() {}
+    };
 }

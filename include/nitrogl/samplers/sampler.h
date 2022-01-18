@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../traits.h"
+#include "../_internal/string_utils.h"
 
 namespace nitrogl {
 
@@ -24,17 +25,30 @@ namespace nitrogl {
     protected:
         virtual sampler_t * on_sub_sampler_request(unsigned index) { return nullptr; }
 
-    public:
-        const unsigned int id;
+    protected:
+        struct no_more_than_999_samplers_allowed {};
+        const unsigned int _id;
         unsigned int _sub_samplers_count=0;
+        char _id_string[4]; // plus null termination
 
-        sampler_t() : id(assign_id()) {}
+        sampler_t() : _id(assign_id()), _id_string{0} {
+            const auto len = nitrogl::facebook_uint32_to_str(_id, _id_string);
+            if(len>=3) {
+#ifdef NITROGL_ENABLE_THROW
+                throw no_more_than_999_samplers_allowed();
+#endif
+            }
+        }
+
+    public:
         unsigned sub_samplers_count () const { return _sub_samplers_count; };
         sampler_t * sub_sampler(unsigned index) {
             return on_sub_sampler_request(index);
         }
-        virtual const char * name() = 0;
-        virtual const char * uniforms() { return "\n"; }
+        unsigned int id() const { return _id; }
+        const char * id_string() const { return _id_string; }
+        virtual const char * name() { return ""; };
+        virtual const char * uniforms() { return nullptr; }
         virtual const char * other_functions() { return "\n"; }
         virtual const char * main() = 0;
         virtual void on_cache_uniforms_locations(GLuint program) {};
