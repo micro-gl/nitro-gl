@@ -11,7 +11,7 @@
 #pragma once
 
 #include "sampler.h"
-#include "color_sampler_tag.h"
+#include "color_sampler.h"
 #include "../traits.h"
 
 namespace nitrogl {
@@ -38,8 +38,8 @@ vec4 other_function(float t) {
             )";
         }
 
-        color_sampler_tag sampler_1{1.0,0.0,0.0,1.0};
-        color_sampler_tag sampler_2{0.0,1.0,0.0,1.0};
+        color_sampler sampler_1{1.0, 0.0, 0.0, 1.0};
+        color_sampler sampler_2{1.0, 1.0, 0.0, 1.0};
 
     public:
         mix_sampler() : multi_sampler<2>() {

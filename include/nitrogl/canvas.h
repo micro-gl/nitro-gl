@@ -360,7 +360,7 @@ namespace nitrogl {
                     mat_proj,
                     transform_uv
             };
-            _node_multi.render(program, data);
+            _node_multi.render(program, sampler, data);
 
             //
             copy_region_to_backdrop(int(left), int(top),

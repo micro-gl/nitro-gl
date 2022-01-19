@@ -28,7 +28,7 @@ namespace nitrogl {
             GLuint * indices;
             size_type pos_size;
             size_type uvs_sampler_size;
-            size_type indices_size;
+            GLsizei indices_size;
             GLenum triangles_type;
             const mat4f & mat_model;
             const mat4f & mat_view;
@@ -92,7 +92,7 @@ namespace nitrogl {
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
-            glDrawElements(GL_TRIANGLES, d.indices_size, GL_UNSIGNED_INT, OFFSET(0));
+            glDrawElements(d.triangles_type, d.indices_size, GL_UNSIGNED_INT, OFFSET(0));
             vao_t::unbind();
 #else
             _ebo.bind();
