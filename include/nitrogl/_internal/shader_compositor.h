@@ -55,7 +55,7 @@ namespace nitrogl {
                             extra_storage{0} {
             }
 
-            void reset() { head_sources=sources; head_storage=extra_storage; }
+            void reset() { head_sources=sources; head_storage=extra_storage; head_lengths=lengths; }
             unsigned size() const { return head_sources-sources; }
             unsigned len_sources() const { return head_sources-sources; }
             unsigned len_lengths() const { return head_lengths-lengths; }
@@ -246,7 +246,7 @@ namespace nitrogl {
             prog.attach_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
             prog.resolve_vertex_attributes_and_uniforms_and_link();
             // sampler_t can now cache uniforms variables
-            sampler.on_cache_uniforms_locations(prog.id());
+            sampler.cache_uniforms_locations(prog.id());
             GLchar source[10000];
             prog.fragment().get_source(source, sizeof (source));
 

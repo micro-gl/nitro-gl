@@ -16,13 +16,13 @@
 namespace nitrogl {
 
     struct test_sampler : public sampler_t {
-        const char * name() override { return "test_sampler"; }
-        const char * uniforms() override {
+        const char * name() const override { return "test_sampler"; }
+        const char * uniforms() const override {
             return R"(
             )";
         }
 
-        const char * other_functions() override {
+        const char * other_functions() const override {
             return R"(
 vec4 other_function(float t) {
     return vec4(t);
@@ -30,7 +30,7 @@ vec4 other_function(float t) {
 )";
         }
 
-        const char * main() override {
+        const char * main() const override {
             return R"(
 (vec3 uv, float time) {
     return vec4(uv.y, uv.y, uv.y, 1.0);

@@ -1,6 +1,8 @@
 #define GL_SILENCE_DEPRECATION
 #define SUPPORTS_VAO
 #define MICROGL_USE_STD_MATH
+#define NITROGL_ENABLE_THROW
+
 #include "src/Resources.h"
 #include "src/example.h"
 #include <nitrogl/ogl/ebo.h>
@@ -13,7 +15,6 @@
 #include <nitrogl/_internal/main_shader_program.h>
 #include <nitrogl/render_nodes/multi_render_node.h>
 #include <nitrogl/samplers/test_sampler.h>
-#include <nitrogl/samplers/color_sampler.h>
 #include <nitrogl/samplers/mix_sampler.h>
 #include <nitrogl/_internal/shader_compositor.h>
 //#include <nitrogl/ogl/typed_shader_program.h>
@@ -22,8 +23,8 @@
 using namespace nitrogl;
 
 struct CC {
-    int width() { return 600; }
-    int height() { return 600; }
+    int width() const { return 600; }
+    int height() const { return 600; }
 };
 
 int main() {

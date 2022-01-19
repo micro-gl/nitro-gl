@@ -37,7 +37,7 @@ namespace nitrogl {
         struct GVA {
             GVA()=default;
             nitrogl::generic_vertex_attrib_t data[2];
-            constexpr unsigned size() const { return 2; }
+            static constexpr unsigned size() { return 2; }
         };
 
         GVA gva{};
@@ -79,7 +79,7 @@ namespace nitrogl {
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
             program.updateOpacity(1.0f);
-            sampler.on_upload_uniforms();
+            sampler.upload_uniforms(program.id());
 
             glCheckError();
 

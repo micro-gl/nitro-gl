@@ -23,37 +23,70 @@ namespace nitrogl {
         }
 
     protected:
-        virtual sampler_t * on_sub_sampler_request(unsigned index) { return nullptr; }
-
-    protected:
         struct no_more_than_999_samplers_allowed {};
         const unsigned int _id;
         unsigned int _sub_samplers_count=0;
-        char _id_string[4]; // plus null termination
+        char _id_string[4]; // "###0"
+        char _id_string_len; // "###0"
 
-        sampler_t() : _id(assign_id()), _id_string{0} {
-            const auto len = nitrogl::facebook_uint32_to_str(_id, _id_string);
-            if(len>=3) {
+        sampler_t() : _id(assign_id()), _id_string{0}, _id_string_len(0) {
+            _id_string_len = nitrogl::facebook_uint32_to_str(_id, _id_string);
+            if(_id_string_len>3) {
 #ifdef NITROGL_ENABLE_THROW
                 throw no_more_than_999_samplers_allowed();
 #endif
             }
         }
+        static char * get_general_static_string_storage() {
+            // used for assembling strings for uniforms locations
+            static char storage[100]{0};
+            return storage;
+        }
 
     public:
+        GLint get_uniform_location(GLuint program, const char * name) const {
+            char s[50] {0};
+            auto i = _id_string;
+            s[0]='d';s[1]='a';s[2]='t';s[3]='a';s[4]='_';
+            s[5]=i[0];s[6]=i[1];s[7]=i[2];s[8]=i[3];s[9]=i[4];
+            char * next = s + 5 + _id_string_len;
+            *(next++) = '.';
+            for (;; ++name, ++next) {
+                const auto c = *name;
+                if(!c) break; // test null termination
+                *next=c;
+            }
+            *next='\0'; // add null termination
+            return glGetUniformLocation(program, s);
+        }
+        virtual ~sampler_t()=default;
         unsigned sub_samplers_count () const { return _sub_samplers_count; };
         sampler_t * sub_sampler(unsigned index) {
             return on_sub_sampler_request(index);
         }
         unsigned int id() const { return _id; }
         const char * id_string() const { return _id_string; }
-        virtual const char * name() { return ""; };
-        virtual const char * uniforms() { return nullptr; }
-        virtual const char * other_functions() { return "\n"; }
-        virtual const char * main() = 0;
+        virtual const char * name() const { return ""; };
+        virtual const char * uniforms() const { return nullptr; }
+        virtual const char * other_functions() const { return "\n"; }
+        virtual const char * main() const = 0;
+        void cache_uniforms_locations(GLuint program) {
+            const auto ssc = sub_samplers_count();
+            for (int ix = 0; ix < ssc; ++ix)
+                sub_sampler(ix)->cache_uniforms_locations(program);
+            on_cache_uniforms_locations(program);
+        };
+        void upload_uniforms(GLuint program) {
+            const auto ssc = sub_samplers_count();
+            for (int ix = 0; ix < ssc; ++ix)
+                sub_sampler(ix)->upload_uniforms(program);
+            on_upload_uniforms_request(program);
+        };
+
+    protected:
+        virtual sampler_t * on_sub_sampler_request(unsigned index) { return nullptr; }
         virtual void on_cache_uniforms_locations(GLuint program) {};
-        virtual void on_upload_uniforms() {}
-        virtual ~sampler_t()=default;
+        virtual void on_upload_uniforms_request(GLuint program) {}
     };
 
     template<unsigned N>

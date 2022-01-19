@@ -16,8 +16,8 @@
 namespace nitrogl {
 
     struct color_sampler_tag : public sampler_t {
-        const char * name() override { return "color_sampler"; }
-        const char * uniforms() override {
+        const char * name() const override { return "color_sampler"; }
+        const char * uniforms() const override {
             return R"(
 {
     vec4 color; // color
@@ -25,7 +25,7 @@ namespace nitrogl {
 )";
         }
 
-        const char * other_functions() override {
+        const char * other_functions() const override {
             return R"(
 vec4 other_function(float t) {
     return vec4(t);
@@ -33,7 +33,7 @@ vec4 other_function(float t) {
 )";
         }
 
-        const char * main() override {
+        const char * main() const override {
             return R"(
 (vec3 uv) {
     return data.color;
@@ -42,17 +42,14 @@ vec4 other_function(float t) {
         }
 
         void on_cache_uniforms_locations(GLuint program) override {
-            _uni_color_loc = glGetUniformLocation(program,
-                                    "color_sampler_color");
         }
 
-        void on_upload_uniforms() override {
-            glUniform4f(_uni_color_loc, color.r, color.g,
-                        color.b, color.a);
+        void on_upload_uniforms_request(GLuint program) override {
+            GLint loc = get_uniform_location(program, "color");
+            glUniform4f(loc, color.r, color.g, color.b, color.a);
         }
 
     private:
-        GLint _uni_color_loc = -1;
 
     public:
         color_t color;

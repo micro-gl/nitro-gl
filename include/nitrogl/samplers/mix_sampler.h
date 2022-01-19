@@ -17,12 +17,12 @@
 namespace nitrogl {
 
     struct mix_sampler : public multi_sampler<2> {
-        const char * name() override { return "color_sampler"; }
-        const char * uniforms() override {
+        const char * name() const override { return "mix_sampler"; }
+        const char * uniforms() const override {
             return nullptr;
         }
 
-        const char * other_functions() override {
+        const char * other_functions() const override {
             return R"(
 vec4 other_function(float t) {
     return vec4(t);
@@ -30,7 +30,7 @@ vec4 other_function(float t) {
             )";
         }
 
-        const char * main() override {
+        const char * main() const override {
             return R"(
 (vec3 uv) {
     return (sampler_0(uv) + sampler_1(uv))/2.0;
@@ -38,18 +38,8 @@ vec4 other_function(float t) {
             )";
         }
 
-        void on_cache_uniforms_locations(GLuint program) override {
-        }
-
-        void on_upload_uniforms() override {
-//            glUniform4f(_uni_color_loc, color.r, color.g,
-//                        color.b, color.a);
-        }
-
         color_sampler_tag sampler_1{1.0,0.0,0.0,1.0};
         color_sampler_tag sampler_2{0.0,1.0,0.0,1.0};
-
-    private:
 
     public:
         mix_sampler() : multi_sampler<2>() {

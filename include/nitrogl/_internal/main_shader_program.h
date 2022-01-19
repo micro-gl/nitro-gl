@@ -93,8 +93,8 @@ void main()
             // this is static because we know their locations is const and predictable,
             // so it does not change between instances of this shader. This saves on memory
             // requirements of this class so this is a win-win. putting this as static inside
-            // a method is atrick to avoid define it once in a separate cpp file
-            constexpr static VAS vas = {{
+            // a method is a trick to avoid define it once in a separate cpp file
+            static VAS vas = {{
                 {"VS_pos", 0,
                  shader_program::shader_attribute_component_type::Float},
                  {"VS_uvs_sampler", 1,
