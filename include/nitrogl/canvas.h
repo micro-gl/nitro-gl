@@ -170,12 +170,13 @@ namespace nitrogl {
         const rect & canvasWindowRect() const { return _window.canvas_rect; }
 
         // get canvas width
-        int width() const { return _window.canvas_rect.width(); };
+        unsigned int width() const { return _window.canvas_rect.width(); };
         // get canvas height
-        int height() const { return _window.canvas_rect.height(); };
+        unsigned int height() const { return _window.canvas_rect.height(); };
         // get the pixels array from the underlying bitmap
         void clear(const color_t &color) const {
             clear(color.r, color.g, color.b, color.a);
+            copy_to_backdrop();
         }
         void clear(float r, float g, float b, float a) const {
             _fbo.bind();
@@ -210,7 +211,7 @@ namespace nitrogl {
             int y_canvas = height() - c.bottom;
             int y_texture = texture.height() - (textureTop + c.height());
             _fbo.bind();
-            texture.use();
+            texture.use(0);
             glCopyTexSubImage2D(GL_TEXTURE_2D, 0, textureLeft, y_texture,
                                 c.left, y_canvas, c.width(), c.height());
             gl_texture::unuse();
@@ -221,7 +222,7 @@ namespace nitrogl {
 
         void drawRect(float left, float top, float right, float bottom,
                       mat3f transform = mat3f::identity(),
-                      float u0=0., float v0=0., float u1=1., float v1=1.,
+                      float u0=0., float v0=1., float u1=1., float v1=0.,
                       const mat3f & transform_uv = mat3f::identity(),
                       opacity_t opacity = 255) {
             static float t =0;
@@ -244,7 +245,8 @@ namespace nitrogl {
 
             // get shader from cache
             //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
-            mix_sampler sampler;
+//            mix_sampler sampler;
+            static color_sampler sampler(1.0,0.0,0.0,1.0);
             main_shader_program program =
                     shader_compositor::composite_main_program_from_sampler(sampler);
 
@@ -254,7 +256,9 @@ namespace nitrogl {
                     mat4f(transform), // promote it to mat4x4
                     mat4f::identity(),
                     mat_proj,
-                    transform_uv
+                    transform_uv,
+                    _tex_backdrop,
+                    width(), height()
             };
             _node_p4.render(program, sampler, data);
 
@@ -262,51 +266,7 @@ namespace nitrogl {
             copy_region_to_backdrop(int(left), int(top),
                                     int(right+0.5f), int(bottom+0.5f));
             fbo_t::unbind();
-        }
-
-        void drawRect_old(float left, float top, float right, float bottom,
-                      mat3f transform = mat3f::identity(),
-                      float u0=0., float v0=0., float u1=1., float v1=1.,
-                      const mat3f & transform_uv = mat3f::identity(),
-                      opacity_t opacity = 255) {
-            static float t =0;
-            t+=0.01;
-            glViewport(0, 0, width(), height());
-            _fbo.bind();
-            // inverted y projection, canvas coords to opengl
-            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
-                                                        float(height()), 0, -1, 1);
-            // make the transform about it's center of mass, a nice feature
-            transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
-
-            // buffers
-            float puvs[24] = {
-                    left,  bottom, u0, v0, 0.0, 1.0, // xyuvpq
-                    right, bottom, u1, v0, 0.0, 1.0,
-                    right, top,    u1, v1, 0.0, 1.0,
-                    left,  top,    u0, v1, 0.0, 1.0,
-                    };
-
-            // get shader from cache
-            //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
-            test_sampler sampler;
-            main_shader_program program =
-                    shader_compositor::composite_main_program_from_sampler(sampler);
-
-            // data
-            p4_render_node::data_type data = {
-                    puvs, 24,
-                    mat4f(transform), // promote it to mat4x4
-                    mat4f::identity(),
-                    mat_proj,
-                    transform_uv
-            };
-            _node_p4.render(program, sampler, data);
-
-            //
-            copy_region_to_backdrop(int(left), int(top),
-                                    int(right+0.5f), int(bottom+0.5f));
-            fbo_t::unbind();
+            copy_to_backdrop();
         }
 
         void drawRect_multi_node(float left, float top, float right, float bottom,

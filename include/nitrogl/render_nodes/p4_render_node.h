@@ -32,6 +32,10 @@ namespace nitrogl {
             const mat4f & mat_view;
             const mat4f & mat_proj;
             const mat3f & mat_uvs_sampler;
+            const gl_texture & backdrop_texture;
+            const GLuint window_width;
+            const GLuint window_height;
+            const float opacity;
         };
 
         struct GVA {
@@ -74,11 +78,16 @@ namespace nitrogl {
         void render(const program_type & program, sampler_t & sampler, const data_type & data) {
             const auto & d = data;
             program.use();
+            // vertex uniforms
             program.updateModelMatrix(d.mat_model);
             program.updateViewMatrix(d.mat_view);
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
-            program.updateOpacity(1.0f);
+            // fragment uniforms
+            program.update_backdrop_texture(d.backdrop_texture);
+            program.update_window_size(d.window_width, d.window_height);
+            program.updateOpacity(d.opacity);
+            // sampler uniforms
             sampler.upload_uniforms(program.id());
 
             glCheckError();

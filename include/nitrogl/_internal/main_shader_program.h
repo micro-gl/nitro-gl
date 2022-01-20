@@ -47,10 +47,17 @@ void main()
 
         constexpr static const char * const frag_other = R"foo(
 // uniforms
-uniform uint time;
+
+uniform struct DATA_MAIN {
+    uint time;
+    float opacity;
+    sampler2D texture_backdrop;
+    uvec2 window_size;
+} data_main;
 
 // in
 in vec3 PS_uvs_sampler;
+//layout(origin_upper_left) in vec4 gl_FragCoord;
 
 // out
 out vec4 FragColor;
@@ -65,9 +72,26 @@ vec4 sample1(vec3 uv) {
 
         constexpr static const char * const frag_main = R"foo(
 
+vec4 blend(vec4 s, vec4 b) {
+    return vec4((s.xyz+b.xyz)/2.0, 1.0);
+}
+
+vec4 sampler_001(vec2 uv) {
+    return vec4(uv.y,uv.y,uv.y, 1.0);
+}
+
 void main()
 {
-    FragColor = __SAMPLER_MAIN(PS_uvs_sampler);
+    vec2 coords = (vec2(0.0,data_main.window_size.y)-gl_FragCoord.xy)/data_main.window_size;
+//    vec2 coords = (gl_FragCoord.xy)/window_size;
+    vec4 bd_texel = texture(data_main.texture_backdrop, coords);
+    vec4 bd_texel2 = texture(data_main.texture_backdrop, coords);
+
+//    vec4 sampler_out = __SAMPLER_MAIN(PS_uvs_sampler);
+//    FragColor = blend(sampler_out, bd_texel);
+//    FragColor =vec4(coords, 0, 1.0);
+//    FragColor = vec4(coords.x, coords.x, coords.x, 1.0);
+    FragColor = sampler_001(PS_uvs_sampler.xy);
 }
         )foo";
 
@@ -81,7 +105,8 @@ void main()
         // I have to have this uniform location cache. It is different
         // from shader to shader instance, so I have no way around saving it.
         struct uniforms_type {
-            GLint mat_model=-1, mat_view=-1, mat_proj=-1, mat_transform_uvs=-1, opacity=-1, time=-1;
+            GLint mat_model=-1, mat_view=-1, mat_proj=-1, mat_transform_uvs=-1,
+            opacity=-1, time=-1, tex_backdrop=-1, window_size=-1;
         };
 
         uniforms_type uniforms;
@@ -132,8 +157,11 @@ void main()
             uniforms.mat_view = uniformLocationByName("mat_view");
             uniforms.mat_proj = uniformLocationByName("mat_proj");
             uniforms.mat_transform_uvs = uniformLocationByName("mat_transform_uvs");
-            uniforms.opacity = uniformLocationByName("opacity");
-            uniforms.time = uniformLocationByName("time");
+
+            uniforms.opacity = uniformLocationByName("data_main.opacity");
+            uniforms.time = uniformLocationByName("data_main.time");
+            uniforms.tex_backdrop = uniformLocationByName("data_main.texture_backdrop");
+            uniforms.window_size = uniformLocationByName("data_main.window_size");
         }
 
     public:
@@ -151,6 +179,15 @@ void main()
         { glUniform1f(uniforms.opacity, opacity); }
         void update_time(GLuint value) const
         { glUniform1ui(uniforms.time, value); }
+        void update_backdrop_texture(const gl_texture & texture) const
+        {
+            texture.use(0);
+            glUniform1i(uniforms.tex_backdrop, 0);
+        }
+        void update_window_size(GLuint w, GLuint h) const
+        {
+            glUniform2ui(uniforms.window_size, w, h);
+        }
 
     };
 

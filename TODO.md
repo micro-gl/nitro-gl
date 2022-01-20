@@ -22,3 +22,9 @@
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,
    normal blending and any of the porter-duff, we can use opengl blending.
+
+NOTES:
+- all samplers should be linear space. If one is pre-mul like a texture,
+then use an unmul sampler
+- branch in vertex shader for made-up uvs for traingles if not present
+- backdrop uvs should be calculated in place

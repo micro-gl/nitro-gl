@@ -16,11 +16,19 @@ namespace nitrogl {
         struct Normal {
             static const char * blend() {
                 return R"(
-(vec3 s vec3 t) {
+(vec3 s, vec3 b) {
     return s;
-}
-)";
-
+                })";
             };
         }
+
+        struct Multiply {
+            static const char * blend() {
+                return R"(
+(vec3 s, vec3 b) {
+    return s*b;
+                })";
+            };
+        }
+
 }
