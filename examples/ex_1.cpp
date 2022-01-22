@@ -36,7 +36,8 @@ int main() {
         canvas canva(500,500);
 
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+//        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_ONE, GL_ZERO);
         auto render = [&]() {
             static float t= 0;
             t+=0.005;
@@ -44,6 +45,7 @@ int main() {
 //            canva.drawRect(100, 100, 150, 150,
 //                           mat3f::rotation(math::deg_to_rad(t), 25, 25));
             canva.drawRect(0, 0, 250, 250);
+            canva.drawRect(125, 125, 125+250, 125+250);
 //            canva.drawRect(0, 125, 500, 260);
 //canva.drawRect(0, 250, 250, 270,
 //                           mat3f::rotation(math::deg_to_rad(t), 125, 10));

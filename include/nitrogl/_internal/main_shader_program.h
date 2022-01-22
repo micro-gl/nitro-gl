@@ -70,6 +70,8 @@ vec4 sample1(vec3 uv) {
         constexpr static const char * const frag_blend = "vec3 __blend_color";
         constexpr static const char * const frag_composite = "vec4 __composite_alpha";
 
+        constexpr static const char * const alpha_mul = R"(
+)";
         constexpr static const char * const frag_main = R"foo(
 
 vec4 blend(vec4 s, vec4 b) {
@@ -80,18 +82,27 @@ vec4 sampler_001(vec2 uv) {
     return vec4(uv.y,uv.y,uv.y, 1.0);
 }
 
+vec4 __alpha_mul(vec4 v) {
+    return vec4(v.rgb*v.a, v.a);
+}
+
+vec4 __alpha_un_mul(vec4 v) {
+    return vec4(v.rgb/v.a, v.a);
+}
+
 void main()
 {
-    vec2 coords = (vec2(0.0,data_main.window_size.y)-gl_FragCoord.xy)/data_main.window_size;
-//    vec2 coords = (gl_FragCoord.xy)/window_size;
-    vec4 bd_texel = texture(data_main.texture_backdrop, coords);
-    vec4 bd_texel2 = texture(data_main.texture_backdrop, coords);
+    // invert coords, consider putting in vertex shader
+    vec2 bd_uvs = (vec2(0.0, data_main.window_size.y)-gl_FragCoord.xy)/data_main.window_size;
+//    vec2 coords = (gl_FragCoord.xy)/data_main.window_size;
+    vec4 bd_texel = texture(data_main.texture_backdrop, bd_uvs);
+    vec4 sampler_out = __SAMPLER_MAIN(PS_uvs_sampler);
+    vec4 after_opacity = vec4(sampler_out.rgb, sampler_out.a*data_main.opacity);
 
-//    vec4 sampler_out = __SAMPLER_MAIN(PS_uvs_sampler);
-//    FragColor = blend(sampler_out, bd_texel);
+    FragColor = blend(after_opacity, bd_texel);
 //    FragColor =vec4(coords, 0, 1.0);
 //    FragColor = vec4(coords.x, coords.x, coords.x, 1.0);
-    FragColor = sampler_001(PS_uvs_sampler.xy);
+//    FragColor = sampler_001(coords);
 }
         )foo";
 

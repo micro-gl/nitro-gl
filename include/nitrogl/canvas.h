@@ -19,7 +19,7 @@
 #include "math/vertex2.h"
 #include "math/mat3.h"
 //#include "porter_duff/None.h"
-//#include "blend_modes/Normal.h"
+//#include "compositing/Normal.h"
 #ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
 #include "micro-tess/include/micro-tess/triangles.h"
 #include "micro-tess/include/micro-tess/polygons.h"
@@ -84,7 +84,7 @@ namespace nitrogl {
         p4_render_node _node_p4;
 //        p4_ _node_multi;
 
-        bool _pre_mul_alpha=false;
+        bool _is_pre_mul_alpha;
 
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
@@ -93,8 +93,8 @@ namespace nitrogl {
         // 1. create RBO with multisampling and attach it to color in fbo_t, and then blit to texture's fbo_t
         // if you are given texture, then draw into it
         explicit canvas(const gl_texture & tex) :
-                _tex_backdrop(gl_texture::empty(tex.width(), tex.height(), tex.internalFormat())),
-                _fbo(), _node_multi(), _node_p4(), _window() {
+            _tex_backdrop(gl_texture::empty(tex.width(), tex.height(), tex.internalFormat(), tex.is_premul_alpha())),
+                _fbo(), _node_multi(), _node_p4(), _window(), _is_pre_mul_alpha(tex.is_premul_alpha()) {
             glCheckError();
             updateClipRect(0, 0, tex.width(), tex.height());
             updateCanvasWindow(0, 0, tex.width(), tex.height());
@@ -106,9 +106,10 @@ namespace nitrogl {
         }
 
         // if you got nothing, draw to bound fbo
-        canvas(int width, int height) :
-                _tex_backdrop(gl_texture::empty(width, height, GL_RGBA)),
-                _fbo(fbo_t::from_current()), _node_multi(), _node_p4(), _window() {
+        canvas(int width, int height, bool is_pre_mul_alpha=true) :
+            _tex_backdrop(gl_texture::empty(width, height, GL_RGBA, is_pre_mul_alpha)),
+            _fbo(fbo_t::from_current()), _node_multi(), _node_p4(), _window(),
+            _is_pre_mul_alpha(is_pre_mul_alpha) {
             updateClipRect(0, 0, width, height);
             updateCanvasWindow(0, 0, width, height);
             _fbo.bind();
@@ -183,7 +184,7 @@ namespace nitrogl {
             glClearColor(r, g, b, a);
             glClear(GL_COLOR_BUFFER_BIT);
             copy_to_backdrop();
-            _fbo.unbind();
+            nitrogl::fbo_t::unbind();
         }
 
 #define max___(a, b) ((a)<(b) ? (b) : (a))
@@ -224,7 +225,7 @@ namespace nitrogl {
                       mat3f transform = mat3f::identity(),
                       float u0=0., float v0=1., float u1=1., float v1=0.,
                       const mat3f & transform_uv = mat3f::identity(),
-                      opacity_t opacity = 255) {
+                      float opacity = 1.0) {
             static float t =0;
             t+=0.01;
             glViewport(0, 0, width(), height());
@@ -248,7 +249,7 @@ namespace nitrogl {
 //            mix_sampler sampler;
             static color_sampler sampler(1.0,0.0,0.0,1.0);
             main_shader_program program =
-                    shader_compositor::composite_main_program_from_sampler(sampler);
+                    shader_compositor::composite_main_program_from_sampler(sampler, _is_pre_mul_alpha);
 
             // data
             p4_render_node::data_type data = {
@@ -258,7 +259,8 @@ namespace nitrogl {
                     mat_proj,
                     transform_uv,
                     _tex_backdrop,
-                    width(), height()
+                    width(), height(),
+                    opacity
             };
             _node_p4.render(program, sampler, data);
 

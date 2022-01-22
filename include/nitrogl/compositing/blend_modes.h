@@ -11,24 +11,23 @@
 #pragma once
 
 namespace nitrogl {
-    namespace blendmode {
+    using blend_mode = const char *;
+    struct blend_modes {
 
-        struct Normal {
-            static const char * blend() {
+        static const char * Normal() {
                 return R"(
-(vec3 s, vec3 b) {
+vec3 __BLEND(vec3 s, vec3 b) {
     return s;
-                })";
-            };
+})";
         }
 
-        struct Multiply {
-            static const char * blend() {
+        static const char * Multiply() {
                 return R"(
-(vec3 s, vec3 b) {
+vec3 __BLEND(vec3 s, vec3 b) {
     return s*b;
-                })";
-            };
-        }
+})";
+        };
+
+    }
 
 }

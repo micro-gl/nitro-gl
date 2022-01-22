@@ -15,6 +15,7 @@
 #include "nitrogl/_internal/main_shader_program.h"
 #include "nitrogl/_internal/string_utils.h"
 #include "nitrogl/samplers/sampler.h"
+#include "nitrogl/compositing/porter_duff.h"
 
 namespace nitrogl {
 
@@ -220,7 +221,9 @@ namespace nitrogl {
         };
 
     public:
-        static main_shader_program composite_main_program_from_sampler(sampler_t & sampler) {
+        static main_shader_program composite_main_program_from_sampler(sampler_t & sampler,
+                                                                       const char * blend_mode=nullptr,
+                                                                       const char * compositor=nullptr) {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
@@ -237,6 +240,10 @@ namespace nitrogl {
             buffers.write_char_array_pointer(main_shader_program::define_sampler);
             buffers.write_char_array_pointer(sampler.id_string());
             buffers.write_new_line();
+            // write compositing stuff
+            buffers.write_char_array_pointer(nitrogl::porter_duff::base());
+            buffers.write_char_array_pointer(compositor);
+            buffers.write_char_array_pointer(blend_mode);
             // write main shader
             buffers.write_char_array_pointer(main_shader_program::frag_main);
             // create shader

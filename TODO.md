@@ -28,3 +28,16 @@ NOTES:
 then use an unmul sampler
 - branch in vertex shader for made-up uvs for traingles if not present
 - backdrop uvs should be calculated in place
+- We can compute mip-maps at client side and the mip level at client side,
+because, the mip level is uniform accros because it is 2d and aligned except for
+quadrilaterals where there is a twist and the sampling rate is varying.
+  https://www.reddit.com/r/opengl/comments/3cdg5r/derivation_of_opengls_mipmap_level_computation/
+- all textures should be pre-multiplied alpha
+- all other samplers should be un-multiplied
+- 
+- backdrop texture does not need interpolation and min filter, therefore it can be mul/unmul alpha
+- if your texture uses any filter/interpolation and it has transperency, you need it to be alpha-mul
+- canvas inherits the alpha-stat of it's texture
+
+OPTIM:
+- if normal blend-mode and any porter-duff and canvas is pre-mul stat, then you can skip backdrop texture and do it all in open-gl
