@@ -44,6 +44,7 @@ void main()
         constexpr static const char * const frag_version = "#version 330 core\n";
 
         constexpr static const char * const define_sampler = "#define __SAMPLER_MAIN sampler_";
+        constexpr static const char * const define_premul_alpha = "\n#define __PRE_MUL_ALPHA\n";
 
         constexpr static const char * const frag_other = R"foo(
 // uniforms
@@ -74,34 +75,44 @@ vec4 sample1(vec3 uv) {
 )";
         constexpr static const char * const frag_main = R"foo(
 
-vec4 blend(vec4 s, vec4 b) {
-    return vec4((s.xyz+b.xyz)/2.0, 1.0);
-}
-
-vec4 sampler_001(vec2 uv) {
-    return vec4(uv.y,uv.y,uv.y, 1.0);
-}
-
-vec4 __alpha_mul(vec4 v) {
-    return vec4(v.rgb*v.a, v.a);
-}
-
-vec4 __alpha_un_mul(vec4 v) {
-    return vec4(v.rgb/v.a, v.a);
+// inplace: Cs = (1 - αb) x Cs + αb x B(Cb, Cs)
+vec4 __blend_in_place(vec4 src, vec4 backdrop, vec3 B) {
+    vec4 result;
+    result.rgb = (1.0 - backdrop.a) * src.rgb + backdrop.a * clamp(B, 0.0, 1.0);
+    result.a = src.a;
+    return result;
 }
 
 void main()
 {
-    // invert coords, consider putting in vertex shader
-    vec2 bd_uvs = (vec2(0.0, data_main.window_size.y)-gl_FragCoord.xy)/data_main.window_size;
+    // coords are screen space left to right, bottom is 0, top is 1.
+    vec2 bd_uvs = vec2(gl_FragCoord.x, gl_FragCoord.y)/data_main.window_size;
+
+// these are inverted
+//    vec2 bd_uvs = vec2(gl_FragCoord.x, data_main.window_size.y-gl_FragCoord.y)/data_main.window_size;
 //    vec2 coords = (gl_FragCoord.xy)/data_main.window_size;
+
     vec4 bd_texel = texture(data_main.texture_backdrop, bd_uvs);
+
+    // un mul alpha if backdrop is alpha-mul
+#ifdef __PRE_MUL_ALPHA
+    bd_texel.rgb /= bd_texel.a;
+#endif
+
     vec4 sampler_out = __SAMPLER_MAIN(PS_uvs_sampler);
     vec4 after_opacity = vec4(sampler_out.rgb, sampler_out.a*data_main.opacity);
+    vec3 blended_colors_only = __BLEND(after_opacity.rgb, bd_texel.rgb);
+    vec4 blended_colors_final = __blend_in_place(after_opacity, bd_texel, blended_colors_only);
+    vec4 composited = __COMPOSITE(blended_colors_final, bd_texel);
+    FragColor = composited;
 
-    FragColor = blend(after_opacity, bd_texel);
+#ifdef __PRE_MUL_ALPHA
+    FragColor.rgb *= FragColor.a;
+#endif
+
 //    FragColor =vec4(coords, 0, 1.0);
-//    FragColor = vec4(coords.x, coords.x, coords.x, 1.0);
+//    FragColor = vec4(bd_uvs.x, bd_uvs.x, bd_uvs.x, 1.0);
+//    FragColor = vec4(bd_uvs.y, bd_uvs.y, bd_uvs.y, 1.0);
 //    FragColor = sampler_001(coords);
 }
         )foo";

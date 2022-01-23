@@ -222,6 +222,7 @@ namespace nitrogl {
 
     public:
         static main_shader_program composite_main_program_from_sampler(sampler_t & sampler,
+                                                                       bool is_premul_alpha_result=true,
                                                                        const char * blend_mode=nullptr,
                                                                        const char * compositor=nullptr) {
             main_shader_program prog;
@@ -241,9 +242,15 @@ namespace nitrogl {
             buffers.write_char_array_pointer(sampler.id_string());
             buffers.write_new_line();
             // write compositing stuff
-            buffers.write_char_array_pointer(nitrogl::porter_duff::base());
-            buffers.write_char_array_pointer(compositor);
-            buffers.write_char_array_pointer(blend_mode);
+            if(compositor) {
+                buffers.write_char_array_pointer(nitrogl::porter_duff::base());
+                buffers.write_char_array_pointer(compositor);
+            }
+            if(blend_mode) {
+                buffers.write_char_array_pointer(blend_mode);
+            }
+            if(is_premul_alpha_result)
+                buffers.write_char_array_pointer(main_shader_program::define_premul_alpha);
             // write main shader
             buffers.write_char_array_pointer(main_shader_program::frag_main);
             // create shader

@@ -18,7 +18,9 @@ namespace nitrogl {
         static GLenum bits2type(unsigned bits)
         { return (bits<=8) ? GL_UNSIGNED_BYTE : (bits<=16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT); }
         static unsigned max(unsigned a, unsigned b) { return a<b ? b : a; }
+
     public:
+        static gl_texture un_generated_dummy() { return gl_texture(); }
         /**
          * create a texture definition from a tightly unpacked byte-array of pixels (no padding between rows).
          * This will create the same texture layout in gpu memory.
@@ -26,7 +28,9 @@ namespace nitrogl {
          */
         static gl_texture from_unpacked_image(GLsizei width, GLsizei height, const void * data,
                                               char r_bits, char g_bits, char b_bits, char a_bits,
-                                              bool is_premul_alpha=false) {
+                                              bool is_premul_alpha=false,
+                                              GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
+                                              GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) {
             const auto max_bits = max(max(r_bits, g_bits), max(b_bits, a_bits));
             GLenum type = bits2type(max_bits);
             GLenum format=GL_RGBA;
@@ -38,7 +42,8 @@ namespace nitrogl {
             else if(r_bits) { format=GL_RED; }
 
             auto tex = gl_texture(width, height, internalformat, is_premul_alpha);
-            tex.uploadImage(format, type, data, 1);
+            tex.uploadImage(format, type, data, 1, filter_mag, filter_min,
+                            wrap_s, wrap_t);
             return tex;
         }
         /**
@@ -48,7 +53,9 @@ namespace nitrogl {
          */
         static gl_texture from_packed_image(GLsizei width, GLsizei height, const void * data,
                                             char r_bits, char g_bits, char b_bits, char a_bits,
-                                            bool reversed=false, bool is_premul_alpha=false) {
+                                            bool reversed=false, bool is_premul_alpha=false,
+                                            GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
+                                            GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) {
             GLenum format=GL_RGBA, type=GL_UNSIGNED_INT_8_8_8_8;
             const bool r = reversed;
             const GLint internalformat = a_bits ? GL_RGBA : GL_RGB;
@@ -72,18 +79,22 @@ namespace nitrogl {
             else { /* custom converter with memory allocation ? */ }
 
             auto tex = gl_texture(width, height, internalformat, is_premul_alpha);
-            tex.uploadImage(format, type, data, 1);
+            tex.uploadImage(format, type, data, 1, filter_mag, filter_min,
+                            wrap_s, wrap_t);
             return tex;
         }
-        static gl_texture empty(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA, bool is_premul_alpha=false) {
+        static gl_texture empty(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA, bool is_premul_alpha=false,
+                                GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
+                                GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) {
             auto tex = gl_texture(width, height, internalformat, is_premul_alpha);
-            tex.uploadImage(GL_RED, GL_UNSIGNED_BYTE, nullptr);
+            tex.uploadImage(GL_RED, GL_UNSIGNED_BYTE, nullptr, 1, filter_mag, filter_min,
+                            wrap_s, wrap_t);
             return tex;
         }
         // use this as a hack if you know what you are doing
-        static gl_texture from_id(GLuint id, GLint internalformat, GLsizei width, GLsizei height, bool owner) {
-            return { id, internalformat, width, height, owner };
-        }
+//        static gl_texture from_id(GLuint id, GLint internalformat, GLsizei width, GLsizei height, bool owner) {
+//            return { id, internalformat, width, height, owner };
+//        }
 
     private:
         GLuint _id;
@@ -91,9 +102,9 @@ namespace nitrogl {
         GLsizei _width, _height;
         bool owner, _is_pre_mul_alpha;
 
-        gl_texture(GLuint id, GLint internalformat, GLsizei width, GLsizei height, bool owner) :
-            _id(id), _internalformat(internalformat), _width(width), _height(height), owner(owner) {};
-
+//        gl_texture(GLuint id, GLint internalformat, GLsizei width, GLsizei height, bool owner) :
+//            _id(id), _internalformat(internalformat), _width(width), _height(height), owner(owner) {};
+        gl_texture() : _id(-1) {  } // ungenerated for internal usage
     public:
         /**
          * The most general ctor
@@ -135,13 +146,6 @@ namespace nitrogl {
         void generate() {
             if(!_id) {
                 glGenTextures(1, &_id);
-                use(0);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                // these two are required for opengl es 2.0
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                unuse();
             }
         }
         bool wasGenerated() const { return _id; }
@@ -159,12 +163,20 @@ namespace nitrogl {
          *                  continuously and I recommend saving images with alignment of 1 (no-padding)
          * @return
          */
-        bool uploadImage(GLenum format, GLenum type, const void * data, GLint unpack_row_alignment=1) const {
+        bool uploadImage(GLenum format, GLenum type, const void * data, GLint unpack_row_alignment=1,
+                         GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
+                         GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
             if(!wasGenerated()) return false;
             use(0);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
             glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
                          format, type, data);
+            const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
+            if(requires_mip_maps) glGenerateMipmap(GL_TEXTURE_2D);
             return true;
         }
 
@@ -175,14 +187,25 @@ namespace nitrogl {
          * @param pixels data of sub texture, has to be with the same format and type
          * @return
          */
-        bool uploadSubImage(GLint x, GLint y, GLsizei width, GLsizei height,
-                            GLenum format, GLenum type, const void * pixels,
-                            GLint unpack_row_alignment= 1) const {
+        bool uploadSubImage(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format,
+                            GLenum type, const void * pixels, GLint unpack_row_alignment= 1,
+                            GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
+                            GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
             if(!wasGenerated()) return false;
             use(0);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
             glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, format, type, pixels);
+            const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
+            if(requires_mip_maps) glGenerateMipmap(GL_TEXTURE_2D);
             return true;
+        }
+        void createMipMaps() const {
+            use(0);
+            glGenerateMipmap(GL_TEXTURE_2D);
         }
         bool is_premul_alpha() const { return _is_pre_mul_alpha; }
         GLuint id() const { return _id; }

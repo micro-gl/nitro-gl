@@ -18,16 +18,24 @@ namespace nitrogl {
                 return R"(
 vec3 __BLEND(vec3 s, vec3 b) {
     return s;
-})";
+}
+)";
         }
 
         static const char * Multiply() {
-                return R"(
+            return R"(
 vec3 __BLEND(vec3 s, vec3 b) {
     return s*b;
 })";
         };
 
-    }
+        static const char * Overlay() {
+            return R"(
+vec3 __BLEND(vec3 s, vec3 b) {
+    return s*b;
+})";
+        };
+
+    };
 
 }

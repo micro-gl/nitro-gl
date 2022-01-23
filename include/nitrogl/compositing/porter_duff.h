@@ -40,17 +40,16 @@ vec4 __internal_porter_duff(float Fa, float Fb, vec4 s, vec4 b) {
 
     return result;
 }
-
 )";
         }
 
         static const char * source_over() {
             return R"(
-vec3 __COMPOSITE(vec4 s, vec4 b) {
+vec4 __COMPOSITE(vec4 s, vec4 b) {
     return __internal_porter_duff(1.0, 1.0 - s.a, s, b);
 })";
         }
 
-    }
+    };
 
 }

@@ -38,6 +38,7 @@ quadrilaterals where there is a twist and the sampling rate is varying.
 - backdrop texture does not need interpolation and min filter, therefore it can be mul/unmul alpha
 - if your texture uses any filter/interpolation and it has transperency, you need it to be alpha-mul
 - canvas inherits the alpha-stat of it's texture
+- opengl textures are top=1.0, bottom=0.0 
 
 OPTIM:
 - if normal blend-mode and any porter-duff and canvas is pre-mul stat, then you can skip backdrop texture and do it all in open-gl
