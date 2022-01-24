@@ -85,6 +85,7 @@ vec4 __blend_in_place(vec4 src, vec4 backdrop, vec3 B) {
 
 void main()
 {
+    // get backdrop uvs
     // coords are screen space left to right, bottom is 0, top is 1.
     vec2 bd_uvs = vec2(gl_FragCoord.x, gl_FragCoord.y)/data_main.window_size;
 
@@ -92,22 +93,26 @@ void main()
 //    vec2 bd_uvs = vec2(gl_FragCoord.x, data_main.window_size.y-gl_FragCoord.y)/data_main.window_size;
 //    vec2 coords = (gl_FragCoord.xy)/data_main.window_size;
 
+    // sample from backdrop
     vec4 bd_texel = texture(data_main.texture_backdrop, bd_uvs);
-
     // un mul alpha if backdrop is alpha-mul
 #ifdef __PRE_MUL_ALPHA
     bd_texel.rgb /= bd_texel.a;
 #endif
 
+    // sample from un-multiplied-alpha sampler
     vec4 sampler_out = __SAMPLER_MAIN(PS_uvs_sampler);
-    vec4 after_opacity = vec4(sampler_out.rgb, sampler_out.a*data_main.opacity);
-    vec3 blended_colors_only = __BLEND(after_opacity.rgb, bd_texel.rgb);
-    vec4 blended_colors_final = __blend_in_place(after_opacity, bd_texel, blended_colors_only);
+    // apply opacity
+    sampler_out.a *= data_main.opacity;
+    // blend mode with un-multiplied-alpha backdrop
+    vec3 blended_colors_only = __BLEND(sampler_out.rgb, bd_texel.rgb);
+    vec4 blended_colors_final = __blend_in_place(sampler_out, bd_texel, blended_colors_only);
+    // alpha composite with backdrop --> result is ALPHA-MULTIPLIED
     vec4 composited = __COMPOSITE(blended_colors_final, bd_texel);
     FragColor = composited;
 
-#ifdef __PRE_MUL_ALPHA
-    FragColor.rgb *= FragColor.a;
+#ifndef __PRE_MUL_ALPHA
+    FragColor.rgb /= FragColor.a;
 #endif
 
 //    FragColor =vec4(coords, 0, 1.0);

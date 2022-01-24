@@ -17,38 +17,142 @@ namespace nitrogl {
 
         static const char * base() {
             return R"(
-// a0 = αs x Fa + αb x Fb
 // co = αs x Fa x Cs + αb x Fb x Cb
-// according to PDF spec, page 322, if we use source-over
-// result is NOT alpha pre-multiplied color
+// a0 = αs x Fa + αb x Fb
+// result is pre-multiplied alpha color
 vec4 __internal_porter_duff(float Fa, float Fb, vec4 s, vec4 b) {
     vec4 result;
-    float as = s.a;
-    float ab = b.a;
-    vec3 Cs = s.rgb;
-    vec3 Cb = b.rgb;
-
-    result.a = as * Fa + ab * Fb;//alpha;
-
-//    if(!areEqual(result.a , 0.0)) {
-        // unmultiply alpha since the Porter-Duff equation results
-        // in pre-multiplied alpha colors
-    result.rgb = (as * Fa * Cs + ab * Fb * Cb);
-//    result.rgb /= result.a;
-
-//    }
-
+    result.a = s.a * Fa + b.a * Fb;
+    result.rgb = (s.a * Fa * s.rgb + b.a * Fb * b.rgb);
     return result;
 }
 )";
         }
 
-        static const char * source_over() {
+        static const char * Clear() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(0.0, 0.0, s, b);
+}
+)";
+        }
+
+        static const char * Copy() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(1.0, 0.0, s, b);
+}
+)";
+        }
+
+        static const char * Destination() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(0.0, 1.0, s, b);
+}
+)";
+        }
+
+        static const char * Source() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(1.0, 0.0, s, b);
+}
+)";
+        }
+
+        static const char * SourceOver() {
             return R"(
 vec4 __COMPOSITE(vec4 s, vec4 b) {
     return __internal_porter_duff(1.0, 1.0 - s.a, s, b);
-})";
+}
+)";
         }
+
+        static const char * SourceOverOpaque() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return vec4((s.a * s.rgb + (1.0 - s.a) * b.rgb), 1.0);
+}
+)";
+        }
+
+
+        static const char * SourceIn() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(b.a, 0.0, s, b);
+}
+)";
+        }
+
+        static const char * SourceOut() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(1.0 - b.a, 0.0, s, b);
+}
+)";
+        }
+
+        static const char * SourceAtop() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(b.a, 1.0 - s.a, s, b);
+}
+)";
+        }
+
+        static const char * DestinationOver() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(1.0 - b.a, 1.0, s, b);
+}
+)";
+        }
+
+
+        static const char * DestinationIn() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(0.0, s.a, s, b);
+}
+)";
+        }
+
+
+        static const char * DestinationOut() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(0.0, 1.0 - s.a, s, b);
+}
+)";
+        }
+
+
+        static const char * DestinationAtop() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(1.0 - b.a, s.a, s, b);
+}
+)";
+        }
+
+        static const char * XOR() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(1.0 - b.a, 1.0 - s.a, s, b);
+}
+)";
+        }
+
+        static const char * Lighter() {
+            return R"(
+vec4 __COMPOSITE(vec4 s, vec4 b) {
+    return __internal_porter_duff(1.0, 1.0, s, b);
+}
+)";
+        }
+
 
     };
 

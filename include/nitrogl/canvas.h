@@ -254,13 +254,13 @@ namespace nitrogl {
 
             // get shader from cache
             //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
-//            mix_sampler sampler;
-            static color_sampler sampler(1.0,0.0,0.0,1.0);
+            static mix_sampler sampler;
+//            static color_sampler sampler(1.0,0.0,0.0,1.0);
             main_shader_program program =
                     shader_compositor::composite_main_program_from_sampler(
                             sampler, _is_pre_mul_alpha,
-                            blend_modes::Multiply(),
-                            porter_duff::source_over());
+                            blend_modes::Normal(),
+                            porter_duff::SourceOverOpaque());
 
             // data
             p4_render_node::data_type data = {
