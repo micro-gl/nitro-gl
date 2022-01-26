@@ -10,12 +10,13 @@
 ========================================================================================*/
 #pragma once
 
-#include "nitrogl/ogl/shader_program.h"
-#include "nitrogl/math/mat4.h"
-#include "nitrogl/_internal/main_shader_program.h"
-#include "nitrogl/_internal/string_utils.h"
-#include "nitrogl/samplers/sampler.h"
-#include "nitrogl/compositing/porter_duff.h"
+#include <nitrogl/compositing/blend_modes.h>
+#include "../ogl/shader_program.h"
+#include "../math/mat4.h"
+#include "../_internal/main_shader_program.h"
+#include "../_internal/string_utils.h"
+#include "../samplers/sampler.h"
+#include "../compositing/porter_duff.h"
 
 namespace nitrogl {
 
@@ -223,8 +224,8 @@ namespace nitrogl {
     public:
         static main_shader_program composite_main_program_from_sampler(sampler_t & sampler,
                                                                        bool is_premul_alpha_result=true,
-                                                                       const char * blend_mode=nullptr,
-                                                                       const char * compositor=nullptr) {
+                                                                       const nitrogl::blend_mode blend_mode=nullptr,
+                                                                       const nitrogl::compositor compositor=nullptr) {
             main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
@@ -243,7 +244,8 @@ namespace nitrogl {
             buffers.write_new_line();
             // write compositing stuff
             if(compositor) {
-                buffers.write_char_array_pointer(nitrogl::porter_duff::base());
+                if(compositor!=nitrogl::porter_duff::SourceOverOpaque())
+                    buffers.write_char_array_pointer(nitrogl::porter_duff::base());
                 buffers.write_char_array_pointer(compositor);
             }
             if(blend_mode) {

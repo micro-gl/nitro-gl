@@ -5,6 +5,7 @@
 6. maybe create a GVA - generic vertex attribute system = DONE
 7. shader compositor
 8. 
+19. general texture sampler_t
 9. static pool for programs
 10. static linear pool for samplers uniforms cache
 11. render node for triangle batches
@@ -12,10 +13,6 @@
 13. test idea of missing uvs coords for triangle batches
 14. basic blending
 15. basic compositing
-16. copy shader and node
-17. a simple texture sampler_t
-18. clipping
-19. general texture sampler_t
 20. AA with rbos or filter shader
 21. implement many samplers
 

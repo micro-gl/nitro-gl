@@ -153,7 +153,6 @@ vec4 __COMPOSITE(vec4 s, vec4 b) {
 )";
         }
 
-
     };
 
 }

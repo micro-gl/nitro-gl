@@ -6,8 +6,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <vector>
-//#include <microgl/text/bitmap_font.h>
 #include "../libs/stb_image/stb_image.h"
 #include "../libs/rapidxml/rapidxml.hpp"
 
@@ -15,7 +13,7 @@ using std::cout;
 using std::endl;
 
 /**
- * basic resources manager, includes built in json and image support.
+ * basic resources loader, includes built in json and image support.
  *
  */
 class Resources  {
@@ -25,71 +23,76 @@ public:
      * basic uncompressed image info structure
      */
     struct image_info_t {
-        // path or name
-        std::string path;
-        std::string name;
+        unsigned char * data;
         int width;
         int height;
         int channels;
-        unsigned char * data;
+        bool is_pre_mul_alpha;
+    };
+
+    struct buffer_t {
+        char * data;
+        unsigned long size;
     };
 
     Resources()=delete;
 
-    /**
-     * asset folder path
-     *
-     */
-    static std::string getAssetFolder() {
-        return "assets/";
+    static
+    image_info_t loadImageFromCompressedPath(const char * path, bool pre_mul_alpha=true) {
+        auto buf = loadFileAsByteArray(path);
+        auto img = loadImageFromCompressedMemory(reinterpret_cast<unsigned char *>(buf.data),
+                                                 buf.size, pre_mul_alpha);
+        delete buf.data;
+        return img;
     }
 
-    /**
-     * load an image from_sampler path
-     *
-     * @param path relative to assets folder
-     * @param name name of the image
-     *
-     * @return  image_info_t instance
-     */
     static
-    image_info_t loadImageFromCompressedPath(const std::string &path, const std::string &name = "");
+    image_info_t loadImageFromCompressedMemory(unsigned char *byte_array,
+                                               unsigned int length_bytes,
+                                               bool pre_mul_alpha=true) {
+        //    stbi_set_flip_vertically_on_load(true);
+        int width, height, channels;
+        unsigned char * data = stbi_load_from_memory(byte_array, length_bytes, &width, &height,
+                                                     &channels, 0);
+        image_info_t info {data, width, height, channels, pre_mul_alpha };
+        if(pre_mul_alpha and channels==4) {
+            using uint = unsigned int;
+            const auto size = width*height;
+            auto p = data;
+            for (int ix = 0; ix < size; ++ix, p+=4) {
+                const uint a = p[3];
+                p[0] = (uint(p[0])*a)/255;
+                p[1] = (uint(p[1])*a)/255;
+                p[2] = (uint(p[2])*a)/255;
+            }
+        }
+        return info;
+    }
 
-    /**
-     * load an image from_sampler raw byte array of memory (decode PNG)
-     *
-     * @param byte_array byte array of the image
-     * @param path length_bytes size
-     * @param name name of the image
-     *
-     * @return  image_info_t instance
-     */
-    static image_info_t loadImageFromCompressedMemory(unsigned char *byte_array, unsigned int length_bytes, const std::string & name) ;
+    static buffer_t loadFileAsByteArray(const char * file_name, unsigned int pad=0) {
+        std::ifstream ifs(file_name, std::ios::binary);
+        ifs.seekg(0, std::ios::end);
+        auto isGood = ifs.good();
+        if(!isGood) return {nullptr, 0};
+        auto length = static_cast<size_t>(ifs.tellg());
+        auto *ret = new char[length + pad];
+        ifs.seekg(0, std::ios::beg);
+        ifs.read(ret, length);
+        ifs.close();
+        return { ret, length };
+    }
 
-    /**
-     * load a file from_sampler disk as a byte array
-     *
-     * @param file_name the file path
-     *
-     * @return a vector as a byte array
-     */
-    static std::vector<unsigned char> * loadFileAsByteArray(const std::string &file_name);
-
-
-
-    /**
-     * load text file
-     *
-     * @param file_name the file path relative to assets folder
-     * @param save save the contents in resources memory ?
-     *
-     * @return true/false on failure
-     */
-    static
-    std::string loadTextFile(const std::string &file_name);
+    static char * loadTextFile(const char * file_name) {
+        auto buffer = loadFileAsByteArray(file_name, 1);
+        buffer.data[buffer.size-1] = '\0';
+        return buffer.data;
+    }
 
     static
-    void loadXML(const std::string &file_name, rapidxml::xml_document<> & doc);
+    void loadXML(const char *file_name, rapidxml::xml_document<> & doc) {
+        doc.clear();
+        doc.parse<0>(loadTextFile(file_name));
+    }
 
 //    template<typename BITMAP>
 //    static microgl::text::bitmap_font<BITMAP> loadFont(const std::string &name) {
@@ -128,9 +131,5 @@ public:
 //        stbi_set_flip_vertically_on_load(true);
 //        return font;
 //    }
-protected:
-
-private:
-    std::string _asset_folder;
 
 };

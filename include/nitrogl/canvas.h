@@ -93,9 +93,9 @@ namespace nitrogl {
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
     public:
         void generate_backdrop() {
-            auto tex = gl_texture::empty(width(), height(), GL_RGBA, _is_pre_mul_alpha,
+            // move
+            _tex_backdrop = gl_texture::empty(width(), height(), GL_RGBA, _is_pre_mul_alpha,
                                          GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-            _tex_backdrop = nitrogl::traits::move(tex);
         }
 
         // if wants AA:
@@ -125,6 +125,7 @@ namespace nitrogl {
             copy_to_backdrop();
             _node_p4.init();
             _node_multi.init();
+            glCheckError();
         }
 
         /**

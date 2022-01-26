@@ -5,7 +5,7 @@ message(\n===========\n${PROJECT_NAME} \n===========\n)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS_DEBUG  ${CMAKE_CXX_FLAGS_DEBUG})
-set(CMAKE_CXX_FLAGS_RELEASE " -fno-rtti -fno-exceptions -fno-unwind-tables \
+set(CMAKE_CXX_FLAGS_RELEASE " -fno-rtti -fno-unwind-tables \
                             -fstrict-aliasing -O3  -flto \
                             -Wstrict-aliasing -fno-math-errno \
                             -ffast-math -fno-threadsafe-statics \
@@ -31,8 +31,6 @@ if(DEFINED SDL2_FOUND)
     set(SOURCES_SHARED
 #            libs/glad_3.2_core/src/glad.c
             libs/stb_image/stb_image.cpp
-            src/Resources.cpp
-            src/Resources.cpp
             src/example.cpp
             )
 
