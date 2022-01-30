@@ -8,6 +8,7 @@
 #include <fstream>
 #include "../libs/stb_image/stb_image.h"
 #include "../libs/rapidxml/rapidxml.hpp"
+#include <nitrogl/ogl/gl_texture.h>
 
 using std::cout;
 using std::endl;
@@ -38,10 +39,10 @@ public:
     Resources()=delete;
 
     static
-    image_info_t loadImageFromCompressedPath(const char * path, bool pre_mul_alpha=true) {
+    image_info_t loadImageFromCompressedPath(const char * path, bool pre_mul_alpha=true, bool flip_vertically=false) {
         auto buf = loadFileAsByteArray(path);
         auto img = loadImageFromCompressedMemory(reinterpret_cast<unsigned char *>(buf.data),
-                                                 buf.size, pre_mul_alpha);
+                                                 buf.size, pre_mul_alpha, flip_vertically);
         delete buf.data;
         return img;
     }
@@ -49,24 +50,56 @@ public:
     static
     image_info_t loadImageFromCompressedMemory(unsigned char *byte_array,
                                                unsigned int length_bytes,
-                                               bool pre_mul_alpha=true) {
-        //    stbi_set_flip_vertically_on_load(true);
+                                               bool pre_mul_alpha=true,
+                                               bool flip_vertically=false) {
         int width, height, channels;
+        if(flip_vertically)
+            stbi_set_flip_vertically_on_load(true);
         unsigned char * data = stbi_load_from_memory(byte_array, length_bytes, &width, &height,
                                                      &channels, 0);
         image_info_t info {data, width, height, channels, pre_mul_alpha };
         if(pre_mul_alpha and channels==4) {
-            using uint = unsigned int;
+            using uint_t = unsigned int;
             const auto size = width*height;
             auto p = data;
             for (int ix = 0; ix < size; ++ix, p+=4) {
-                const uint a = p[3];
-                p[0] = (uint(p[0])*a)/255;
-                p[1] = (uint(p[1])*a)/255;
-                p[2] = (uint(p[2])*a)/255;
+                const uint_t a = p[3];
+                p[0] = (uint_t(p[0])*a)/255;
+                p[1] = (uint_t(p[1])*a)/255;
+                p[2] = (uint_t(p[2])*a)/255;
             }
+        } else if (channels==4) { // this for test
+            using uint_t = unsigned int;
+            const auto size = width*height;
+            auto p = data;
+            for (int ix = 0; ix < size; ++ix, p+=4) {
+                const uint_t a = p[3];
+                if(a==0) p[1]=255;
+            }
+
         }
         return info;
+    }
+
+    static
+    nitrogl::gl_texture loadTexture(const char * path, bool pre_mul_alpha=true) {
+        auto img = loadImageFromCompressedPath(path, pre_mul_alpha);
+        auto tex = nitrogl::gl_texture::from_unpacked_image(img.width, img.height, img.data, 8, 8, 8,
+                                                        img.channels==4?8:0, pre_mul_alpha);
+        delete img.data;
+        return tex;
+    }
+
+    static
+    nitrogl::gl_texture loadTextureFromCompressedMemory(unsigned char *byte_array,
+                                               unsigned int length_bytes,
+                                               bool pre_mul_alpha=true,
+                                               bool flip_vertically=false) {
+        auto img = loadImageFromCompressedMemory(byte_array, length_bytes, pre_mul_alpha, flip_vertically);
+        auto tex = nitrogl::gl_texture::from_unpacked_image(img.width, img.height, img.data, 8, 8, 8,
+                                                            img.channels==4?8:0,pre_mul_alpha);
+        delete img.data;
+        return tex;
     }
 
     static buffer_t loadFileAsByteArray(const char * file_name, unsigned int pad=0) {

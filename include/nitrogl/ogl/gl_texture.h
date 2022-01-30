@@ -20,6 +20,13 @@ namespace nitrogl {
         static unsigned max(unsigned a, unsigned b) { return a<b ? b : a; }
 
     public:
+        static GLint next_texture_unit() {
+            static GLint next=-1;
+            static GLint max=-1;
+            if(max<0) glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max);
+            return (++next)%max;
+        }
+
         static gl_texture un_generated_dummy() { return gl_texture(); }
         /**
          * create a texture definition from a tightly unpacked byte-array of pixels (no padding between rows).
@@ -206,6 +213,16 @@ namespace nitrogl {
         void createMipMaps() const {
             use(0);
             glGenerateMipmap(GL_TEXTURE_2D);
+        }
+        void update_parameters(GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
+                               GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
+            use(0);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
+            const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
+            if(requires_mip_maps) glGenerateMipmap(GL_TEXTURE_2D);
         }
         bool is_premul_alpha() const { return _is_pre_mul_alpha; }
         GLuint id() const { return _id; }

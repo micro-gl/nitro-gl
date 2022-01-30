@@ -208,8 +208,9 @@ void main()
         { glUniform1ui(uniforms.time, value); }
         void update_backdrop_texture(const gl_texture & texture) const
         {
-            texture.use(0);
-            glUniform1i(uniforms.tex_backdrop, 0);
+            const auto unit = gl_texture::next_texture_unit();
+            texture.use(unit);
+            glUniform1i(uniforms.tex_backdrop, unit);
         }
         void update_window_size(GLuint w, GLuint h) const
         {

@@ -186,10 +186,10 @@ namespace nitrogl {
         // get the pixels array from the underlying bitmap
         void clear(const color_t &color) const {
             clear(color.r, color.g, color.b, color.a);
-            copy_to_backdrop();
         }
         void clear(float r, float g, float b, float a) const {
             _fbo.bind();
+            if(_is_pre_mul_alpha) { r*=a; g*=a; b*=a; }
             glClearColor(r, g, b, a);
             glClear(GL_COLOR_BUFFER_BIT);
             copy_to_backdrop();
@@ -230,11 +230,12 @@ namespace nitrogl {
 
     public:
 
-        void drawRect(float left, float top, float right, float bottom,
+        void drawRect(sampler_t & sampler,
+                      float left, float top, float right, float bottom,
                       mat3f transform = mat3f::identity(),
                       float u0=0., float v0=1., float u1=1., float v1=0.,
                       const mat3f & transform_uv = mat3f::identity(),
-                      float opacity = 1.0/2) {
+                      float opacity = 1.0/1) {
             static float t =0;
             t+=0.01;
             glViewport(0, 0, width(), height());
@@ -242,7 +243,7 @@ namespace nitrogl {
             // inverted y projection, canvas coords to opengl
             auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
                                                         float(height()), 0, -1, 1);
-            // make the transform about it's center of mass, a nice feature
+            // make the transform about it's origin, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
 
             // buffers
@@ -255,7 +256,7 @@ namespace nitrogl {
 
             // get shader from cache
             //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
-            static mix_sampler sampler;
+//            static mix_sampler sampler;
 //            static color_sampler sampler(1.0,0.0,0.0,1.0);
             main_shader_program program =
                     shader_compositor::composite_main_program_from_sampler(
@@ -276,6 +277,7 @@ namespace nitrogl {
             };
             glDisable(GL_BLEND);
             _node_p4.render(program, sampler, data);
+            glEnable(GL_BLEND);
 
             //
 //            copy_region_to_backdrop(int(left), int(top),
