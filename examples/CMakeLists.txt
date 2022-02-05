@@ -27,7 +27,8 @@ if(DEFINED SDL2_FOUND)
     set(INCLUDES  ${SDL2_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
     set(SOURCES
             ex_1.cpp
-            ex_sampler_texture.cpp)
+            ex_sampler_texture.cpp
+            ex_cache.cpp)
 
     set(SOURCES_SHARED
 #            libs/glad_3.2_core/src/glad.c
