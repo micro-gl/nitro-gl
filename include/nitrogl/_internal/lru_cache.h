@@ -194,6 +194,7 @@ namespace nitrogl {
         void put(machine_word key, int value) {
             auto start = c2p(key);
             item_t next_displaced_item {};
+            int head_pos=0;
             // first iterations to find a spot
             for (int step = 0; step < items_count; ++step) {
                 const auto pos = c2p(start + step); // modulo
@@ -223,21 +224,22 @@ namespace nitrogl {
                     // connect to head
                     move_to_head(pos, false);
                     // displace next iterations
-                    start = pos+1;
+                    start = pos;
+                    head_pos=pos;
                     break;
                 }
             }
-
+            print();
+//            return;
             // now displacements, this is not in the above loop because lru cache
-            // requires some mods.
+            // requires some mods. NONE of the displaced items can be heads.
             bool has_pending_displace=true;
             while(has_pending_displace) {
                 has_pending_displace=false;
-                for (int step = 0; step < items_count; ++step) {
+                for (int step = 1; step < items_count; ++step) {
                     const auto pos = c2p(start + step); // modulo
                     auto & item = _items[pos];
                     if (item.is_free()) { // free item, let's conquer
-                        // remove current node
                         item = next_displaced_item;
                         // now item was copied, he has linked-list info but his
                         // pred/succ do not point to him, so let's fix it
@@ -246,14 +248,20 @@ namespace nitrogl {
                     }
                     if (distance_to_home_of(item.key, pos) < step) { // let's robin hood
                         // swap
+                        // before all, update siblings, because current pos might be the sibling
                         const auto temp = next_displaced_item;
                         next_displaced_item = item;
+                        if(temp.next() == pos) next_displaced_item.set_prev(pos);
+                        if(temp.prev() == pos) next_displaced_item.set_next(pos);
 
+                        // now, detach current node
                         remove_node(pos);
+                        // assign displaced
                         item = temp;
                         // update lru linked list, only change its siblings
                         insert_detached_node_before(pos, item.next());
-                        start = pos+1;
+//                        print();
+                        start = pos;
                         has_pending_displace=true;
                         break;
                     }
@@ -289,11 +297,6 @@ namespace nitrogl {
                 insert_detached_node_before(pos_predecessor, item.next());
                 if(is_pos_head) _head=pos_predecessor;
                 item.set_is_free(true);
-                // now update the lru linked list of it's siblings to it's new pos
-//                _items[item.prev()].set_next(pos_predecessor);
-//                _items[item.next()].set_prev(pos_predecessor);
-//                if(pos==_head) _head=pos_predecessor;
-
             }
         }
 
@@ -301,14 +304,15 @@ namespace nitrogl {
             int curr = _head;
             std::cout << "\n====== Printing in MRU \n[\n";
             if(curr==-1) { std::cout << "- empty !!!\n"; return; }
-
+            int counter=items_count;
             do {
                 const auto item = _items[curr];
                 std::cout << curr << " = ( K: " << item.key << ", V: "
                           << item.value() << ", free: " << item.is_free() << ", <-: "
                           << item.prev() << ", ->: " << item.next() << " ),\n";
                 curr = item.next();
-            } while(curr!=_head);
+                --counter;
+            } while(curr!=_head && counter);
             std::cout << "]\n";
         }
 
