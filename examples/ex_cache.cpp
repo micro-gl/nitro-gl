@@ -13,23 +13,21 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         glCheckError();
-//        lru_cache<2, int> cache;
+        lru_cache<4, int> cache;
+
+        //
 //        cache.print();
 //        cache.put(0, 0);
-//        cache.print();
-//        cache.put(1, 1);
-//        cache.print();
-//        cache.put(4, 0);
-//        cache.print();
-//        cache.remove(4);
-//        cache.print();
-//        cache.remove(0);
+//        cache.put(16, 1);
+//        cache.put(32, 2);
 //        cache.print();
 //        cache.remove(0);
 //        cache.print();
 //
+//        return;
+//        //
 
-        lru_cache<4, int> cache;
+
         cache.print();
         cache.put(0, 0);
         cache.put(1, 1);
@@ -37,6 +35,21 @@ int main() {
         cache.put(3, 3);
         cache.print();
         cache.put(16, 10);
+        cache.print();
+        cache.put(32, 10);
+        cache.print();
+        cache.put(33, 12);
+        cache.print();
+//        cache.remove(0);
+        cache.print();
+        cache.remove(32);
+        cache.print();
+        cache.remove(16);
+        cache.print();
+        cache.put(13, 13);
+        cache.put(13+16, 13);
+        cache.print();
+        cache.remove(13);
         cache.print();
 
     };

@@ -62,27 +62,26 @@ namespace nitrogl {
         };
 
         item_t _items[items_count];
-        int _head, _free_list;
+        int _lru_list, _free_list;
 
     public:
         using value_type = int;
 
-        lru_cache() : _items{}, _head(-1), _free_list(-1) {
+        lru_cache() : _items{}, _lru_list(-1), _free_list(-1) {
             // set linked list
-//            for (int ix = 0; ix < items_count; ++ix) {
-//                auto & item = _items[ix];
-//                item.key=0;
-//                item.set_value(ix);
-//                item.set_prev(ix-1);
-//                item.set_next(ix+1);
-//                item.set_is_free(true);
-//            }
+            for (int ix = 0; ix < items_count; ++ix) {
+                auto & item = _items[ix];
+                item.key=0;
+                item.set_value(ix);
+                item.set_prev(ix-1);
+                item.set_next(ix+1);
+                item.set_is_free(true);
+            }
             // a node is head/tail if it's prev/next is itself
-            _head=-1;
-//            _free_list=0;
-//            _items[items_count-1].set_is_free(true);
-//            _items[items_count-1].set_next(_free_list);
-//            _items[_free_list].set_prev(items_count-1);
+            _lru_list=-1;
+            _free_list=0;
+            _items[items_count-1].set_next(_free_list);
+            _items[_free_list].set_prev(items_count-1);
         }
 
     private:
@@ -112,61 +111,44 @@ namespace nitrogl {
             return -1;
         }
 
-        void move_to_head(int pos, bool is_free) {
+        void move_attached_node_to_list_head(item_t & node, int pos, int & list) {
             // this item is at the head already, nothing to do
-            if(pos==_head) return;
-            if(!is_free) remove_node(pos);
-            insert_detached_node_before(pos, _head);
-            _head=pos;
-            return;
-
-            auto & item = _items[pos];
-
-            // first remove the node
-            {
-                const auto prev = item.prev();
-                const auto next = item.next();
-                _items[prev].set_next(next);
-                _items[next].set_prev(prev);
-            }
-            // now put it in the head
-            {
-                auto & head_item = _items[_head];
-                auto & tail_item = _items[head_item.prev()];
-                item.set_next(_head);
-                item.set_prev(head_item.prev());
-                head_item.set_prev(pos);
-                tail_item.set_next(pos);
-            }
-            // tag
-            _head=pos;
+            if(pos == list) return;
+            remove_node(node, pos, list);
+            insert_detached_node_before(node, pos, list, list);
+            list=pos;
+        }
+        void move_detached_node_to_list_head(item_t & node, int pos, int & list) {
+            insert_detached_node_before(node, pos, list, list);
+            list=pos;
         }
 
-        void remove_node(int pos) {
-            auto & item = _items[pos];
+        void remove_node(const item_t & node, int pos, int & list) {
+//            auto & item = _items[pos];
             // first remove the item
-            const auto prev = item.prev();
-            const auto next = item.next();
+            const auto prev = node.prev();
+            const auto next = node.next();
             _items[prev].set_next(next);
             _items[next].set_prev(prev);
             //
-            if(pos==_head) _head = next!=pos ? next : -1;
+            if(pos == list) list = (next!=pos ? next : -1);
         }
 
-        void insert_detached_node_before(int pos, int before) {
-            item_t & node = _items[pos];
+        void insert_detached_node_before(item_t & node, int pos, int before, int & list) {
+//            item_t & node = _items[pos];
             item_t & before_node = _items[before];
             if(before >= 0) {
+                auto before_node_prev = before_node.prev();
                 node.set_next(before);
-                node.set_prev(before_node.prev());
+                node.set_prev(before_node_prev);
                 //
-                _items[before_node.prev()].set_next(pos);
+                _items[before_node_prev].set_next(pos);
                 before_node.set_prev(pos);
             }
             else { // first item
                 node.set_next(pos);
                 node.set_prev(pos);
-                _head=pos;
+                list=pos;
             }
         }
 
@@ -185,16 +167,16 @@ namespace nitrogl {
         query_type get(machine_word key) {
             const auto pos = internal_pos_of(key);
             if(pos==-1) return { 0, false };
-            int payload = _items[pos].value();
+            auto & node = _items[pos];
             // lru-cache update
-            move_to_head(pos, false);
-            return { payload, true };
+            move_to_list_head(node, pos, _lru_list);
+            return { node.value(), true };
         }
 
         void put(machine_word key, int value) {
             auto start = c2p(key);
             item_t next_displaced_item {};
-            int head_pos=0;
+            int base_dist=0;
             // first iterations to find a spot
             for (int step = 0; step < items_count; ++step) {
                 const auto pos = c2p(start + step); // modulo
@@ -204,32 +186,30 @@ namespace nitrogl {
                     item.key = key;
                     item.set_value(value);
                     item.set_is_free(false);
-                    move_to_head(pos, true);
+                    remove_node(item, pos, _free_list);
+                    move_detached_node_to_list_head(item, pos, _lru_list);
                     return;
                 }
                 if (item.key == key) { // found, let's update value
                     item.set_value(value);
-                    move_to_head(pos, false);
+                    move_attached_node_to_list_head(item, pos, _lru_list);
                     return;
                 }
-                if (distance_to_home_of(item.key, pos) < step) { // let's robin hood
+                base_dist = distance_to_home_of(item.key, pos);
+                if (base_dist < step) { // let's robin hood
                     // swap
                     next_displaced_item = item;
                     item.key = key;
                     item.set_value(value);
-                    // move to head, special case ignoring neighborhood of previous member.
-                    // displaced item takes his linked list info with him. So we just ignore and
-                    // new item at head
-                    // now put it in the head
-                    // connect to head
-                    move_to_head(pos, false);
-                    // displace next iterations
+                    // move to head
+//                    move_to_list_head(pos, false);
+                    move_attached_node_to_list_head(item, pos, _lru_list);
+                     // displace next iterations
                     start = pos;
-                    head_pos=pos;
                     break;
                 }
             }
-            print();
+//            print();
 //            return;
             // now displacements, this is not in the above loop because lru cache
             // requires some mods. NONE of the displaced items can be heads.
@@ -240,32 +220,37 @@ namespace nitrogl {
                     const auto pos = c2p(start + step); // modulo
                     auto & item = _items[pos];
                     if (item.is_free()) { // free item, let's conquer
-                        item = next_displaced_item;
                         // now item was copied, he has linked-list info but his
                         // pred/succ do not point to him, so let's fix it
-                        insert_detached_node_before(pos, item.next());
+                        remove_node(item, pos, _free_list);
+                        item = next_displaced_item;
+                        insert_detached_node_before(item, pos, item.next(), _lru_list);
                         return;
                     }
-                    if (distance_to_home_of(item.key, pos) < step) { // let's robin hood
-                        // swap
-                        // before all, update siblings, because current pos might be the sibling
+                    int item_dist = distance_to_home_of(item.key, pos);
+                    if (item_dist < base_dist+step) { // let's robin hood
+                        // before all, current displaced item might have wanted to move
+                        // to one of its siblings(prev/next), so make a copy and update them.
                         const auto temp = next_displaced_item;
                         next_displaced_item = item;
                         if(temp.next() == pos) next_displaced_item.set_prev(pos);
                         if(temp.prev() == pos) next_displaced_item.set_next(pos);
 
                         // now, detach current node
-                        remove_node(pos);
+                        remove_node(item, pos, _lru_list);
                         // assign displaced
                         item = temp;
                         // update lru linked list, only change its siblings
-                        insert_detached_node_before(pos, item.next());
+                        insert_detached_node_before(item, pos, item.next(), _lru_list);
 //                        print();
+                        // prepare for next iteration
+                        base_dist = item_dist;
                         start = pos;
                         has_pending_displace=true;
                         break;
                     }
                 }
+//                print();
             }
 
         }
@@ -275,8 +260,9 @@ namespace nitrogl {
             if(start==-1) return;
 
             auto & removed_item = _items[start];
-            remove_node(start);
+            remove_node(removed_item, start, _lru_list);
             removed_item.set_is_free(true);
+            move_detached_node_to_list_head(removed_item, start, _free_list);
             ++start;
 //            print();
 //            return;
@@ -291,28 +277,44 @@ namespace nitrogl {
                 if(distance_to_home_of(item.key, pos) == 0) return;
                 // other-wise, we need to move it left because it's left sibling is empty
                 const auto pos_predecessor = c2p(start + step - 1); // modulo
-                bool is_pos_head = pos==_head;
-                remove_node(pos);
-                _items[pos_predecessor] = item;
-                insert_detached_node_before(pos_predecessor, item.next());
-                if(is_pos_head) _head=pos_predecessor;
+                bool is_pos_head = pos == _lru_list;
+                remove_node(item, pos, _lru_list);
+                auto & predecessor = _items[pos_predecessor];
+                remove_node(predecessor, pos_predecessor, _free_list);
+                predecessor = item;
+                int insert_pred_before = is_pos_head ? _lru_list : predecessor.next();
+                insert_detached_node_before(predecessor, pos_predecessor, insert_pred_before, _lru_list);
+                if(is_pos_head) _lru_list=pos_predecessor;
                 item.set_is_free(true);
+                move_detached_node_to_list_head(item, pos, _free_list);
             }
         }
 
-        void print() const {
-            int curr = _head;
-            std::cout << "\n====== Printing in MRU \n[\n";
-            if(curr==-1) { std::cout << "- empty !!!\n"; return; }
+#define LRU_PRINT_SEQ 0
+#define LRU_PRINT_ORDER_MRU 1
+#define LRU_PRINT_ORDER_FREE_LIST 2
+
+    void print(char order=1) const {
+            const bool order_seq = order==LRU_PRINT_SEQ;
+            const bool order_mru = order==LRU_PRINT_ORDER_MRU;
+            const bool order_free = order==LRU_PRINT_ORDER_FREE_LIST;
+            int start = order_seq ? 0 : order_mru ? _lru_list : _free_list;
+            int stop = order_seq ? items_count : order_mru ? _lru_list : _free_list;
+            const char * str_order = order_seq ? "SEQUENCE" : order_mru ? "MRU" : "FREE";
+            std::cout << "\n====== Printing in " << str_order << " order \n"
+                      << "- mru head is " << _lru_list << ", free head is "
+                      << _free_list << "\n[\n";
+            if(start==-1) return;
             int counter=items_count;
             do {
-                const auto item = _items[curr];
-                std::cout << curr << " = ( K: " << item.key << ", V: "
+                const auto item = _items[start];
+                const char * head_str = start == _lru_list ? "* " : start == _free_list ? "$ " : "";
+                std::cout << head_str << start << " = ( K: " << item.key << ", V: "
                           << item.value() << ", free: " << item.is_free() << ", <-: "
                           << item.prev() << ", ->: " << item.next() << " ),\n";
-                curr = item.next();
-                --counter;
-            } while(curr!=_head && counter);
+                start = order_seq ? (start + 1) : item.next();
+                ++counter;
+            } while(start != stop && counter);
             std::cout << "]\n";
         }
 
