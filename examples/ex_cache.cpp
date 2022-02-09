@@ -5,30 +5,35 @@
 
 #include "src/example.h"
 #include "src/Resources.h"
+#include <nitrogl/traits.h>
 #include <nitrogl/_internal/lru_cache.h>
 
 using namespace nitrogl;
+
+struct TT {
+    uint32_t a; //4
+    uint8_t b; // 1
+    uint16_t c; // 2
+
+};
 
 int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         glCheckError();
-        lru_cache<4, int> cache;
+        int bb = sizeof (long);
+//        lru_cache<4, unsigned int, std::allocator<char>> cache{0.125f};
+//        lru_cache<10, unsigned int, nitrogl::std_rebind_allocator<>> cache{0.125f};
+        lru_cache<21, unsigned long, nitrogl::std_rebind_allocator<char>> cache{0.125f};
+
+        for (int ix = 0; ix < 15*2; ++ix) {
+            cache.put(ix, ix);
+        }
 
         //
-//        cache.print();
-//        cache.put(0, 0);
-//        cache.put(16, 1);
-//        cache.put(32, 2);
-//        cache.print();
-//        cache.remove(0);
-//        cache.print();
-//
-//        return;
-//        //
+        cache.print(1, 10);
 
-
-        cache.print();
+        return;
         cache.put(0, 0);
         cache.put(1, 1);
         cache.put(2, 2);
@@ -51,6 +56,10 @@ int main() {
         cache.print();
         cache.remove(13);
         cache.print();
+        cache.clear();
+        cache.print();
+
+
 
     };
 
