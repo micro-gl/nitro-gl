@@ -28,7 +28,7 @@ namespace nitrogl {
      * @tparam machine_word the machine word type = short, int or long
      */
     template<int size_bits=10, class machine_word=long, class Allocator=void>
-    class lru_cache {
+    class bits_robin_lru_cache {
         using mw = machine_word;
         static constexpr int sb=size_bits;
         static constexpr int size_of_mw_bytes=sizeof (mw);
@@ -87,7 +87,7 @@ namespace nitrogl {
 
     public:
 
-        lru_cache(float load_factor=0.5f, const allocator_type & allocator = allocator_type()) :
+        bits_robin_lru_cache(float load_factor=0.5f, const allocator_type & allocator = allocator_type()) :
                             _items(nullptr), _mru_list(-1), _free_list(-1), _mru_size(0),
                             _max_size(compute_max_items(load_factor)), _allocator(allocator) {
             constexpr bool correcto = (size_of_mw_bytes==4 and (size_bits>=1 and size_bits<=10)) or
@@ -109,7 +109,7 @@ namespace nitrogl {
             _items[items_count-1].set_next(_free_list);
             _items[_free_list].set_prev(items_count-1);
         }
-        ~lru_cache() {
+        ~bits_robin_lru_cache() {
             _allocator.deallocate(_items, items_count);
         }
 
@@ -118,7 +118,6 @@ namespace nitrogl {
         constexpr int capacity() const { return items_count; }
         int size() const { return _mru_size; }
         int maxSize() const { return _max_size; }
-
         struct query_type {
             int payload;
             bool found;
@@ -349,7 +348,6 @@ namespace nitrogl {
 
     void print(char order=1, int how_many=-1) const {
 #ifdef LRU_CACHE_ALLOW_PRINT
-
             const bool order_seq = order==LRU_PRINT_SEQ;
             const bool order_mru = order==LRU_PRINT_ORDER_MRU;
             const bool order_free = order==LRU_PRINT_ORDER_FREE_LIST;
@@ -362,8 +360,9 @@ namespace nitrogl {
             std::cout << "- MAX SIZE is " << _max_size << ", LOAD FACTOR is " << float(maxSize())/capacity()
                       << "\n";
             std::cout << "- LRU size is " << _mru_size << ", FREE size is "
-                      << (capacity() - _mru_size) << ", CAPACITY is " << capacity()
-                      << "\n[\n";
+                      << (capacity() - _mru_size) << ", CAPACITY is " << capacity() << '\n';
+            std::cout << "- Printing " << (how_many==-1 ? "All" : std::to_string(how_many)) << " Items \n";
+            std::cout << "[\n";
             if(start==-1) return;
             do {
                 if(how_many--==0) break;
