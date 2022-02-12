@@ -8,6 +8,7 @@
 #include <nitrogl/traits.h>
 #include <nitrogl/_internal/bits_robin_lru_cache.h>
 #include <nitrogl/_internal/bits_robin_lru_pool.h>
+#include <nitrogl/_internal/bits_linear_probe_lru_pool.h>
 
 using namespace nitrogl;
 
@@ -18,89 +19,91 @@ struct TT {
 
 };
 
-void test_cache_2() {
+void test_cache_linear_probe() {
     int bb = sizeof (long);
     //        bits_robin_lru_cache<4, unsigned int, std::allocator<char>> cache{0.125f};
     //        bits_robin_lru_cache<10, unsigned int, nitrogl::std_rebind_allocator<>> cache{0.125f};
-    bits_robin_lru_cache<4, unsigned int, nitrogl::std_rebind_allocator<char>> cache{0.125f};
+    bits_linear_probe_lru_pool<4, unsigned int, nitrogl::std_rebind_allocator<char>> pool{0.125f};
 
-    //        for (int ix = 0; ix < 15*2; ++ix) {
-    //            cache.put(ix, ix);
-    //        }
-    //
+    pool.print();
 
-    //        cache.print(1, 10);
+    //    for (int ix = 0; ix < 15*2; ++ix) {
+    //        pool.get(ix);
+    //        pool.print();
+    //     }
+    //    pool.get(28);
+    //    pool.print();
+
     //
     //        return;
-    cache.put(0, 0);
-    cache.put(1, 1);
-    cache.put(2, 2);
-    cache.put(3, 3);
-    cache.print();
-    cache.put(16, 10);
-    cache.print();
-    cache.put(32, 10);
-    cache.print();
-    cache.put(33, 12);
-    cache.print();
-    //        cache.remove(0);
-    cache.print();
-    cache.remove(32);
-    cache.print();
-    cache.remove(16);
-    cache.print();
-    cache.put(13, 13);
-    cache.put(13+16, 13);
-    cache.print();
-    cache.remove(13);
-    cache.print();
-    cache.clear();
-    cache.print();
+    pool.get(0);
+    pool.get(1);
+    pool.get(2);
+    pool.get(3);
+    pool.print();
+    pool.get(16);
+    pool.print();
+    pool.get(32);
+    pool.print();
+    pool.get(33);
+    pool.print();
+    //        pool.remove(0);
+    pool.print();
+    pool.remove(32);
+    pool.print();
+    pool.remove(16);
+    pool.print();
+    pool.get(13);
+    pool.get(13 + 16);
+    pool.print();
+    pool.remove(13);
+    pool.print();
+    pool.clear();
+    pool.print();
 
 
 }
 
-void test_cache_1() {
+void test_cache_robin_hood() {
     int bb = sizeof (long);
-    //        bits_robin_lru_cache<4, unsigned int, std::allocator<char>> cache{0.125f};
-    //        bits_robin_lru_cache<10, unsigned int, nitrogl::std_rebind_allocator<>> cache{0.125f};
-    bits_robin_lru_pool<4, unsigned int, nitrogl::std_rebind_allocator<char>> cache{0.0f};
-    cache.print();
+    //        bits_robin_lru_cache<4, unsigned int, std::allocator<char>> pool{0.125f};
+    //        bits_robin_lru_cache<10, unsigned int, nitrogl::std_rebind_allocator<>> pool{0.125f};
+    bits_robin_lru_pool<4, unsigned int, nitrogl::std_rebind_allocator<char>> pool{0.0f};
+    pool.print();
 
 //    for (int ix = 0; ix < 15*2; ++ix) {
-//        cache.get(ix);
-//        cache.print();
+//        pool.get(ix);
+//        pool.print();
 //     }
-//    cache.get(28);
-//    cache.print();
-
+//    pool.get(28);
+//    pool.print();
 
     //
     //        return;
-    cache.get(0);
-    cache.get(1);
-    cache.get(2);
-    cache.get(3);
-    cache.print();
-    cache.get(16);
-    cache.print();
-    cache.get(32);
-    cache.print();
-    cache.get(33);
-    cache.print();
-    //        cache.remove(0);
-    cache.print();
-    cache.remove(32);
-    cache.print();
-    cache.remove(16);
-    cache.print();
-    cache.get(13);
-    cache.get(13+16);
-    cache.print();
-    cache.remove(13);
-    cache.print();
-    cache.clear();
-    cache.print();
+    pool.get(0);
+    pool.get(1);
+    pool.get(2);
+    pool.get(3);
+    pool.print();
+    pool.get(16);
+    pool.print();
+    pool.get(32);
+    pool.print();
+    pool.get(33);
+    pool.print();
+    //        pool.remove(0);
+    pool.print();
+    pool.remove(32);
+    pool.print();
+    pool.remove(16);
+    pool.print();
+    pool.get(13);
+    pool.get(13 + 16);
+    pool.print();
+    pool.remove(13);
+    pool.print();
+    pool.clear();
+    pool.print();
 
 
 }
@@ -110,7 +113,8 @@ int main() {
     auto on_init = [](SDL_Window *, void *) {
         glCheckError();
 
-        test_cache_1();
+//        test_cache_linear_probe();
+        test_cache_robin_hood();
     };
 
     example_init(on_init);
