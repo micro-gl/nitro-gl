@@ -1,3 +1,13 @@
+/*========================================================================================
+ Copyright (2021), Tomer Shalev (tomer.shalev@gmail.com, https://github.com/HendrixString).
+ All Rights Reserved.
+ License is a custom open source semi-permissive license with the following guidelines:
+ 1. unless otherwise stated, derivative work and usage of this file is permitted and
+    should be credited to the project and the author of this project.
+ 2. Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+========================================================================================*/
 #pragma once
 
 namespace nitrogl {
@@ -12,8 +22,8 @@ namespace nitrogl {
     /**
      * LRU Cache and pool for integer values with constrained bits:
      * 1. upto 10 bits per value for 32 bits keys
-     * 2. upto 21 bits per value for 64 bits keys
-     * This uses a hash table with robin hood probing and in-place linked-list,
+     * 2. upto 20 bits per value for 64 bits keys
+     * This uses a hash table with linear probing and in-place linked-list,
      * and is very conservative with memory, which allows CPU caches to load many entries at once.
      *
      * NOTES:
@@ -21,7 +31,7 @@ namespace nitrogl {
      * - for 32 bits keys, each entry is 64 bit.
      * - for 64 bits keys, each entry is 128 bit.
      * - The size of the cache is a power of 2 of the bits for value, which gives some optimizations.
-     * - perfect for small caches: up to 1024 entries for 32 bit keys and 2,097,152 for 64 bit keys.
+     * - perfect for small caches: up to 1024 entries for 32 bit keys and 1,048,576 for 64 bit keys.
      * - perfect for storing integer indices.
      *
      * @tparam size_bits the integer bits size
@@ -61,24 +71,12 @@ namespace nitrogl {
             inline void set_next(int value) {
                 data = (data & (~mask_next)) | (mw(value & mm) << (sb<<1));
             }
-            inline void set_tombstone_true() {
-                data = data | mask_tombstone;
-            }
-            inline void set_tombstone_false() {
-                data = data & (~mask_tombstone);
-            }
-            inline void set_free_true() {
-                data = data | mask_free;
-            }
-            inline void set_free_false() {
-                data = data & (~mask_free);
-            }
-            inline void set_is_free_and_tombstone_true() {
-                data = data | mask_free_and_tombstone;
-            }
-            inline void set_is_free_and_tombstone_false() {
-                data = data & (~mask_free_and_tombstone);
-            }
+            inline void set_tombstone_true() { data = data | mask_tombstone; }
+            inline void set_tombstone_false() { data = data & (~mask_tombstone); }
+            inline void set_free_true() { data = data | mask_free; }
+            inline void set_free_false() { data = data & (~mask_free); }
+            inline void set_is_free_and_tombstone_true() { data = data | mask_free_and_tombstone; }
+            inline void set_is_free_and_tombstone_false() { data = data & (~mask_free_and_tombstone); }
         };
 
     public:
@@ -109,7 +107,8 @@ namespace nitrogl {
         }
 
     public:
-        bits_linear_probe_lru_pool(float load_factor=0.5f, const allocator_type & allocator = allocator_type()) :
+        bits_linear_probe_lru_pool(float load_factor=0.5f,
+                                   const allocator_type & allocator = allocator_type()) :
                             _items(nullptr), _mru_list(-1), _free_list(-1), _mru_size(0),
                             _max_size(compute_max_items(load_factor)), _allocator(allocator) {
             constexpr bool correcto = (size_of_mw_bytes==4 and (size_bits>=1 and size_bits<=10)) or
@@ -271,7 +270,7 @@ namespace nitrogl {
             _items[_free_list].set_prev(items_count-1);
         }
 
-    void print(char order=1, int how_many=-1) const {
+        void print(char order=LRU_PRINT_ORDER_MRU, int how_many=-1) const {
 #ifdef LRU_CACHE_ALLOW_PRINT
             const bool order_seq = order==LRU_PRINT_SEQ;
             const bool order_mru = order==LRU_PRINT_ORDER_MRU;
@@ -291,11 +290,12 @@ namespace nitrogl {
             if(start==-1) return;
             do {
                 if(how_many--==0) break;
-                const auto item = _items[start];
+                const item_t item = _items[start];
                 const char * head_str = start == _mru_list ? "* " : start == _free_list ? "$ " : "";
-                std::cout << head_str << start << " = ( K: " << item.key << ", V: "
-                          << item.value() << ", free: " << item.is_free() << ", <-: "
-                          << item.prev() << ", ->: " << item.next() << " ),\n";
+                std::cout << head_str << start << " = ( K: " << item.key << ", V: " << item.value()
+                          << ", free: " << item.is_free() << ", tomb: " << item.is_tombstone()
+                          << ", <-: " << item.prev() << ", ->: " << item.next()
+                          << " ),\n";
                 start = order_seq ? (start + 1) : item.next();
             } while(start != stop);
             std::cout << "]\n";

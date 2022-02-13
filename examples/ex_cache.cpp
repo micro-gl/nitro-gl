@@ -23,19 +23,20 @@ void test_cache_linear_probe() {
     int bb = sizeof (long);
     //        bits_robin_lru_cache<4, unsigned int, std::allocator<char>> cache{0.125f};
     //        bits_robin_lru_cache<10, unsigned int, nitrogl::std_rebind_allocator<>> cache{0.125f};
-    bits_linear_probe_lru_pool<4, unsigned int, nitrogl::std_rebind_allocator<char>> pool{0.125f};
+    bits_linear_probe_lru_pool<4, unsigned int, nitrogl::std_rebind_allocator<char>> pool{0.5f};
 
     pool.print();
 
-    //    for (int ix = 0; ix < 15*2; ++ix) {
-    //        pool.get(ix);
-    //        pool.print();
-    //     }
-    //    pool.get(28);
-    //    pool.print();
+    for (int ix = 0; ix < 15*2; ++ix) {
+        pool.get(ix);
+        pool.print();
+     }
+    pool.print();
+    pool.get(28);
+    pool.print();
 
-    //
-    //        return;
+    return;
+
     pool.get(0);
     pool.get(1);
     pool.get(2);
@@ -58,6 +59,10 @@ void test_cache_linear_probe() {
     pool.print();
     pool.remove(13);
     pool.print();
+    pool.get(33);
+    pool.print();
+    pool.get(5);
+    pool.print();
     pool.clear();
     pool.print();
 
@@ -68,7 +73,7 @@ void test_cache_robin_hood() {
     int bb = sizeof (long);
     //        bits_robin_lru_cache<4, unsigned int, std::allocator<char>> pool{0.125f};
     //        bits_robin_lru_cache<10, unsigned int, nitrogl::std_rebind_allocator<>> pool{0.125f};
-    bits_robin_lru_pool<4, unsigned int, nitrogl::std_rebind_allocator<char>> pool{0.0f};
+    bits_robin_lru_pool<4, unsigned int, nitrogl::std_rebind_allocator<char>> pool{0.5f};
     pool.print();
 
 //    for (int ix = 0; ix < 15*2; ++ix) {
@@ -113,8 +118,8 @@ int main() {
     auto on_init = [](SDL_Window *, void *) {
         glCheckError();
 
-//        test_cache_linear_probe();
-        test_cache_robin_hood();
+        test_cache_linear_probe();
+//        test_cache_robin_hood();
     };
 
     example_init(on_init);
