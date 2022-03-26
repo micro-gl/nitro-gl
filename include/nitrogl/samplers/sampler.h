@@ -12,6 +12,7 @@
 
 #include "../traits.h"
 #include "../_internal/string_utils.h"
+#include "../_internal/murmur.h"
 
 namespace nitrogl {
 
@@ -62,7 +63,7 @@ namespace nitrogl {
         virtual ~sampler_t()=default;
         unsigned sub_samplers_count () const { return _sub_samplers_count; };
         sampler_t * sub_sampler(unsigned index) {
-            return on_sub_sampler_request(index);
+            return sub_sampler(index);
         }
         unsigned int id() const { return _id; }
         const char * id_string() const { return _id_string; }
@@ -83,8 +84,19 @@ namespace nitrogl {
             on_upload_uniforms_request(program);
         };
 
+        virtual sampler_t * operator[](unsigned idx) {
+            return sub_sampler(idx);
+        }
+        virtual nitrogl::uintptr_type hash_code() const {
+            microc::iterative_murmur<nitrogl::uintptr_type> murmur;
+            murmur.begin(reinterpret_cast<nitrogl::uintptr_type>(main()));
+            for (unsigned int ix = 0; ix < _sub_samplers_count; ++ix)
+                murmur.next(sub_samplers()[ix].hash_code());
+            return murmur.end();
+        }
+
     protected:
-        virtual sampler_t * on_sub_sampler_request(unsigned index) { return nullptr; }
+        virtual sampler_t * sub_samplers() const { return nullptr; }
         virtual void on_cache_uniforms_locations(GLuint program) {};
         virtual void on_upload_uniforms_request(GLuint program) {}
     };
@@ -95,8 +107,8 @@ namespace nitrogl {
         sampler_t * _sub_samplers[N];
 
     protected:
-        sampler_t * on_sub_sampler_request(unsigned index) override {
-            return _sub_samplers[index];
+        sampler_t * sub_samplers() const override {
+            return _sub_samplers;
         }
 
     public:

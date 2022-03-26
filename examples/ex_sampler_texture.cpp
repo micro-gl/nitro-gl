@@ -46,7 +46,7 @@ int main() {
 //            canva.drawRect(100, 100, 150, 150,
 //                           mat3f::rotation(math::deg_to_rad(t), 25, 25));
             canva.drawRect(tex_sampler_1, 0, 0, 250, 250);
-            canva.drawRect(tex_sampler_2, 250, 0, 500, 250);
+            canva.drawRect(sampler_mix, 250, 0, 500, 250);
             canva.drawRect(tex_sampler_3, 125, 125, 125+250, 125+250);
 //            canva.drawRect(0, 125, 500, 260);
 //canva.drawRect(0, 250, 250, 270,
