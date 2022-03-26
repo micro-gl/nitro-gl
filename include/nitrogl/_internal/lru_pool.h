@@ -47,6 +47,22 @@ namespace microc {
             class machine_word=long, class Allocator=void>
     class lru_pool {
     private:
+        template< class T > struct remove_reference      {typedef T type;};
+        template< class T > struct remove_reference<T&>  {typedef T type;};
+        template< class T > struct remove_reference<T&&> {typedef T type;};
+
+        template <class _Tp> inline typename remove_reference<_Tp>::type&&
+        move(_Tp&& __t) noexcept {
+            typedef typename remove_reference<_Tp>::type _Up;
+            return static_cast<_Up&&>(__t);
+        }
+        template <class _Tp> inline _Tp&&
+        forward(typename remove_reference<_Tp>::type& __t) noexcept
+        { return static_cast<_Tp&&>(__t); }
+        template <class _Tp> inline _Tp&&
+        forward(typename remove_reference<_Tp>::type&& __t) noexcept
+        { return static_cast<_Tp&&>(__t); }
+
         using pool_t = bits_robin_lru_pool<size_bits, machine_word, Allocator>;
         using _pool_iter = typename pool_t::const_iterator;
 
@@ -120,7 +136,7 @@ namespace microc {
                  _pool(load_factor, allocator), _allocator(allocator), _items(nullptr),
                  _are_items_constructed(false) {
             _items = _allocator.allocate(_pool.capacity());
-            construct(microc::traits::forward<Args>(args)...);
+            construct(forward<Args>(args)...);
         }
         explicit lru_pool(float load_factor=0.5f,
                           const allocator_type & allocator = allocator_type()) :
@@ -158,13 +174,17 @@ namespace microc {
         void construct(Args && ...args) {
             if(_are_items_constructed) destruct();
             for (int ix = 0; ix < capacity(); ++ix)
-                ::new(_items + ix, microc_new::blah) value_type(microc::traits::forward<Args>(args)...);
+                ::new(_items + ix) value_type(forward<Args>(args)...);
+//                ::new(_items + ix, microc_new::blah) value_type(microc::traits::forward<Args>(args)...);
             _are_items_constructed=true;
         }
         void clear() {
             // clear/reset all active values
             _pool.clear();
         }
-    };
 
+        bool are_items_constructed() const {
+            return _are_items_constructed;
+        }
+    };
 }

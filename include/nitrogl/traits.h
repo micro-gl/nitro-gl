@@ -56,9 +56,9 @@ namespace nitrogl {
     }
 
     /**
- * standard allocator
- * @tparam T the allocated object type
- */
+     * standard allocator
+     * @tparam T the allocated object type
+     */
     template<typename T=unsigned char>
     class std_rebind_allocator {
     public:

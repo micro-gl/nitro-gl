@@ -150,7 +150,7 @@ namespace microc {
 
         bool remove(machine_word key) {
             int val = _pool.remove(key);
-            if(val==-1) return true;
+            if(val==-1) return false;
             // let's destruct the free item
             (_items + val)->~value_type();
             return true;

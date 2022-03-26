@@ -10,7 +10,7 @@
 ========================================================================================*/
 #pragma once
 
-#include <nitrogl/compositing/blend_modes.h>
+#include "../compositing/blend_modes.h"
 #include "../ogl/shader_program.h"
 #include "../math/mat4.h"
 #include "../_internal/main_shader_program.h"

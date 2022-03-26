@@ -10,13 +10,14 @@
 ========================================================================================*/
 #pragma once
 
-#include "nitrogl/math/rect.h"
 #include "color.h"
 #include "traits.h"
 #include "masks.h"
 #include "math.h"
 #include "stdint.h"
+#include "math/rect.h"
 #include "math/vertex2.h"
+#include "math/mat3.h"
 #include "math/mat3.h"
 //#include "porter_duff/None.h"
 //#include "compositing/Normal.h"
@@ -54,6 +55,8 @@
 #include "samplers/test_sampler.h"
 #include "_internal/main_shader_program.h"
 #include "_internal/shader_compositor.h"
+#include "_internal/static_linear_allocator.h"
+#include "_internal/lru_pool.h"
 #include "camera.h"
 
 #include "compositing/porter_duff.h"
@@ -64,6 +67,7 @@ using namespace microtess::polygons;
 //using namespace nitrogl;
 
 namespace nitrogl {
+
     class canvas {
     public:
         using rect = nitrogl::rect_t<int>;
@@ -77,15 +81,25 @@ namespace nitrogl {
             rect canvas_rect;
             rect clip_rect;
         };
-    private:
 
+    private:
+        using static_alloc = micro_alloc::static_linear_allocator<char, 1<<11, 0>;
+        using lru_main_shader_pool_t = microc::lru_pool<main_shader_program, 5, nitrogl::uintptr_type, static_alloc>;
         window_t _window;
 //        gl_texture _tex;
         gl_texture _tex_backdrop;
         fbo_t _fbo;
         multi_render_node _node_multi;
         p4_render_node _node_p4;
-//        p4_ _node_multi;
+        static_alloc _allocator_static;
+
+        static lru_main_shader_pool_t & lru_main_shader_pool() {
+            // shader pool is shared among all canvas instances
+            static lru_main_shader_pool_t pool{0.5f};
+            if(!pool.are_items_constructed())
+                pool.construct();
+            return pool;
+        }
 
         bool _is_pre_mul_alpha;
 
