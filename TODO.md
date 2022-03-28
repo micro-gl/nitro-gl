@@ -8,8 +8,10 @@
 9. basic blending = done
 10. basic compositing = done
 11. test idea with backdrop sampling read = done
-12. 
-13. static pool for programs
+
+12. attach_shaders, update_shaders
+12. static pool for programs
+13. murmur hashcode
 14. static linear pool for samplers uniforms cache
 15. render node for triangle batches - wip
 16. test idea of missing uvs coords for triangle batches
@@ -17,6 +19,7 @@
 18. AA with rbos or filter shader
 19. implement many samplers
 20. gradients
+21. investigate caching of uniforms per program
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

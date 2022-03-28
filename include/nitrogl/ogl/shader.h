@@ -21,9 +21,6 @@ namespace nitrogl {
                            const GLint *length=nullptr) {
             auto shade = shader(shader_type);
             shade.updateShaderSource(sources, count, length, true);
-            shade.compile();
-            char buff[1000];
-            shade.info_log(buff, 1000);
             return shade;
         }
         static shader from(const type shader_type, const GLchar * source)
@@ -36,6 +33,10 @@ namespace nitrogl {
         { return from(type::vertex, &source, 1, nullptr); }
         static shader from_fragment(const GLchar * source)
         { return from(type::fragment, &source, 1, nullptr); }
+        static shader empty_vertex()
+        { return shader(type::vertex); }
+        static shader empty_fragment()
+        { return shader(type::fragment); }
 
     private:
         GLuint _id;
@@ -93,7 +94,13 @@ namespace nitrogl {
                                 bool compile_right_away=false) {
             if(!wasCreated()) return false;
             glShaderSource(_id, count, sources, length);
+            _is_compiled=false;
             if(compile_right_away) compile();
+            // info log for compilation
+            // todo: remove in debug
+            char buff[1000];
+            info_log(buff, 1000);
+            //
             return true;
         }
         bool updateShaderSource(const GLchar * source, bool compile_right_away=false) {

@@ -83,7 +83,7 @@ namespace nitrogl {
         };
 
     private:
-        using static_alloc = micro_alloc::static_linear_allocator<char, 1<<11, 0>;
+        using static_alloc = micro_alloc::static_linear_allocator<char, 1<<14, 0>;
         using lru_main_shader_pool_t = microc::lru_pool<main_shader_program, 5, nitrogl::uintptr_type, static_alloc>;
         window_t _window;
 //        gl_texture _tex;
@@ -91,11 +91,18 @@ namespace nitrogl {
         fbo_t _fbo;
         multi_render_node _node_multi;
         p4_render_node _node_p4;
-        static_alloc _allocator_static;
+
+
+        static static_alloc get_static_allocator() {
+            // static allocator, shared by all canvases
+            static static_alloc allocator_static;
+            return allocator_static;
+        }
 
         static lru_main_shader_pool_t & lru_main_shader_pool() {
             // shader pool is shared among all canvas instances
-            static lru_main_shader_pool_t pool{0.5f};
+            static lru_main_shader_pool_t pool{0.5f, get_static_allocator()};
+            // construct all of the shaders if needed
             if(!pool.are_items_constructed())
                 pool.construct();
             return pool;
@@ -272,6 +279,18 @@ namespace nitrogl {
             //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
 //            static mix_sampler sampler;
 //            static color_sampler sampler(1.0,0.0,0.0,1.0);
+            // compute key
+            const auto sampler_key = sampler.hash_code();
+            auto & pool = lru_main_shader_pool();
+            auto res = pool.get(sampler_key);
+            if(false && !res.is_active) {
+                res.object = shader_compositor::composite_main_program_from_sampler(
+                                sampler, _is_pre_mul_alpha,
+                                blend_modes::Normal(),
+                                porter_duff::SourceOverOpaque());
+
+            }
+            //
             main_shader_program program =
                     shader_compositor::composite_main_program_from_sampler(
                             sampler, _is_pre_mul_alpha,

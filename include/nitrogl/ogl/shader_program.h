@@ -61,17 +61,29 @@ namespace nitrogl {
             GLint location=-1; // the location
         };
 
+        static shader_program with_empty_shaders() {
+            return from_shaders(shader::empty_vertex(), shader::empty_fragment(), false);
+        }
+
         static shader_program from_shaders(const shader & vertex, const shader & fragment, bool link=false) {
             shader_program prog;
             prog.attach_shaders(vertex, fragment);
             if(link) prog.link();
             return prog;
         }
-        // ctor: init with empty shaders
-        shader_program() : _vertex(shader::null_shader()), _fragment(shader::null_shader()),
-                owner(true), _id(0), _last_link_status(GL_FALSE) {
-            create();
+        static shader_program from_shaders(shader && vertex, shader && fragment, bool link=false) {
+            shader_program prog;
+            prog.attach_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
+            if(link) prog.link();
+            return prog;
         }
+        // ctor: init with empty shaders
+//        shader_program() : _vertex(shader::null_shader()), _fragment(shader::null_shader()),
+//            owner(true), _id(0), _last_link_status(GL_FALSE) {
+//            create();
+//        }
+        shader_program() : shader_program(shader::empty_vertex(), shader::empty_fragment())
+        {}
         shader_program(const shader & vertex, const shader & fragment, bool $link=false) :
                 _vertex(vertex), _fragment(fragment), owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
@@ -116,12 +128,14 @@ namespace nitrogl {
         bool wasCreated() const { return _id; }
         void create() { if(!_id) _id = glCreateProgram(); }
         void attach_shaders(const shader & vertex, const shader & fragment) {
+            detachShaders();
             _vertex = vertex;
             _fragment = fragment;
             glAttachShader(_id, _vertex.id());
             glAttachShader(_id, _fragment.id());
         }
         void attach_shaders(shader && vertex, shader && fragment) {
+            detachShaders();
             _vertex = nitrogl::traits::move(vertex);
             _fragment = nitrogl::traits::move(fragment);
             glAttachShader(_id, _vertex.id());

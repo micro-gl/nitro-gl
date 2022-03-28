@@ -62,8 +62,11 @@ namespace nitrogl {
         }
         virtual ~sampler_t()=default;
         unsigned sub_samplers_count () const { return _sub_samplers_count; };
+        sampler_t * sub_sampler(unsigned index) const {
+            return sub_samplers()[index];
+        }
         sampler_t * sub_sampler(unsigned index) {
-            return sub_sampler(index);
+            return sub_samplers()[index];
         }
         unsigned int id() const { return _id; }
         const char * id_string() const { return _id_string; }
@@ -73,30 +76,27 @@ namespace nitrogl {
         virtual const char * main() const = 0;
         void cache_uniforms_locations(GLuint program) {
             const auto ssc = sub_samplers_count();
-            for (int ix = 0; ix < ssc; ++ix)
+            for (unsigned ix = 0; ix < ssc; ++ix)
                 sub_sampler(ix)->cache_uniforms_locations(program);
             on_cache_uniforms_locations(program);
         };
         void upload_uniforms(GLuint program) {
             const auto ssc = sub_samplers_count();
-            for (int ix = 0; ix < ssc; ++ix)
+            for (unsigned ix = 0; ix < ssc; ++ix)
                 sub_sampler(ix)->upload_uniforms(program);
             on_upload_uniforms_request(program);
         };
 
-        virtual sampler_t * operator[](unsigned idx) {
-            return sub_sampler(idx);
-        }
         virtual nitrogl::uintptr_type hash_code() const {
             microc::iterative_murmur<nitrogl::uintptr_type> murmur;
             murmur.begin(reinterpret_cast<nitrogl::uintptr_type>(main()));
             for (unsigned int ix = 0; ix < _sub_samplers_count; ++ix)
-                murmur.next(sub_samplers()[ix].hash_code());
+                murmur.next(sub_samplers()[ix]->hash_code());
             return murmur.end();
         }
 
-    protected:
-        virtual sampler_t * sub_samplers() const { return nullptr; }
+        virtual sampler_t * const * sub_samplers() const { return nullptr; }
+        virtual sampler_t ** sub_samplers() { return nullptr; }
         virtual void on_cache_uniforms_locations(GLuint program) {};
         virtual void on_upload_uniforms_request(GLuint program) {}
     };
@@ -106,8 +106,10 @@ namespace nitrogl {
     private:
         sampler_t * _sub_samplers[N];
 
-    protected:
-        sampler_t * sub_samplers() const override {
+        sampler_t * const * sub_samplers() const override {
+            return _sub_samplers;
+        }
+        sampler_t ** sub_samplers() override {
             return _sub_samplers;
         }
 
