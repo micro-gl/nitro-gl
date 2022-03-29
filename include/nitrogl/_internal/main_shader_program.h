@@ -161,7 +161,7 @@ void main()
             const GLchar * frag_shards[3] = { frag_version, frag_other, frag_main };
             auto v = shader::from_vertex(vert);
             auto f = shader::from_fragment(frag_shards, 3, nullptr);
-            attach_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
+            update_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
             resolve_vertex_attributes_and_uniforms_and_link();
         }
         main_shader_program(const main_shader_program & o) = default;

@@ -259,7 +259,7 @@ namespace nitrogl {
             auto fragment = shader::from_fragment(buffers.sources, buffers.size(), buffers.lengths);
 
             // attach shaders
-            prog.attach_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
+            prog.update_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
             prog.resolve_vertex_attributes_and_uniforms_and_link();
             // sampler_t can now cache uniforms variables
             sampler.cache_uniforms_locations(prog.id());
