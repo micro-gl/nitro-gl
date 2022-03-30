@@ -156,7 +156,14 @@ void main()
         }
 
         // ctor: init with empty shaders and attach which is legal
-        main_shader_program() : uniforms(), shader_program() {}
+        main_shader_program(const shader & vertex, const shader & fragment, bool $link=false) :
+                            shader_program(vertex, fragment, $link), uniforms() {
+        }
+        main_shader_program(shader && vertex, shader && fragment, bool $link=false) :
+                    shader_program(nitrogl::traits::move(vertex),
+                                   nitrogl::traits::move(fragment), $link), uniforms() {
+        }
+        main_shader_program() : uniforms(), shader_program() {} // with empty shaders
         main_shader_program(bool test) : uniforms(), shader_program() {
             const GLchar * frag_shards[3] = { frag_version, frag_other, frag_main };
             auto v = shader::from_vertex(vert);
@@ -206,14 +213,12 @@ void main()
         { glUniform1f(uniforms.opacity, opacity); }
         void update_time(GLuint value) const
         { glUniform1ui(uniforms.time, value); }
-        void update_backdrop_texture(const gl_texture & texture) const
-        {
+        void update_backdrop_texture(const gl_texture & texture) const {
             const auto unit = gl_texture::next_texture_unit();
             texture.use(unit);
             glUniform1i(uniforms.tex_backdrop, unit);
         }
-        void update_window_size(GLuint w, GLuint h) const
-        {
+        void update_window_size(GLuint w, GLuint h) const {
             glUniform2ui(uniforms.window_size, w, h);
         }
 

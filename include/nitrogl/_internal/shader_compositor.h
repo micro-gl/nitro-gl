@@ -226,7 +226,6 @@ namespace nitrogl {
                                                                        bool is_premul_alpha_result=true,
                                                                        const nitrogl::blend_mode blend_mode=nullptr,
                                                                        const nitrogl::compositor compositor=nullptr) {
-            main_shader_program prog;
             auto vertex = shader::from_vertex(main_shader_program::vert);
             // fragment shards
             using buffers_type = sources_buffer<1000, 1>;
@@ -259,7 +258,12 @@ namespace nitrogl {
             auto fragment = shader::from_fragment(buffers.sources, buffers.size(), buffers.lengths);
 
             // attach shaders
-            prog.update_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
+            main_shader_program prog { nitrogl::traits::move(vertex), nitrogl::traits::move(fragment)};
+//            prog.detachShaders();
+//            prog.vertex() = nitrogl::traits::move(vertex);
+//            prog.fragment() = nitrogl::traits::move(fragment);
+//            prog.update_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
+//            prog.attach_shaders();
             prog.resolve_vertex_attributes_and_uniforms_and_link();
             // sampler_t can now cache uniforms variables
             sampler.cache_uniforms_locations(prog.id());
@@ -269,6 +273,66 @@ namespace nitrogl {
             std::cout<<source<<std::endl;
             return prog;
         }
+
+        static void composite_main_program_from_sampler2(main_shader_program & program,
+                                                        sampler_t & sampler,
+                                                        bool is_premul_alpha_result=true,
+                                                        const nitrogl::blend_mode blend_mode=nullptr,
+                                                        const nitrogl::compositor compositor=nullptr) {
+//            auto vertex = shader::from_vertex(main_shader_program::vert);
+            // fragment shards
+            using buffers_type = sources_buffer<1000, 1>;
+            static buffers_type buffers{};
+            buffers.reset();
+            // write version
+            buffers.write_char_array_pointer(main_shader_program::frag_version);
+            // write frag variables
+            buffers.write_char_array_pointer(main_shader_program::frag_other);
+            // add samplers tree recursively
+            _internal_composite(&sampler, buffers);
+            // add define (#define __SAMPLER_MAIN sampler_{id})
+            buffers.write_char_array_pointer(main_shader_program::define_sampler);
+            buffers.write_char_array_pointer(sampler.id_string());
+            buffers.write_new_line();
+            // write compositing stuff
+            if(compositor) {
+                if(compositor!=nitrogl::porter_duff::SourceOverOpaque())
+                    buffers.write_char_array_pointer(nitrogl::porter_duff::base());
+                buffers.write_char_array_pointer(compositor);
+            }
+            if(blend_mode) {
+                buffers.write_char_array_pointer(blend_mode);
+            }
+            if(is_premul_alpha_result)
+                buffers.write_char_array_pointer(main_shader_program::define_premul_alpha);
+            // write main shader
+            buffers.write_char_array_pointer(main_shader_program::frag_main);
+            //
+
+            auto & vertex = program.vertex();
+            auto & fragment = program.fragment();
+
+            vertex.updateShaderSource(main_shader_program::vert, true);
+            fragment.updateShaderSource(buffers.sources, buffers.size(), buffers.lengths, true);
+            // create shader
+//            auto fragment = shader::from_fragment(buffers.sources, buffers.size(), buffers.lengths);
+            // attach shaders
+//            main_shader_program prog { nitrogl::traits::move(vertex), nitrogl::traits::move(fragment)};
+            //            prog.detachShaders();
+            //            prog.vertex() = nitrogl::traits::move(vertex);
+            //            prog.fragment() = nitrogl::traits::move(fragment);
+            //            prog.update_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
+            //            prog.attach_shaders();
+            program.resolve_vertex_attributes_and_uniforms_and_link();
+            // sampler_t can now cache uniforms variables
+            sampler.cache_uniforms_locations(program.id());
+            GLchar source[10000];
+            program.fragment().get_source(source, sizeof (source));
+
+            std::cout<<source<<std::endl;
+//            return program;
+        }
+
 
     };
 

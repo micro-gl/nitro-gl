@@ -72,6 +72,7 @@ namespace nitrogl {
                     nitrogl::traits::forward<VV>(fragment), link};
             return prog;
         }
+        // create the program with empty shaders, that can be filled later
         shader_program() : shader_program(shader::empty_vertex(), shader::empty_fragment())
         {}
         shader_program(const shader & vertex, const shader & fragment, bool $link=false) :

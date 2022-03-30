@@ -283,19 +283,23 @@ namespace nitrogl {
             const auto sampler_key = sampler.hash_code();
             auto & pool = lru_main_shader_pool();
             auto res = pool.get(sampler_key);
-            if(false && !res.is_active) {
-                res.object = shader_compositor::composite_main_program_from_sampler(
-                                sampler, _is_pre_mul_alpha,
+            auto & program = res.object;
+            if(!res.is_active) {
+//            if(true || !res.is_active) {
+                // if it is not active, reconfigure it with new shader source code
+                shader_compositor::composite_main_program_from_sampler2(
+                        program,sampler, _is_pre_mul_alpha,
                                 blend_modes::Normal(),
                                 porter_duff::SourceOverOpaque());
 
             }
+
             //
-            main_shader_program program =
-                    shader_compositor::composite_main_program_from_sampler(
-                            sampler, _is_pre_mul_alpha,
-                            blend_modes::Normal(),
-                            porter_duff::SourceOverOpaque());
+//            main_shader_program program =
+//                    shader_compositor::composite_main_program_from_sampler(
+//                            sampler, _is_pre_mul_alpha,
+//                            blend_modes::Normal(),
+//                            porter_duff::SourceOverOpaque());
 
             // data
             p4_render_node::data_type data = {
@@ -317,6 +321,7 @@ namespace nitrogl {
 //                                    int(right+0.5f), int(bottom+0.5f));
             fbo_t::unbind();
             copy_to_backdrop();
+            glCheckError();
         }
 
         void drawRect_multi_node(float left, float top, float right, float bottom,

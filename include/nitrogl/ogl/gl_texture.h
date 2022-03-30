@@ -24,7 +24,7 @@ namespace nitrogl {
             static GLint next=-1;
             static GLint max=-1;
             if(max<0) glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max);
-            return (++next)%max;
+            return (++next)%(max-1);
         }
 
         static gl_texture un_generated_dummy() { return gl_texture(); }

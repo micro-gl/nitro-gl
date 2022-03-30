@@ -8,8 +8,8 @@
 9. basic blending = done
 10. basic compositing = done
 11. test idea with backdrop sampling read = done
+12. attach_shaders, update_shaders, ctors - DONE
 
-12. attach_shaders, update_shaders
 12. static pool for programs
 13. murmur hashcode
 14. static linear pool for samplers uniforms cache

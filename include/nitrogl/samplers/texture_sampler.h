@@ -48,8 +48,8 @@ namespace nitrogl {
 
         void on_upload_uniforms_request(GLuint program) override {
             const auto tex_unit = gl_texture::next_texture_unit();
-            glUniform1i(get_uniform_location(program, "texture"), tex_unit);
             texture.use(tex_unit);
+            glUniform1i(get_uniform_location(program, "texture"), tex_unit);
         }
 
     public:
