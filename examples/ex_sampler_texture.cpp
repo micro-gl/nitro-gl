@@ -31,7 +31,7 @@ int main() {
 //        canvas canva(tex);
         canvas canva(500,500);
         auto tex_sampler_1 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", true));
-        auto tex_sampler_2 = texture_sampler<false>(Resources::loadTexture("assets/images/test.png", false));
+        auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
         auto tex_sampler_3 = texture_sampler<>(Resources::loadTexture("assets/images/uv_256.png", true));
         mix_sampler sampler_mix;
         color_sampler sampler_color(1.0,0.0,0.0,1.0);
@@ -46,7 +46,7 @@ int main() {
 //            canva.drawRect(100, 100, 150, 150,
 //                           mat3f::rotation(math::deg_to_rad(t), 25, 25));
             canva.drawRect(tex_sampler_1, 0, 0, 250, 250);
-//            canva.drawRect(sampler_mix, 250, 0, 500, 250);
+            canva.drawRect(sampler_mix, 250, 0, 500, 250);
             canva.drawRect(tex_sampler_3, 125, 125, 125+250, 125+250);//, mat3f::rotation(t));
 //            canva.drawRect(0, 125, 500, 260);
 //canva.drawRect(0, 250, 250, 270,

@@ -27,7 +27,7 @@ namespace nitrogl {
         struct no_more_than_999_samplers_allowed {};
         const unsigned int _id;
         unsigned int _sub_samplers_count=0;
-        char _id_string[4]; // "###0"
+        char _id_string[4]; // "###0", null terminated through '0' initialization
         char _id_string_len; // "###0"
 
         sampler_t() : _id(assign_id()), _id_string{0}, _id_string_len(0) {
@@ -58,7 +58,8 @@ namespace nitrogl {
                 *next=c;
             }
             *next='\0'; // add null termination
-            return glGetUniformLocation(program, s);
+            const auto loc = glGetUniformLocation(program, s);
+            return loc;
         }
         virtual ~sampler_t()=default;
         unsigned sub_samplers_count () const { return _sub_samplers_count; };
@@ -90,8 +91,9 @@ namespace nitrogl {
         virtual nitrogl::uintptr_type hash_code() const {
             microc::iterative_murmur<nitrogl::uintptr_type> murmur;
             murmur.begin(reinterpret_cast<nitrogl::uintptr_type>(main()));
-            for (unsigned int ix = 0; ix < _sub_samplers_count; ++ix)
-                murmur.next(sub_samplers()[ix]->hash_code());
+            const auto ssc = sub_samplers_count();
+            for (unsigned int ix = 0; ix < ssc; ++ix)
+                murmur.next(sub_sampler(ix)->hash_code());
             return murmur.end();
         }
 
@@ -99,6 +101,15 @@ namespace nitrogl {
         virtual sampler_t ** sub_samplers() { return nullptr; }
         virtual void on_cache_uniforms_locations(GLuint program) {};
         virtual void on_upload_uniforms_request(GLuint program) {}
+        virtual unsigned int generate_ids(unsigned int id) {
+            _id_string_len = nitrogl::facebook_uint32_to_str(id, _id_string);
+            if(_id_string_len>3) {
+#ifdef NITROGL_ENABLE_THROW
+                throw no_more_than_999_samplers_allowed();
+#endif
+            }
+            return ++id;
+        }
     };
 
     template<unsigned N>
@@ -118,6 +129,20 @@ namespace nitrogl {
 
         void add_sub_sampler(sampler_t * sampler) {
             _sub_samplers[_sub_samplers_count++] = sampler;
+        }
+
+        unsigned int generate_ids(unsigned int id) override {
+            const auto ssc = sub_samplers_count();
+            for (unsigned int ix = 0; ix < ssc; ++ix) {
+                id = sub_sampler(ix)->generate_ids(id);
+            }
+            _id_string_len = nitrogl::facebook_uint32_to_str(id, _id_string);
+            if(_id_string_len>3) {
+#ifdef NITROGL_ENABLE_THROW
+                throw no_more_than_999_samplers_allowed();
+#endif
+            }
+            return ++id;
         }
 
     };

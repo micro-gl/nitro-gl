@@ -27,6 +27,11 @@ namespace nitrogl {
         shader_compositor operator=(shader_compositor &&)=delete;
         ~shader_compositor()=delete;
 
+        const char * const * db() {
+            const static char * _db[3] = { "_0", "_1", "_2"};
+            return _db;
+        }
+
         /**
          * sources buffer to pointer for stitching pre defined strings, also
          * includes optional storage for char arrays
@@ -328,9 +333,7 @@ namespace nitrogl {
             sampler.cache_uniforms_locations(program.id());
             GLchar source[10000];
             program.fragment().get_source(source, sizeof (source));
-
-            std::cout<<source<<std::endl;
-//            return program;
+            std::cout<< source <<std::endl;
         }
 
 
