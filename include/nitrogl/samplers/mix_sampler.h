@@ -44,7 +44,8 @@ vec4 other_function(float t) {
     public:
         mix_sampler() : multi_sampler<2>() {
             add_sub_sampler(&sampler_1);
-            add_sub_sampler(&sampler_2);
+            add_sub_sampler(&sampler_1);
+//            add_sub_sampler(&sampler_2);
         }
     };
 }

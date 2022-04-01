@@ -63,9 +63,9 @@ in vec3 PS_uvs_sampler;
 // out
 out vec4 FragColor;
 
-vec4 sample1(vec3 uv) {
-    return vec4(uv.x, uv.x, uv.x, 1.0);
-}
+//vec4 sample1(vec3 uv) {
+//    return vec4(uv.x, uv.x, uv.x, 1.0);
+//}
 )foo";
 
         constexpr static const char * const frag_blend = "vec3 __blend_color";

@@ -25,6 +25,7 @@ namespace nitrogl {
 
     protected:
         struct no_more_than_999_samplers_allowed {};
+        struct location_of_uniform_not_found {};
         const unsigned int _id;
         unsigned int _sub_samplers_count=0;
         char _id_string[4]; // "###0", null terminated through '0' initialization
@@ -59,6 +60,9 @@ namespace nitrogl {
             }
             *next='\0'; // add null termination
             const auto loc = glGetUniformLocation(program, s);
+#ifdef NITROGL_ENABLE_THROW
+            if(loc==-1) throw location_of_uniform_not_found();
+#endif
             return loc;
         }
         virtual ~sampler_t()=default;
