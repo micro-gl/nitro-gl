@@ -26,6 +26,7 @@ if(DEFINED SDL2_FOUND)
 #    set(INCLUDES  ${SDL2_INCLUDE_DIR})
     set(INCLUDES  ${SDL2_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
     set(SOURCES
+            ex_create_numbers_db.cpp
             ex_1.cpp
             ex_sampler_texture.cpp
             ex_cache.cpp)

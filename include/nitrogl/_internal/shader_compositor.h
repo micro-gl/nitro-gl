@@ -136,6 +136,10 @@ namespace nitrogl {
     private:
         template<unsigned N, unsigned M>
         static void _internal_composite(sampler_t * sampler, sources_buffer<N, M> & buffer) {
+            // if the sampler is nullptr or was already visited, then we don't need to write it
+            if(sampler==nullptr or sampler->traversal_info().visited) return;
+            sampler->traversal_info().visited=true;
+            // otherwise, recurse bottom-up
             const auto sub_samplers_count = sampler->sub_samplers_count();
             for (int ix = 0; ix < sub_samplers_count; ++ix)
                 _internal_composite(sampler->sub_sampler(ix), buffer);
@@ -144,16 +148,19 @@ namespace nitrogl {
             const bool has_uniforms_data = !nitrogl::is_empty(sampler->uniforms());
             if(has_uniforms_data) {
                 buffer.write_char_array_pointer("uniform struct DATA_", -1);
-                buffer.write_char_array_pointer(sampler->id_string()); // ID from previous stored value
+                buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                                sampler->traversal_info().size_id_str()); // ID from previous stored value
                 buffer.write_char_array_pointer(sampler->uniforms(), -1);
                 buffer.write_char_array_pointer("data_", -1);
-                buffer.write_char_array_pointer(sampler->id_string()); // ID from previous stored value
+                buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                                sampler->traversal_info().size_id_str()); // ID from previous stored value
                 buffer.write_comma_and_2_newline();
             }
 
             // vec4 sampler_ID
             buffer.write_char_array_pointer("vec4 sampler_", -1);
-            buffer.write_char_array_pointer(sampler->id_string());
+            buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                            sampler->traversal_info().size_id_str());
 
             // now the tough part starts function body of sampler. Our goal
             // is to track 'data.' and 'sampler_' strings and to stitch:
@@ -171,8 +178,10 @@ namespace nitrogl {
                         // parse local_id
                         auto begin_1 = nitrogl::index_of_in("(", end_0, 1); // ptr to (
                         auto local_id = nitrogl::s2i(end_0, begin_1-end_0); // local_id to int
-                        const auto global_id_str = sampler->sub_sampler(local_id)->id_string(); // global-id
-                        buffer.write_char_array_pointer(global_id_str); // stitch {global_id}
+//                        const auto global_id_str = sampler->sub_sampler(local_id)->id_string(); // global-id
+                        // stitch {global_id}
+                        buffer.write_char_array_pointer(sampler->sub_sampler(local_id)->traversal_info().id_str(),
+                                                        sampler->sub_sampler(local_id)->traversal_info().size_id_str());
                         race.handled=true;
                         return begin_1;
                     }
@@ -182,7 +191,9 @@ namespace nitrogl {
                         buffer.write_range_pointer(begin_0, end_0); // stitch [main, data)
                         //
                         buffer.write_under_score(); // stitch _
-                        buffer.write_char_array_pointer(sampler->id_string()); // stitch {current_sampler_id}
+                        // stitch {current_sampler_id}
+                        buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                                        sampler->traversal_info().size_id_str());
                         race.handled=true;
                         return end_0;
                     }
@@ -227,6 +238,7 @@ namespace nitrogl {
         };
 
     public:
+        /*
         static main_shader_program composite_main_program_from_sampler(sampler_t & sampler,
                                                                        bool is_premul_alpha_result=true,
                                                                        const nitrogl::blend_mode blend_mode=nullptr,
@@ -278,6 +290,7 @@ namespace nitrogl {
             std::cout<<source<<std::endl;
             return prog;
         }
+        */
 
         static void composite_main_program_from_sampler2(main_shader_program & program,
                                                         sampler_t & sampler,
@@ -297,7 +310,8 @@ namespace nitrogl {
             _internal_composite(&sampler, buffers);
             // add define (#define __SAMPLER_MAIN sampler_{id})
             buffers.write_char_array_pointer(main_shader_program::define_sampler);
-            buffers.write_char_array_pointer(sampler.id_string());
+            buffers.write_char_array_pointer(sampler.traversal_info().id_str(),
+                                             sampler.traversal_info().size_id_str());
             buffers.write_new_line();
             // write compositing stuff
             if(compositor) {

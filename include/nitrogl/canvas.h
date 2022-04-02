@@ -282,7 +282,7 @@ namespace nitrogl {
 
 ///*
             // compute key
-            sampler.generate_ids(0);
+            sampler.generate_traversal(0);
             const auto sampler_key = sampler.hash_code();
             auto & pool = lru_main_shader_pool();
             auto res = pool.get(sampler_key);
@@ -367,8 +367,8 @@ namespace nitrogl {
 
             // get shader from cache
             test_sampler sampler;
-            main_shader_program program =
-                    shader_compositor::composite_main_program_from_sampler(sampler);
+            main_shader_program program;
+            shader_compositor::composite_main_program_from_sampler2(program, sampler);
 
             // data
             multi_render_node::data_type data = {
