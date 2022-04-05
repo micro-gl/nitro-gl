@@ -11,7 +11,7 @@
 #pragma once
 
 namespace nitrogl {
-    using blend_mode = const char *;
+    using blend_mode_t = const char *;
     struct blend_modes {
 
         static const char * Normal() {

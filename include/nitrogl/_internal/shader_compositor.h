@@ -10,13 +10,11 @@
 ========================================================================================*/
 #pragma once
 
-#include <nitrogl/compositing/blend_modes.h>
-#include "../ogl/shader_program.h"
-#include "../math/mat4.h"
+#include "../compositing/blend_modes.h"
+#include "../compositing/porter_duff.h"
 #include "../_internal/main_shader_program.h"
 #include "../_internal/string_utils.h"
 #include "../samplers/sampler.h"
-#include "../compositing/porter_duff.h"
 
 namespace nitrogl {
 
@@ -26,6 +24,11 @@ namespace nitrogl {
         shader_compositor & operator=(const shader_compositor &)=delete;
         shader_compositor operator=(shader_compositor &&)=delete;
         ~shader_compositor()=delete;
+
+        const char * const * db() {
+            const static char * _db[3] = { "_0", "_1", "_2"};
+            return _db;
+        }
 
         /**
          * sources buffer to pointer for stitching pre defined strings, also
@@ -131,24 +134,32 @@ namespace nitrogl {
     private:
         template<unsigned N, unsigned M>
         static void _internal_composite(sampler_t * sampler, sources_buffer<N, M> & buffer) {
+            // if the sampler is nullptr or was already visited, then we don't need to write it
+            if(sampler==nullptr or sampler->traversal_info().visited) return;
+            // otherwise, recurse bottom-up
             const auto sub_samplers_count = sampler->sub_samplers_count();
             for (int ix = 0; ix < sub_samplers_count; ++ix)
                 _internal_composite(sampler->sub_sampler(ix), buffer);
+
+            sampler->traversal_info().visited=true;
 
             // uniform struct DATA_ID { float a;  vec2 b; } data_ID;
             const bool has_uniforms_data = !nitrogl::is_empty(sampler->uniforms());
             if(has_uniforms_data) {
                 buffer.write_char_array_pointer("uniform struct DATA_", -1);
-                buffer.write_char_array_pointer(sampler->id_string()); // ID from previous stored value
+                buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                                sampler->traversal_info().size_id_str()); // ID from previous stored value
                 buffer.write_char_array_pointer(sampler->uniforms(), -1);
                 buffer.write_char_array_pointer("data_", -1);
-                buffer.write_char_array_pointer(sampler->id_string()); // ID from previous stored value
+                buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                                sampler->traversal_info().size_id_str()); // ID from previous stored value
                 buffer.write_comma_and_2_newline();
             }
 
             // vec4 sampler_ID
             buffer.write_char_array_pointer("vec4 sampler_", -1);
-            buffer.write_char_array_pointer(sampler->id_string());
+            buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                            sampler->traversal_info().size_id_str());
 
             // now the tough part starts function body of sampler. Our goal
             // is to track 'data.' and 'sampler_' strings and to stitch:
@@ -166,8 +177,9 @@ namespace nitrogl {
                         // parse local_id
                         auto begin_1 = nitrogl::index_of_in("(", end_0, 1); // ptr to (
                         auto local_id = nitrogl::s2i(end_0, begin_1-end_0); // local_id to int
-                        const auto global_id_str = sampler->sub_sampler(local_id)->id_string(); // global-id
-                        buffer.write_char_array_pointer(global_id_str); // stitch {global_id}
+                        // stitch {global_id}
+                        buffer.write_char_array_pointer(sampler->sub_sampler(local_id)->traversal_info().id_str(),
+                                                        sampler->sub_sampler(local_id)->traversal_info().size_id_str());
                         race.handled=true;
                         return begin_1;
                     }
@@ -177,7 +189,9 @@ namespace nitrogl {
                         buffer.write_range_pointer(begin_0, end_0); // stitch [main, data)
                         //
                         buffer.write_under_score(); // stitch _
-                        buffer.write_char_array_pointer(sampler->id_string()); // stitch {current_sampler_id}
+                        // stitch {current_sampler_id}
+                        buffer.write_char_array_pointer(sampler->traversal_info().id_str(),
+                                                        sampler->traversal_info().size_id_str());
                         race.handled=true;
                         return end_0;
                     }
@@ -222,12 +236,11 @@ namespace nitrogl {
         };
 
     public:
-        static main_shader_program composite_main_program_from_sampler(sampler_t & sampler,
-                                                                       bool is_premul_alpha_result=true,
-                                                                       const nitrogl::blend_mode blend_mode=nullptr,
-                                                                       const nitrogl::compositor compositor=nullptr) {
-            main_shader_program prog;
-            auto vertex = shader::from_vertex(main_shader_program::vert);
+        static void composite_main_program_from_sampler(main_shader_program & program,
+                                                        sampler_t & sampler,
+                                                        bool is_premul_alpha_result=true,
+                                                        const nitrogl::blend_mode_t blend_mode=nullptr,
+                                                        const nitrogl::compositor_t compositor=nullptr) {
             // fragment shards
             using buffers_type = sources_buffer<1000, 1>;
             static buffers_type buffers{};
@@ -240,7 +253,8 @@ namespace nitrogl {
             _internal_composite(&sampler, buffers);
             // add define (#define __SAMPLER_MAIN sampler_{id})
             buffers.write_char_array_pointer(main_shader_program::define_sampler);
-            buffers.write_char_array_pointer(sampler.id_string());
+            buffers.write_char_array_pointer(sampler.traversal_info().id_str(),
+                                             sampler.traversal_info().size_id_str());
             buffers.write_new_line();
             // write compositing stuff
             if(compositor) {
@@ -255,19 +269,22 @@ namespace nitrogl {
                 buffers.write_char_array_pointer(main_shader_program::define_premul_alpha);
             // write main shader
             buffers.write_char_array_pointer(main_shader_program::frag_main);
-            // create shader
-            auto fragment = shader::from_fragment(buffers.sources, buffers.size(), buffers.lengths);
+            //
 
-            // attach shaders
-            prog.attach_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
-            prog.resolve_vertex_attributes_and_uniforms_and_link();
+            auto & vertex = program.vertex();
+            auto & fragment = program.fragment();
+
+            // vertex shader is always the same/constant here, so we can save a compilation once it is hot
+            // or was used compiled once in the past.
+            if(!vertex.isCompiled())
+                vertex.updateShaderSource(main_shader_program::vert, true);
+            fragment.updateShaderSource(buffers.sources, buffers.size(), buffers.lengths, true);
+            program.resolve_vertex_attributes_and_uniforms_and_link();
             // sampler_t can now cache uniforms variables
-            sampler.cache_uniforms_locations(prog.id());
+            sampler.cache_uniforms_locations(program.id());
             GLchar source[10000];
-            prog.fragment().get_source(source, sizeof (source));
-
-            std::cout<<source<<std::endl;
-            return prog;
+            program.fragment().get_source(source, sizeof (source));
+            std::cout<< source <<std::endl;
         }
 
     };

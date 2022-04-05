@@ -63,9 +63,9 @@ in vec3 PS_uvs_sampler;
 // out
 out vec4 FragColor;
 
-vec4 sample1(vec3 uv) {
-    return vec4(uv.x, uv.x, uv.x, 1.0);
-}
+//vec4 sample1(vec3 uv) {
+//    return vec4(uv.x, uv.x, uv.x, 1.0);
+//}
 )foo";
 
         constexpr static const char * const frag_blend = "vec3 __blend_color";
@@ -155,13 +155,20 @@ void main()
             return vas;
         }
 
-        // ctor: init with empty shaders and attach which is legal
-        main_shader_program() : uniforms(), shader_program() {}
+        // ctor: internal_init with empty shaders and attach which is legal
+        main_shader_program(const shader & vertex, const shader & fragment, bool $link=false) :
+                            shader_program(vertex, fragment, $link), uniforms() {
+        }
+        main_shader_program(shader && vertex, shader && fragment, bool $link=false) :
+                    shader_program(nitrogl::traits::move(vertex),
+                                   nitrogl::traits::move(fragment), $link), uniforms() {
+        }
+        main_shader_program() : uniforms(), shader_program() {} // with empty shaders
         main_shader_program(bool test) : uniforms(), shader_program() {
             const GLchar * frag_shards[3] = { frag_version, frag_other, frag_main };
             auto v = shader::from_vertex(vert);
             auto f = shader::from_fragment(frag_shards, 3, nullptr);
-            attach_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
+            update_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
             resolve_vertex_attributes_and_uniforms_and_link();
         }
         main_shader_program(const main_shader_program & o) = default;
@@ -206,14 +213,12 @@ void main()
         { glUniform1f(uniforms.opacity, opacity); }
         void update_time(GLuint value) const
         { glUniform1ui(uniforms.time, value); }
-        void update_backdrop_texture(const gl_texture & texture) const
-        {
+        void update_backdrop_texture(const gl_texture & texture) const {
             const auto unit = gl_texture::next_texture_unit();
             texture.use(unit);
             glUniform1i(uniforms.tex_backdrop, unit);
         }
-        void update_window_size(GLuint w, GLuint h) const
-        {
+        void update_window_size(GLuint w, GLuint h) const {
             glUniform2ui(uniforms.window_size, w, h);
         }
 

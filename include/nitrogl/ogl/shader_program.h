@@ -61,30 +61,31 @@ namespace nitrogl {
             GLint location=-1; // the location
         };
 
-        static shader_program from_shaders(const shader & vertex, const shader & fragment, bool link=false) {
-            shader_program prog;
-            prog.attach_shaders(vertex, fragment);
-            if(link) prog.link();
+        static shader_program with_empty_shaders() {
+            return from_shaders(shader::empty_vertex(),
+                                shader::empty_fragment(), false);
+        }
+
+        template<class VV>
+        static shader_program from_shaders(VV && vertex, VV && fragment, bool link=false) {
+            shader_program prog {nitrogl::traits::forward<VV>(vertex),
+                    nitrogl::traits::forward<VV>(fragment), link};
             return prog;
         }
-        // ctor: init with empty shaders
-        shader_program() : _vertex(shader::null_shader()), _fragment(shader::null_shader()),
-                owner(true), _id(0), _last_link_status(GL_FALSE) {
-            create();
-        }
+        // create the program with empty shaders, that can be filled later
+        shader_program() : shader_program(shader::empty_vertex(), shader::empty_fragment())
+        {}
         shader_program(const shader & vertex, const shader & fragment, bool $link=false) :
                 _vertex(vertex), _fragment(fragment), owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
-            glAttachShader(_id, _vertex.id());
-            glAttachShader(_id, _fragment.id());
+            attach_shaders();
             if($link) link();
         }
         shader_program(shader && vertex, shader && fragment, bool $link=false) :
                     _vertex(nitrogl::traits::move(vertex)), _fragment(nitrogl::traits::move(fragment)),
                     owner(true), _id(0), _last_link_status(GL_FALSE) {
             create();
-            glAttachShader(_id, _vertex.id());
-            glAttachShader(_id, _fragment.id());
+            attach_shaders();
             if($link) link();
         }
         shader_program(shader_program && o) noexcept : _id(o._id), _last_link_status(o._last_link_status),
@@ -115,15 +116,35 @@ namespace nitrogl {
 
         bool wasCreated() const { return _id; }
         void create() { if(!_id) _id = glCreateProgram(); }
-        void attach_shaders(const shader & vertex, const shader & fragment) {
-            _vertex = vertex;
-            _fragment = fragment;
-            glAttachShader(_id, _vertex.id());
-            glAttachShader(_id, _fragment.id());
+
+    private:
+        template<class VV>
+        void internal_update_shaders(VV && vertex, VV && fragment) {
+            if(vertex.id() != _vertex.id()) {
+                if(_vertex.id()) glDetachShader(_id, _vertex.id());
+                _vertex = nitrogl::traits::forward<VV>(vertex);
+                glAttachShader(_id, _vertex.id());
+            }
+            if(fragment.id() != _fragment.id()) {
+                if(_fragment.id()) glDetachShader(_id, _fragment.id());
+                _fragment = nitrogl::traits::forward<VV>(fragment);
+                glAttachShader(_id, _fragment.id());
+            }
         }
-        void attach_shaders(shader && vertex, shader && fragment) {
-            _vertex = nitrogl::traits::move(vertex);
-            _fragment = nitrogl::traits::move(fragment);
+
+    public:
+        /**
+         * Update mechanism, you cal also use assignment opertor on the shaders, BUT:
+         * - this will also detach the overridden shader if needed
+         * - overridden shader will be flagged for deletion if it is an owner
+         */
+        void update_shaders(const shader & vertex, const shader & fragment) {
+            internal_update_shaders(vertex, fragment);
+        }
+        void update_shaders(shader && vertex, shader && fragment) {
+            internal_update_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
+        }
+        void attach_shaders() {
             glAttachShader(_id, _vertex.id());
             glAttachShader(_id, _fragment.id());
         }

@@ -50,7 +50,8 @@ void example_init(const on_init_callback &on_init) {
     window = SDL_CreateWindow( "SDL ", SDL_WINDOWPOS_CENTERED,
                                SDL_WINDOWPOS_CENTERED,
                                5, 5,
-                               SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+//                               SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI);
+                               SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | 0);
 
     // use this for DPI scaling of window
     int wPixels, hPixels;

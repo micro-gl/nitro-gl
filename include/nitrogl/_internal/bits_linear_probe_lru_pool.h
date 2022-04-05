@@ -10,7 +10,7 @@
 ========================================================================================*/
 #pragma once
 
-namespace nitrogl {
+namespace microc {
 #define LRU_PRINT_SEQ 0
 #define LRU_PRINT_ORDER_MRU 1
 #define LRU_PRINT_ORDER_FREE_LIST 2
@@ -84,9 +84,51 @@ namespace nitrogl {
         using allocator_type = Allocator;
         using rebind_alloc = typename allocator_type::template rebind<item_t>::other;
         struct result_type {
+            // the value that was chosen
             int value;
+            // the LRU item value that was removed (not a key)
+            int removed_value;
+            // inserted key was active or free ?
             bool is_active;
         };
+
+        struct iterator_t {
+            struct pair {
+                machine_word key;
+                int value;
+            };
+            const bits_linear_probe_lru_pool * _c; // container
+            int _i; // index
+
+            explicit iterator_t(int i, const bits_linear_probe_lru_pool * c) : _i(i), _c(c) {}
+            iterator_t& operator++() {
+                if(_i==-1) return *this;
+                auto next = _c->_items[_i].next();
+                if(next==_c->_mru_list) _i=-1; // reached end
+                else _i=next;
+                return *this;
+            }
+            iterator_t& operator--() {
+                if(_i==-1) return *this;
+                if(_i==_c->_mru_list) _i=-1;
+                else _i=_c->_items[_i].prev();
+                return *this;
+            }
+            iterator_t operator+(int val) {
+                iterator_t temp(*this);
+                for (int ix = 0; ix < val; ++ix) ++temp;
+                return temp;
+            }
+            iterator_t operator++(int) { iterator_t ret(_i, _c); ++(*this); return ret; }
+            iterator_t operator--(int) { iterator_t ret(_i, _c); --(*this); return ret; }
+            bool operator==(iterator_t o) const { return _i==o._i; }
+            bool operator!=(iterator_t o) const { return !(*this==o); }
+            pair operator*() const { return { _c->_items[_i].key, _c->_items[_i].value() }; }
+        };
+
+        using const_iterator = iterator_t;
+        const_iterator begin() const noexcept { return const_iterator(_mru_list, this); }
+        const_iterator end() const noexcept { return const_iterator(-1, this); }
 
     private:
         item_t * _items;
@@ -130,7 +172,7 @@ namespace nitrogl {
 
     private:
         inline int c2p(machine_word code) const {
-            // when size is power of 2, we can get modulo with
+            // when size is power of 2, we can get_or_put modulo with
             // bit-wise operation
             return (code & mm);
         }
@@ -186,9 +228,9 @@ namespace nitrogl {
             }
         }
 
-        void adjust_load_factor() {
+        int adjust_load_factor() {
             int delta = _mru_size - _max_size;
-            if(delta<=0) return;
+            if(delta<=0) return -1;
             // now, let's move nodes from active lru to free list
             for(; delta and _mru_list != -1; --delta) {
                 const auto pos = _items[_mru_list].prev(); // tail is LRU
@@ -197,11 +239,35 @@ namespace nitrogl {
             }
         }
 
+        /**
+         * remove just one excess item and return the int value, that
+         * became free
+         */
+        int adjust_load_factor_remove_one() {
+            int delta = _mru_size - _max_size;
+            if(delta<=0) return -1;
+            const auto pos = _items[_mru_list].prev(); // tail is LRU
+            auto & node = _items[pos];
+            int removed_value = node.value();
+            internal_remove_key_node(node, pos);
+            return removed_value;
+        }
+
     public:
         bool has(machine_word key) const { return internal_pos_of(key) + 1; }
+        int get(machine_word key) {
+            const auto pos = internal_pos_of(key);
+            // report -1 if key not found
+            if(pos==-1) return -1;
+            auto & item = _items[pos];
+            // update LRU list
+            move_attached_node_to_list_head(item, pos, _mru_list);
+            // return its value
+            return item.value();
+        }
 
-        result_type get(machine_word key) {
-            adjust_load_factor();
+        result_type get_or_put(machine_word key) {
+            int removed_value = adjust_load_factor_remove_one();
             auto start = c2p(key);
             int first_free_pos=-1;
             for (int step = 0; step < items_count; ++step) {
@@ -218,21 +284,21 @@ namespace nitrogl {
                 } // important that this is first
                 if (item.key == key) { // found the item with high probability
                     move_attached_node_to_list_head(item, pos, _mru_list);
-                    return {item.value(), true};
+                    return {item.value(), removed_value, true};
                 }
             }
             // if we got here, key was not found, let's put it one of the free
             // location we found.
 
             // error, key not found and no free place to allocate
-            if(first_free_pos==-1) return { -1, false };
+            if(first_free_pos==-1) return { -1, -1, false };
             item_t & item = _items[first_free_pos];
             item.set_is_free_and_tombstone_false();
             item.key=key;
             remove_node(item, first_free_pos, _free_list);
             move_detached_node_to_list_head(item, first_free_pos, _mru_list);
             ++_mru_size;
-            return { item.value(), false };
+            return { item.value(), removed_value, false };
         }
 
     private:
@@ -245,11 +311,13 @@ namespace nitrogl {
         }
 
     public:
-        void remove(machine_word key) {
+        int remove(machine_word key) {
             auto start = internal_pos_of(key);
-            if(start==-1) return;
+            if(start==-1) return -1;
             auto & removed_item = _items[start];
+            int removed_item_value = removed_item.value();
             internal_remove_key_node(removed_item, start);
+            return removed_item_value;
         }
 
         void clear() {

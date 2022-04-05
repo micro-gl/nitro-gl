@@ -3,8 +3,8 @@
 #define MICROGL_USE_STD_MATH
 #define NITROGL_ENABLE_THROW
 
-#include "src/Resources.h"
 #include "src/example.h"
+#include "src/Resources.h"
 #include <nitrogl/ogl/ebo.h>
 #include <nitrogl/ogl/vbo.h>
 #include <nitrogl/ogl/vao.h>
