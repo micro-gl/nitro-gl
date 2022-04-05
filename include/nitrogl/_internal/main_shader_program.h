@@ -155,7 +155,7 @@ void main()
             return vas;
         }
 
-        // ctor: init with empty shaders and attach which is legal
+        // ctor: internal_init with empty shaders and attach which is legal
         main_shader_program(const shader & vertex, const shader & fragment, bool $link=false) :
                             shader_program(vertex, fragment, $link), uniforms() {
         }

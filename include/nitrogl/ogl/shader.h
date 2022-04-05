@@ -47,7 +47,7 @@ namespace nitrogl {
 
     public:
         explicit shader(const type shader_type) :
-        owner(true), _type(shader_type), _is_compiled(false), _id(0) {
+            owner(true), _type(shader_type), _is_compiled(false), _id(0) {
             create();
         }
         static shader null_shader() { return shader(); }

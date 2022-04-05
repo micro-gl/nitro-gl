@@ -25,36 +25,17 @@ namespace nitrogl {
             const char * id_str() const {
                 return nitrogl::numbers_99_db::get(id);
             }
-            char size_id_str() const { return 2; }
+            static constexpr char size_id_str() { return 2; }
         };
-//        static unsigned assign_id() {
-//            static unsigned int id=-1;
-//            return ++id;
-//        }
 
     protected:
         struct no_more_than_999_samplers_allowed {};
         struct no_more_than_99_samplers_allowed {};
         struct location_of_uniform_not_found {};
         unsigned int _sub_samplers_count=0;
-//        const unsigned int _id;
-//        char _id_string[4]; // "###0", null terminated through '0' initialization
-//        char _id_string_len; // "###0"
 
-        sampler_t() : _sub_samplers_count(0), _traversal_info{-1, false}
-//        _id(assign_id()), _id_string{0}, _id_string_len(0)
-        {
-//            _id_string_len = nitrogl::facebook_uint32_to_str(_id, _id_string);
-//            if(_id_string_len>3) {
-//#ifdef NITROGL_ENABLE_THROW
-//                throw no_more_than_999_samplers_allowed();
-//#endif
-//            }
-        }
-        static char * get_general_static_string_storage() {
-            // used for assembling strings for uniforms locations
-            static char storage[100]{0};
-            return storage;
+        sampler_t() : _sub_samplers_count(0),
+            _traversal_info{-1, false} {
         }
 
     public:
@@ -63,10 +44,10 @@ namespace nitrogl {
             return _traversal_info;
         }
         GLint get_uniform_location(GLuint program, const char * name) const {
-            char s[50] {0};
+            static char s[50] {0};
             auto i = _traversal_info.id_str();
             s[0]='d';s[1]='a';s[2]='t';s[3]='a';s[4]='_';
-            s[5]=i[0];s[6]=i[1];//s[7]=i[2];s[8]=i[3];s[9]=i[4];
+            s[5]=i[0];s[6]=i[1];
             char * next = s + 5 + _traversal_info.size_id_str();
             *(next++) = '.';
             for (;; ++name, ++next) {
@@ -89,7 +70,6 @@ namespace nitrogl {
         sampler_t * sub_sampler(unsigned index) {
             return sub_samplers()[index];
         }
-//        const char * id_string() const { return _id_string; }
         virtual const char * name() const { return ""; };
         virtual const char * uniforms() const { return nullptr; }
         virtual const char * other_functions() const { return nullptr; }
@@ -109,7 +89,7 @@ namespace nitrogl {
 
         virtual nitrogl::uintptr_type hash_code() const {
             microc::iterative_murmur<nitrogl::uintptr_type> murmur;
-            murmur.begin(reinterpret_cast<nitrogl::uintptr_type>(main()));
+            murmur.begin_cast(main());
             const auto ssc = sub_samplers_count();
             for (unsigned int ix = 0; ix < ssc; ++ix)
                 murmur.next(sub_sampler(ix)->hash_code());

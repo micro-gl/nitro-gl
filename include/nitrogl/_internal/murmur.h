@@ -45,13 +45,21 @@ namespace microc {
             static_assert(_is_unsigned, "machine-word must be unsigned");
         }
 
-        void begin(machine_word seed) {
+        template<class VV> iterative_murmur begin_cast(VV seed) {
+            return begin(reinterpret_cast<machine_word>(seed));
+        }
+        iterative_murmur begin(machine_word seed) {
             _state=seed; _len=0;
+            return *this;
         }
 
-        void next(machine_word payload) {
+        template<class VV> iterative_murmur next_cast(VV payload) {
+            return next(reinterpret_cast<machine_word>(payload));
+        }
+        iterative_murmur next(machine_word payload) {
             ++_len;
             _next<_bits_>(payload);
+            return *this;
         }
 
         machine_word end() {

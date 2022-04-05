@@ -11,7 +11,7 @@
 #pragma once
 
 namespace nitrogl {
-    using compositor = const char *;
+    using compositor_t = const char *;
 
     struct porter_duff {
 

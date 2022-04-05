@@ -27,7 +27,7 @@ namespace microc {
      * 1. size is upto 10 bits = 1024 for 32 bits keys
      * 2. size is upto 21 bits = 2,097,152 for 64 bits keys
      * 3. compact lookup and is perfect for CPU cache
-     * 4. Objects can be constructed at init time, and are never destructed (but rather reused), unless the pool is destructed
+     * 4. Objects can be constructed at internal_init time, and are never destructed (but rather reused), unless the pool is destructed
      * 5. You can also defer construction to a later time.
      * This uses a hash table with robin hood probing and in-place linked-list, that fits in a machine word.
      * and is very conservative with memory, which allows CPU caches to load many entries at once.

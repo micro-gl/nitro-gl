@@ -64,7 +64,6 @@
 
 using namespace microtess::triangles;
 using namespace microtess::polygons;
-//using namespace nitrogl;
 
 namespace nitrogl {
 
@@ -84,14 +83,15 @@ namespace nitrogl {
 
     private:
         using static_alloc = micro_alloc::static_linear_allocator<char, 1<<14, 0>;
-        using lru_main_shader_pool_t = microc::lru_pool<main_shader_program, 5, nitrogl::uintptr_type, static_alloc>;
+        using lru_main_shader_pool_t = microc::lru_pool<main_shader_program, 5,
+                                                nitrogl::uintptr_type, static_alloc>;
         window_t _window;
-//        gl_texture _tex;
         gl_texture _tex_backdrop;
         fbo_t _fbo;
         multi_render_node _node_multi;
         p4_render_node _node_p4;
-
+        blend_mode_t _blend_mode;
+        compositor_t _alpha_compositor;
 
         static static_alloc get_static_allocator() {
             // static allocator, shared by all canvases
@@ -112,34 +112,7 @@ namespace nitrogl {
 
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
-    public:
-        void generate_backdrop() {
-            // move
-            _tex_backdrop = gl_texture::empty(width(), height(), GL_RGBA, _is_pre_mul_alpha,
-                                         GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-        }
-
-        // if wants AA:
-        // 1. create RBO with multisampling and attach it to color in fbo_t, and then blit to texture's fbo_t
-        // if you are given texture, then draw into it
-        explicit canvas(const gl_texture & tex) : _tex_backdrop(gl_texture::un_generated_dummy()),
-                _fbo(), _node_multi(), _node_p4(), _window(), _is_pre_mul_alpha(tex.is_premul_alpha()) {
-            glCheckError();
-            updateClipRect(0, 0, tex.width(), tex.height());
-            updateCanvasWindow(0, 0, tex.width(), tex.height());
-            _fbo.attachTexture(tex);
-            generate_backdrop();
-            copy_to_backdrop();
-            _node_p4.init();
-            _node_multi.init();
-            glCheckError();
-        }
-
-        // if you got nothing, draw to bound fbo
-        canvas(int width, int height, bool is_pre_mul_alpha=true) :
-            _tex_backdrop(gl_texture::un_generated_dummy()),
-            _fbo(fbo_t::from_current()), _node_multi(), _node_p4(), _window(),
-            _is_pre_mul_alpha(is_pre_mul_alpha) {
+        void internal_init(unsigned width, unsigned height) {
             updateClipRect(0, 0, width, height);
             updateCanvasWindow(0, 0, width, height);
             generate_backdrop();
@@ -147,6 +120,42 @@ namespace nitrogl {
             _node_p4.init();
             _node_multi.init();
             glCheckError();
+        }
+
+    public:
+        void generate_backdrop() {
+            // move
+            _tex_backdrop = gl_texture::empty(width(), height(), GL_RGBA, _is_pre_mul_alpha,
+                                         GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+        }
+
+        /**
+         * Update the blend mode and alpha compositor(usually Porter-Duff opertor)
+         */
+        void update_composition(blend_mode_t blend_mode,
+                                compositor_t alpha_compositor=porter_duff::SourceOver()) {
+            _blend_mode=blend_mode; _alpha_compositor=alpha_compositor;
+        }
+
+
+        // if wants AA:
+        // 1. create RBO with multisampling and attach it to color in fbo_t, and then blit to texture's fbo_t
+        // if you are given texture, then draw into it
+        explicit canvas(const gl_texture & tex) : _tex_backdrop(gl_texture::un_generated_dummy()),
+                                                  _fbo(), _node_multi(), _node_p4(), _window(),
+                                                  _is_pre_mul_alpha(tex.is_premul_alpha()),
+                                                  _blend_mode(blend_modes::Normal()),
+                                                  _alpha_compositor(porter_duff::SourceOver()) {
+            _fbo.attachTexture(tex);
+            internal_init(tex.width(), tex.height());
+        }
+
+        // if you got nothing, draw to bound fbo
+        canvas(int width, int height, bool is_pre_mul_alpha=true) :
+                _tex_backdrop(gl_texture::un_generated_dummy()), _fbo(fbo_t::from_current()),
+                _node_multi(), _node_p4(), _window(), _is_pre_mul_alpha(is_pre_mul_alpha),
+                _blend_mode(blend_modes::Normal()), _alpha_compositor(porter_duff::SourceOver()) {
+            internal_init(width, height);
         }
 
         /**
@@ -249,6 +258,45 @@ namespace nitrogl {
             fbo_t::unbind();
         }
 
+        /**
+         * given a sampler, generate the main shader of it and use the pool
+         * to get it or update it
+         * @param sampler Sampler object
+         * @return
+         */
+        main_shader_program & get_main_shader_program_for_sampler(
+                sampler_t & sampler) {
+            /*{ // debug
+                static int LL = 0;
+                if(LL%1000==0) {
+                    _blend_mode = blend_modes::Normal();
+                } else {
+                    _blend_mode = blend_modes::Multiply();
+                }
+                ++LL;
+            }*/
+            // we always regenerate a traversal because parts of a sampler
+            // tree may have been used in another sampler, which might have
+            // written the traversal info
+            sampler.generate_traversal(0);
+            microc::iterative_murmur<nitrogl::uintptr_type> murmur;
+            const auto sampler_key = sampler.hash_code();
+            const auto key = murmur.begin(sampler_key)
+                  .next(_is_pre_mul_alpha ? 0 : 1)
+                  .next_cast(_blend_mode)
+                  .next_cast(_alpha_compositor).end();
+            auto & pool = lru_main_shader_pool();
+            auto res = pool.get(key);
+            auto & program = res.object;
+            if(!res.is_active) {
+                // if it is not active, reconfigure it with new shader source code
+                shader_compositor::composite_main_program_from_sampler(
+                        program,sampler, _is_pre_mul_alpha,
+                        _blend_mode, _alpha_compositor);
+            }
+            return program;
+        }
+
     public:
 
         void drawRect(sampler_t & sampler,
@@ -273,37 +321,9 @@ namespace nitrogl {
                     right, bottom, u1, v0, 0.0, 1.0,
                     right, top,    u1, v1, 0.0, 1.0,
                     left,  top,    u0, v1, 0.0, 1.0,
-                    };
+            };
 
-            // get shader from cache
-            //            color_sampler sampler(1.0, 0.0, 1.0, 1.0);
-//            static mix_sampler sampler;
-//            static color_sampler sampler(1.0,0.0,0.0,1.0);
-
-///*
-            // compute key
-            sampler.generate_traversal(0);
-            const auto sampler_key = sampler.hash_code();
-            auto & pool = lru_main_shader_pool();
-            auto res = pool.get(sampler_key);
-            auto & program = res.object;
-            if(!res.is_active) {
-                // if it is not active, reconfigure it with new shader source code
-                shader_compositor::composite_main_program_from_sampler2(
-                        program,sampler, _is_pre_mul_alpha,
-                                blend_modes::Normal(),
-                                porter_duff::SourceOverOpaque());
-
-            }
-
-//            */
-
-            //
-//            main_shader_program program;
-//            shader_compositor::composite_main_program_from_sampler2(
-//                            program, sampler, _is_pre_mul_alpha,
-//                            blend_modes::Normal(),
-//                            porter_duff::SourceOverOpaque());
+            auto & program = get_main_shader_program_for_sampler(sampler);
 
             // data
             p4_render_node::data_type data = {
@@ -320,9 +340,6 @@ namespace nitrogl {
             _node_p4.render(program, sampler, data);
             glEnable(GL_BLEND);
 
-            //
-//            copy_region_to_backdrop(int(left), int(top),
-//                                    int(right+0.5f), int(bottom+0.5f));
             fbo_t::unbind();
             copy_to_backdrop();
             glCheckError();
@@ -368,7 +385,7 @@ namespace nitrogl {
             // get shader from cache
             test_sampler sampler;
             main_shader_program program;
-            shader_compositor::composite_main_program_from_sampler2(program, sampler);
+            shader_compositor::composite_main_program_from_sampler(program, sampler);
 
             // data
             multi_render_node::data_type data = {
