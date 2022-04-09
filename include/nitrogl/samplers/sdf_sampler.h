@@ -12,11 +12,11 @@
 
 #include "sampler.h"
 #include "../traits.h"
-#include "../color.h"
 
 namespace nitrogl {
 
-    struct color_sampler : public sampler_t {
+    struct sdf_sampler : public multi_sampler<2> {
+        using base = multi_sampler<2>;
         const char * name() const override { return "color_sampler"; }
         const char * uniforms() const override {
             return R"(
@@ -37,7 +37,14 @@ vec4 other_function(float t) {
         const char * main() const override {
             return R"(
 (vec3 uv) {
-    return data.color;
+    vec2 uv1 = uv.xy - vec2(0.5f);
+    float r = 0.5;
+    float d = length(uv1) - r;
+    vec4 col = (d>0.0) ? vec4(0.,0.,0., 0.) : vec4(0.65,0.85,0.0,1.);
+    return vec4(col);
+//    return vec4(uv1, 0.0, 1.0);
+    return vec4(vec3(uv1.y), 1.0);
+//    return data.color;
 }
 )";
         }
@@ -46,16 +53,15 @@ vec4 other_function(float t) {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-            GLint loc = get_uniform_location(program, "color");
-            glUniform4f(loc, color.r, color.g, color.b, color.a);
+//            GLint loc = get_uniform_location(program, "color");
+//            glUniform4f(loc, color.r, color.g, color.b, color.a);
         }
-
-    private:
 
     public:
         color_t color;
-        color_sampler() : color{1.0, 1.0, 1.0, 1.0}, sampler_t() {}
-        explicit color_sampler(color_t $color) : color($color), sampler_t() {}
-        color_sampler(float r, float g, float b, float a) : color{r, g, b, a}, sampler_t() {}
+        float radius;
+        sdf_sampler() : radius(0.5), color{0.0, 1.0, 1.0, 1.0}, base() {
+
+        }
     };
 }

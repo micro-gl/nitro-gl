@@ -101,7 +101,7 @@ namespace nitrogl {
             char buff[1000];
             info_log(buff, 1000);
             //
-            return true;
+            return _is_compiled;
         }
         bool updateShaderSource(const GLchar * source, bool compile_right_away=false) {
             return updateShaderSource(&source, 1, nullptr, compile_right_away);

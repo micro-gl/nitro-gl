@@ -29,7 +29,8 @@ if(DEFINED SDL2_FOUND)
             ex_create_numbers_db.cpp
             ex_1.cpp
             ex_sampler_texture.cpp
-            ex_cache.cpp)
+            ex_cache.cpp
+            ex_sdf.cpp)
 
     set(SOURCES_SHARED
 #            libs/glad_3.2_core/src/glad.c

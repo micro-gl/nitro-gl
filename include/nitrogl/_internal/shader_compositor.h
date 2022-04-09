@@ -278,11 +278,18 @@ namespace nitrogl {
             // or was used compiled once in the past.
             if(!vertex.isCompiled())
                 vertex.updateShaderSource(main_shader_program::vert, true);
-            fragment.updateShaderSource(buffers.sources, buffers.size(), buffers.lengths, true);
+            bool stat_compile = fragment.updateShaderSource(buffers.sources, buffers.size(),
+                                                            buffers.lengths, true);
+            GLchar source[10000];
+            if(!stat_compile) {
+                fragment.info_log(source, sizeof(source));
+                std::cout << source << std::endl;
+                struct compile_error{};
+                throw compile_error{};
+            }
             program.resolve_vertex_attributes_and_uniforms_and_link();
             // sampler_t can now cache uniforms variables
             sampler.cache_uniforms_locations(program.id());
-            GLchar source[10000];
             program.fragment().get_source(source, sizeof (source));
             std::cout<< source <<std::endl;
         }

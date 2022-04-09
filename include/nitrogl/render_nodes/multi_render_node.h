@@ -11,6 +11,9 @@
 #pragma once
 
 #include "../ogl/shader_program.h"
+#include "../ogl/vao.h"
+#include "../ogl/vbo.h"
+#include "../ogl/ebo.h"
 #include "../_internal/main_shader_program.h"
 #include "../color.h"
 #include "../samplers/sampler.h"
