@@ -71,7 +71,9 @@ namespace nitrogl {
             return sub_samplers()[index];
         }
         virtual const char * name() const { return ""; };
-        virtual const char * uniforms() const { return nullptr; }
+        virtual const char * uniforms() const {
+            return nullptr;
+        }
         virtual const char * other_functions() const { return nullptr; }
         virtual const char * main() const = 0;
         void cache_uniforms_locations(GLuint program) {

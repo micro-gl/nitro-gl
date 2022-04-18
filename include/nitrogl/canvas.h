@@ -322,7 +322,7 @@ namespace nitrogl {
                     right, bottom, u1, v0, 0.0, 1.0,
                     right, top,    u1, v1, 0.0, 1.0,
                     left,  top,    u0, v1, 0.0, 1.0,
-                    };
+            };
 
             auto & program = get_main_shader_program_for_sampler(sampler);
 
@@ -430,7 +430,7 @@ namespace nitrogl {
             static GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
 
             // get shader from cache
-            test_sampler sampler;
+            test_sampler<> sampler;
             main_shader_program program;
             shader_compositor::composite_main_program_from_sampler(program, sampler);
 

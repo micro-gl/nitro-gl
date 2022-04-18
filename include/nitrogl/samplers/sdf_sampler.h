@@ -11,6 +11,8 @@
 #pragma once
 
 #include "sampler.h"
+#include "color_sampler.h"
+#include "test_sampler.h"
 #include "../traits.h"
 
 namespace nitrogl {
@@ -21,7 +23,8 @@ namespace nitrogl {
         const char * uniforms() const override {
             return R"(
 {
-    vec4 color; // color
+    float r; // radius
+    float stroke; // stroke width
 }
 )";
         }
@@ -37,14 +40,33 @@ vec4 other_function(float t) {
         const char * main() const override {
             return R"(
 (vec3 uv) {
-    vec2 uv1 = uv.xy - vec2(0.5f);
+    // move to origin
     float r = 0.5;
-    float d = length(uv1) - r;
-    vec4 col = (d>0.0) ? vec4(0.,0.,0., 0.) : vec4(0.65,0.85,0.0,1.);
-    return vec4(col);
-//    return vec4(uv1, 0.0, 1.0);
-    return vec4(vec3(uv1.y), 1.0);
-//    return data.color;
+    float pix = 10.0/250.0;
+    float sw = 10/2 * pix; // stroke width
+    float aa_b = 2.0*pix; // aa boundary
+
+    // SDF function
+    vec2 xy = uv.xy - vec2(0.5f);
+    float d = length(xy) - r; // sdf, signed distance to shape's boundary
+
+    /////////////
+    // inner circle with AA at the boundary
+    /////////////
+    vec4 col_base = sampler_00(uv);
+    col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_b, d) );
+
+    /////////////
+    // mix stroke
+    /////////////
+    vec4 col_src = sampler_01(uv);
+    col_src.a *= (1.0 - smoothstep(sw, sw + aa_b, abs(d) ));
+
+    /////////////
+    // source-over compositing stroke over circle
+    /////////////
+    vec4 col = __internal_porter_duff(1.0, 1.0-col_src.a, col_src, col_base);
+    return vec4(col.rgb/col.a, col.a); // un-multiply alpha
 }
 )";
         }
@@ -57,11 +79,16 @@ vec4 other_function(float t) {
 //            glUniform4f(loc, color.r, color.g, color.b, color.a);
         }
 
+        color_sampler _color_void;
+        color_sampler _color_void_2;
+        test_sampler<> _sampler_test;
     public:
         color_t color;
         float radius;
-        sdf_sampler() : radius(0.5), color{0.0, 1.0, 1.0, 1.0}, base() {
-
+        sdf_sampler(float r=0.5f) : radius(r),
+        _color_void{0.0, 1.0, 0.0, 1.0}, _color_void_2{0.0, 1.0, 0.0, 1.0}, base() {
+            add_sub_sampler(&_sampler_test);
+            add_sub_sampler(&_color_void_2);
         }
     };
 }

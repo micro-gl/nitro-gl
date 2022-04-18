@@ -249,6 +249,7 @@ namespace nitrogl {
             buffers.write_char_array_pointer(main_shader_program::frag_version);
             // write frag variables
             buffers.write_char_array_pointer(main_shader_program::frag_other);
+            buffers.write_char_array_pointer(nitrogl::porter_duff::base());
             // add samplers tree recursively
             _internal_composite(&sampler, buffers);
             // add define (#define __SAMPLER_MAIN sampler_{id})
@@ -257,14 +258,8 @@ namespace nitrogl {
                                              sampler.traversal_info().size_id_str());
             buffers.write_new_line();
             // write compositing stuff
-            if(compositor) {
-                if(compositor!=nitrogl::porter_duff::SourceOverOpaque())
-                    buffers.write_char_array_pointer(nitrogl::porter_duff::base());
-                buffers.write_char_array_pointer(compositor);
-            }
-            if(blend_mode) {
-                buffers.write_char_array_pointer(blend_mode);
-            }
+            if(compositor) buffers.write_char_array_pointer(compositor);
+            if(blend_mode) buffers.write_char_array_pointer(blend_mode);
             if(is_premul_alpha_result)
                 buffers.write_char_array_pointer(main_shader_program::define_premul_alpha);
             // write main shader

@@ -118,7 +118,6 @@ void main()
 //    FragColor =vec4(coords, 0, 1.0);
 //    FragColor = vec4(bd_uvs.x, bd_uvs.x, bd_uvs.x, 1.0);
 //    FragColor = vec4(bd_uvs.y, bd_uvs.y, bd_uvs.y, 1.0);
-//    FragColor = sampler_001(coords);
 }
         )foo";
 

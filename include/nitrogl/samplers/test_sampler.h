@@ -15,12 +15,11 @@
 
 namespace nitrogl {
 
+    template<bool horizontal=true>
     struct test_sampler : public sampler_t {
+        test_sampler() : sampler_t() {}
+
         const char * name() const override { return "test_sampler"; }
-        const char * uniforms() const override {
-            return R"(
-            )";
-        }
 
         const char * other_functions() const override {
             return R"(
@@ -31,11 +30,19 @@ vec4 other_function(float t) {
         }
 
         const char * main() const override {
-            return R"(
-(vec3 uv, float time) {
+            if(horizontal) {
+                return R"(
+(vec3 uv) {
+    return vec4(uv.x, uv.x, uv.x, 1.0);
+}
+)";
+            } else {
+                return R"(
+(vec3 uv) {
     return vec4(uv.y, uv.y, uv.y, 1.0);
 }
 )";
+            }
         }
 
     };
