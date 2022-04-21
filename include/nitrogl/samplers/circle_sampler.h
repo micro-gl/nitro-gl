@@ -17,14 +17,14 @@
 
 namespace nitrogl {
 
-    struct sdf_sampler : public multi_sampler<2> {
+    struct circle_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
-        const char * name() const override { return "color_sampler"; }
+        const char * name() const override { return "circle_sampler"; }
         const char * uniforms() const override {
             return R"(
 {
-    float r; // radius
-    float stroke; // stroke width
+    // radius, stroke-width, aa_width
+    float inputs[3];
 }
 )";
         }
@@ -40,13 +40,25 @@ vec4 other_function(float t) {
         const char * main() const override {
             return R"(
 (vec3 uv) {
-    // move to origin
-    float r = 0.5;
-    float pix = 10.0/250.0;
-    float sw = 10/2 * pix; // stroke width
-    float aa_b = 2.0*pix; // aa boundary
+//    // move to origin data.
+//    float r = 0.5;
+//    //    float pix = 1.0/250.0;
+//    float sw = 0.01/2.;//10.0/2 * pix; // stroke width,  divide by 2
+//    float aa_b = 0.04;//2.0*pix; // aa boundary, mul by 2 for more beautiful
 
+    /////////////
+    // inputs
+    /////////////
+    // radius
+    float r = data.inputs[0];
+    // stroke width,  divide by 2
+    float sw = data.inputs[1]/2.0;
+    // aa boundary, mul by 2 for more beautiful
+    float aa_b = data.inputs[2]*2.0;
+
+    /////////////
     // SDF function
+    /////////////
     vec2 xy = uv.xy - vec2(0.5f);
     float d = length(xy) - r; // sdf, signed distance to shape's boundary
 
@@ -75,20 +87,28 @@ vec4 other_function(float t) {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-//            GLint loc = get_uniform_location(program, "color");
-//            glUniform4f(loc, color.r, color.g, color.b, color.a);
+            float inputs[3] = { radius, stroke_width, aa_width };
+            GLint loc_inputs = get_uniform_location(program, "inputs");
+            glUniform1fv(loc_inputs, 3, inputs);
         }
 
-        color_sampler _color_void;
-        color_sampler _color_void_2;
+        color_sampler _color_void {0.0, 1.0, 0.0, 1.0};
+        color_sampler _color_void_2 {0.0, 1.0, 0.0, 1.0};
         test_sampler<> _sampler_test;
+
     public:
-        color_t color;
         float radius;
-        sdf_sampler(float r=0.5f) : radius(r),
-        _color_void{0.0, 1.0, 0.0, 1.0}, _color_void_2{0.0, 1.0, 0.0, 1.0}, base() {
-            add_sub_sampler(&_sampler_test);
-            add_sub_sampler(&_color_void_2);
+        float stroke_width;
+        float aa_width;
+
+        template <class... Ts>
+        circle_sampler(float radius=0.5f, float stroke_width=0.01f, float aa_width=0.01f, Ts... rest) :
+                    radius(radius),stroke_width(stroke_width), aa_width(aa_width),
+                    base(rest...) {
+//            _sub_samplers[0]=&_sampler_test;
+//            _sub_samplers[1]=&_color_void_2;
+//            add_sub_sampler(&_sampler_test);
+//            add_sub_sampler(&_color_void_2);
         }
     };
 }

@@ -32,7 +32,7 @@ namespace nitrogl {
         struct no_more_than_999_samplers_allowed {};
         struct no_more_than_99_samplers_allowed {};
         struct location_of_uniform_not_found {};
-        unsigned int _sub_samplers_count=0;
+        unsigned int _sub_samplers_count;
 
         sampler_t() : _sub_samplers_count(0),
             _traversal_info{-1, false} {
@@ -116,9 +116,10 @@ namespace nitrogl {
 
     template<unsigned N>
     struct multi_sampler : public sampler_t {
-    private:
+    protected:
         sampler_t * _sub_samplers[N];
 
+    public:
         sampler_t * const * sub_samplers() const override {
             return _sub_samplers;
         }
@@ -126,11 +127,18 @@ namespace nitrogl {
             return _sub_samplers;
         }
 
-    public:
-        multi_sampler() : _sub_samplers{nullptr}, sampler_t() {}
+        multi_sampler() : _sub_samplers{nullptr}, sampler_t() {
+            _sub_samplers_count=N;
+        }
 
-        void add_sub_sampler(sampler_t * sampler) {
+        template <class... Ts>
+        multi_sampler(Ts... rest) : _sub_samplers{rest...}, sampler_t() {
+            _sub_samplers_count=N;
+        }
+
+        multi_sampler & add_sub_sampler(sampler_t * sampler) {
             _sub_samplers[_sub_samplers_count++] = sampler;
+            return *this;
         }
 
         unsigned int generate_traversal(unsigned int id) override {

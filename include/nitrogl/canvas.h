@@ -302,10 +302,11 @@ namespace nitrogl {
 
         void drawRect(sampler_t & sampler,
                       float left, float top, float right, float bottom,
+                      float opacity = 1.0,
                       mat3f transform = mat3f::identity(),
                       float u0=0., float v0=1., float u1=1., float v1=0.,
-                      const mat3f & transform_uv = mat3f::identity(),
-                      float opacity = 1.0/1) {
+                      const mat3f & transform_uv = mat3f::identity()
+                      ) {
             static float t =0;
             t+=0.01;
             glViewport(0, 0, width(), height());

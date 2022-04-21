@@ -183,7 +183,7 @@ namespace nitrogl {
                         race.handled=true;
                         return begin_1;
                     }
-                    case 1: { // data. --> data_{current_sampler_global_id}
+                    case 1: { // data. --> data_{current_sampler_global_id}.
                         auto begin_0 = from; // latest end loose
                         auto end_0 = race.next + race.name_len - 1; // end of '...data'
                         buffer.write_range_pointer(begin_0, end_0); // stitch [main, data)
@@ -199,25 +199,37 @@ namespace nitrogl {
                 return nullptr;
             };
             race_t races[2] = {
-                    {0, "sampler_", 8, main, true},
-                    {1, "data.", 5, main, true},
+                    {0, "sampler_", 8, main, true, true},
+                    {1, "data.", 5, main, true, true},
             };
             const auto * latest_main = main;
-            if(sub_samplers_count==0) races[0].handled=false; // disable 0
-            if(!has_uniforms_data) races[1].handled=false; // disable 1
+            if(sub_samplers_count==0) races[0].enabled=false; // disable 0
+            if(!has_uniforms_data) races[1].enabled=false; // disable 1
             int arg_min=0;
             for(; arg_min!=-1; ) {
                 arg_min=-1;
                 // pick next index of handled and argmin
                 for (int ix = 0; ix < 2; ++ix) {
                     auto & race = races[ix];
-                    if(race.handled and race.next) {
+                    if(!race.enabled) continue;
+                    if(race.handled) {
                         race.next = index_of_in(race.name, latest_main, race.name_len);
-                        if(race.next==nullptr) continue; // did not find
+                        if(race.next==nullptr) { // did not find
+                            // let's disable it entirely
+                            race.enabled=false;
+                            continue;
+                        }
+                        // flag it is pending a handle
                         race.handled=false;
+                    }
+                }
+                for (int ix = 0; ix < 2; ++ix) {
+                    auto & race = races[ix];
+                    if(!race.enabled) continue;
+                    if(!race.handled) {
                         if(arg_min==-1 or
-                           races[arg_min].next==nullptr or
-                           race.next<races[arg_min].next)
+                            races[arg_min].next==nullptr or
+                            race.next<races[arg_min].next)
                             arg_min=ix;
                     }
                 }
@@ -233,6 +245,7 @@ namespace nitrogl {
             const char * name; int name_len;
             const char * next;
             bool handled;
+            bool enabled;
         };
 
     public:
