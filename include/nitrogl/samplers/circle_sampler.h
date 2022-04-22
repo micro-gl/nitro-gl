@@ -24,7 +24,7 @@ namespace nitrogl {
             return R"(
 {
     // radius, stroke-width, aa_width
-    float inputs[3];
+    float inputs[4];
 }
 )";
         }
@@ -53,8 +53,9 @@ vec4 other_function(float t) {
     float r = data.inputs[0];
     // stroke width,  divide by 2
     float sw = data.inputs[1]/2.0;
-    // aa boundary, mul by 2 for more beautiful
-    float aa_b = data.inputs[2]*2.0;
+    // aa fill and stroke, mul by 2 for more beautiful
+    float aa_fill = data.inputs[2]*2.0;
+    float aa_stroke = data.inputs[3]*2.0;
 
     /////////////
     // SDF function
@@ -66,13 +67,13 @@ vec4 other_function(float t) {
     // inner circle with AA at the boundary
     /////////////
     vec4 col_base = sampler_00(uv);
-    col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_b, d) );
+    col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_fill, d) );
 
     /////////////
     // mix stroke
     /////////////
     vec4 col_src = sampler_01(uv);
-    col_src.a *= (1.0 - smoothstep(sw, sw + aa_b, abs(d) ));
+    col_src.a *= (1.0 - smoothstep(sw, sw + aa_stroke, abs(d) ));
 
     /////////////
     // source-over compositing stroke over circle
@@ -87,9 +88,9 @@ vec4 other_function(float t) {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-            float inputs[3] = { radius, stroke_width, aa_width };
+            float inputs[4] = { radius, stroke_width, aa_fill, aa_stroke };
             GLint loc_inputs = get_uniform_location(program, "inputs");
-            glUniform1fv(loc_inputs, 3, inputs);
+            glUniform1fv(loc_inputs, 4, inputs);
         }
 
         color_sampler _color_void {0.0, 1.0, 0.0, 1.0};
@@ -99,11 +100,11 @@ vec4 other_function(float t) {
     public:
         float radius;
         float stroke_width;
-        float aa_width;
+        float aa_fill, aa_stroke;
 
         template <class... Ts>
-        circle_sampler(float radius=0.5f, float stroke_width=0.01f, float aa_width=0.01f, Ts... rest) :
-                    radius(radius),stroke_width(stroke_width), aa_width(aa_width),
+        circle_sampler(float radius=0.5f, float stroke_width=0.01f, float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
+                radius(radius), stroke_width(stroke_width), aa_fill(aa_fill), aa_stroke(aa_stroke),
                     base(rest...) {
 //            _sub_samplers[0]=&_sampler_test;
 //            _sub_samplers[1]=&_color_void_2;

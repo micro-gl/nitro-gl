@@ -59,6 +59,8 @@
 #include "_internal/lru_pool.h"
 #include "camera.h"
 #include "samplers/sampler.h"
+#include "samplers/circle_sampler.h"
+#include "samplers/color_sampler.h"
 
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
@@ -345,6 +347,24 @@ namespace nitrogl {
             fbo_t::unbind();
             copy_to_backdrop();
             glCheckError();
+        }
+
+        void drawCircle(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+                        float x, float y, float radius, float stroke,
+                        float opacity = 1.0,
+                        const mat3f & transform = mat3f::identity(),
+                        float u0=0., float v0=1., float u1=1., float v1=0.,
+                        const mat3f & transform_uv = mat3f::identity()) {
+            float ex_radi = radius + stroke + 5; // extended radius
+            float l = x - ex_radi, t = y - ex_radi;
+            float r = x + ex_radi, b = y + ex_radi;
+            float w = r-l, h = b-t;
+            float radius_n = radius/w;
+            float stroke_n = stroke/w;
+            float aa_fill = 1.0f/w;
+            float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/w);
+            circle_sampler cs(radius_n, stroke_n, aa_fill, aa_stroke, &sampler_fill, &sampler_stroke);
+            drawRect(cs, l, t, r, b, opacity, transform, u0, v0, u1, v1, transform_uv);
         }
 
         void drawRect2(sampler_t & sampler,

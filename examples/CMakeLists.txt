@@ -30,7 +30,9 @@ if(DEFINED SDL2_FOUND)
             ex_1.cpp
             ex_sampler_texture.cpp
             ex_cache.cpp
-            ex_sampler_circle.cpp)
+            ex_sampler_circle.cpp
+            ex_draw_circle.cpp
+            )
 
     set(SOURCES_SHARED
 #            libs/glad_3.2_core/src/glad.c
