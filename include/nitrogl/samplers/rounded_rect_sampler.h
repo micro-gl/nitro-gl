@@ -14,17 +14,18 @@
 #include "color_sampler.h"
 #include "test_sampler.h"
 #include "../traits.h"
+#include "../math/vertex2.h"
 
 namespace nitrogl {
 
-    struct circle_sampler : public multi_sampler<2> {
+    struct rounded_rect_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
         const char * name() const override { return "circle_sampler"; }
         const char * uniforms() const override {
             return R"(
 {
-    // radius, stroke-width, aa_fill, aa_stroke
-    float inputs[4];
+    // x1, y1, x2, y2, radius, stroke-width, aa_fill, aa_stroke
+    float inputs[6];
 }
 )";
         }
@@ -40,28 +41,24 @@ vec4 other_function(float t) {
         const char * main() const override {
             return R"(
 (vec3 uv) {
-//    // move to origin data.
-//    float r = 0.5;
-//    //    float pix = 1.0/250.0;
-//    float sw = 0.01/2.;//10.0/2 * pix; // stroke width,  divide by 2
-//    float aa_b = 0.04;//2.0*pix; // aa boundary, mul by 2 for more beautiful
 
     /////////////
     // inputs
     /////////////
-    // radius
-    float r = data.inputs[0];
+    vec2 a = vec2(data.inputs[0], data.inputs[1]);
+    float r = data.inputs[2];
     // stroke width,  divide by 2
-    float sw = data.inputs[1]/2.0;
+    float sw = data.inputs[3]/2.0;
     // aa fill and stroke, mul by 2 for more beautiful
-    float aa_fill = data.inputs[2]*2.0;
-    float aa_stroke = data.inputs[3]*2.0;
+    float aa_fill = data.inputs[4]*2.0;
+    float aa_stroke = data.inputs[5]*2.0;
 
     /////////////
     // SDF function
     /////////////
-    vec2 xy = uv.xy - vec2(0.5f);
-    float d = length(xy) - r; // sdf, signed distance to shape's boundary
+    vec2 p = uv.xy - vec2(0.5f);
+    vec2 d2 = abs(p) - vec2(0.25,0.25);//+0.5f;
+    float d = length(max(d2,0.0)) + min(max(d2.x,d2.y),0.0) -0.1f;//+ 0.34;
 
     /////////////
     // inner circle with AA at the boundary
@@ -88,22 +85,31 @@ vec4 other_function(float t) {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-            float inputs[4] = { radius, stroke_width, aa_fill, aa_stroke };
+            float inputs[6] = { w, h, radius, stroke_width, aa_fill, aa_stroke };
             GLint loc_inputs = get_uniform_location(program, "inputs");
-            glUniform1fv(loc_inputs, 4, inputs);
+            glUniform1fv(loc_inputs, 6, inputs);
         }
 
+        color_sampler _color_void {0.0, 1.0, 0.0, 1.0};
+        color_sampler _color_void_2 {0.0, 1.0, 0.0, 1.0};
+        test_sampler<> _sampler_test;
+
     public:
+        float w, h;
         float radius;
         float stroke_width;
         float aa_fill, aa_stroke;
 
         template <class... Ts>
-        circle_sampler(float radius=0.5f, float stroke_width=0.01f,
-                       float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
-                        radius(radius), stroke_width(stroke_width), aa_fill(aa_fill),
-                        aa_stroke(aa_stroke),
-                        base(rest...) {
+        rounded_rect_sampler(float w, float h,
+                             float radius=0.5f, float stroke_width=0.01f,
+                             float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
+                             w(w), h(h), radius(radius), stroke_width(stroke_width),
+                             aa_fill(aa_fill), aa_stroke(aa_stroke), base(rest...) {
+//            _sub_samplers[0]=&_sampler_test;
+//            _sub_samplers[1]=&_color_void_2;
+//            add_sub_sampler(&_sampler_test);
+//            add_sub_sampler(&_color_void_2);
         }
     };
 }
