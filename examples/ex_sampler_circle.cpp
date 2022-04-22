@@ -23,7 +23,7 @@ int main() {
         auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
         auto tex_sampler_3 = texture_sampler<false>(Resources::loadTexture("assets/images/uv_256.png", true));
         color_sampler sampler_color(1.0,0.0,0.0,1.0);
-        circle_sampler circle { 0.45f, 0.01f, 0.01f, &tex_sampler_3, &tex_sampler_3 };
+        circle_sampler circle { 0.45f, 0.01f, 0.01f, 0.01f, &tex_sampler_3, &sampler_color };
 
 //        circle.sub_samplers()[0] = &tex_sampler_3;
 
