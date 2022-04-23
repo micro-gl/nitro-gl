@@ -45,8 +45,8 @@ vec4 other_function(float t) {
     /////////////
     // inputs
     /////////////
-    vec2 a = vec2(data.inputs[0], data.inputs[1]);
-    float r = data.inputs[2];
+    vec2 a = vec2(data.inputs[0], data.inputs[1])/2.0;
+    float r = data.inputs[2]/1.0;
     // stroke width,  divide by 2
     float sw = data.inputs[3]/2.0;
     // aa fill and stroke, mul by 2 for more beautiful
@@ -56,9 +56,10 @@ vec4 other_function(float t) {
     /////////////
     // SDF function
     /////////////
-    vec2 p = uv.xy - vec2(0.5f);
-    vec2 d2 = abs(p) - vec2(0.25,0.25);//+0.5f;
-    float d = length(max(d2,0.0)) + min(max(d2.x,d2.y),0.0) -0.1f;//+ 0.34;
+    vec2 p = (uv.xy - 0.5f);
+//    vec2 p = (2.0*uv.xy - 1.f);
+    vec2 d2 = abs(p) - a;
+    float d = length(max(d2,0.0)) + min(max(d2.x,d2.y),0.0) - r;//+ 0.34;
 
     /////////////
     // inner circle with AA at the boundary

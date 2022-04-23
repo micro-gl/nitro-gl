@@ -60,6 +60,7 @@
 #include "camera.h"
 #include "samplers/sampler.h"
 #include "samplers/circle_sampler.h"
+#include "samplers/rounded_rect_sampler.h"
 #include "samplers/color_sampler.h"
 
 #include "compositing/porter_duff.h"
@@ -365,6 +366,63 @@ namespace nitrogl {
             float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/w);
             circle_sampler cs(radius_n, stroke_n, aa_fill, aa_stroke, &sampler_fill, &sampler_stroke);
             drawRect(cs, l, t, r, b, opacity, transform, u0, v0, u1, v1, transform_uv);
+        }
+
+        void drawRoundedRect333(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+                             float left, float top, float right, float bottom,
+                             float radius, float stroke,
+                             float opacity = 1.0,
+                             const mat3f & transform = mat3f::identity(),
+                             float u0=0., float v0=1., float u1=1., float v1=0.,
+                             const mat3f & transform_uv = mat3f::identity()) {
+            float ex_radi = radius + stroke/2.0 + 5; // extended radius
+            float pad_and_stroke = 5.0f + stroke/2.0f;
+            float l = left + radius, t = top + radius;
+            float r = right - radius, b = bottom - radius;
+            float w = r-l, h = b-t;
+            float w_c = right-left + pad_and_stroke*2.0f, h_c = bottom-top + pad_and_stroke*2.0f;
+            float max_d = w_c > h_c ? w_c : h_c;
+            float l_c = left-pad_and_stroke, t_c = top-pad_and_stroke;
+            w /= max_d; h /= max_d;
+            float radius_n = radius/max_d;
+            float stroke_n = stroke/max_d;
+            float aa_fill = 1.0f/max_d;
+            float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/max_d);
+            rounded_rect_sampler cs(0.95, 0.95, radius_n, stroke_n, aa_fill, aa_stroke, &sampler_fill, &sampler_stroke);
+            drawRect(cs,
+                     left, top, right, bottom,
+                     opacity, transform, u0, v0, u1, v1, transform_uv);
+        }
+
+
+        void drawRoundedRect(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+                             float left, float top, float right, float bottom,
+                             float radius, float stroke,
+                             float opacity = 1.0,
+                             const mat3f & transform = mat3f::identity(),
+                             float u0=0., float v0=1., float u1=1., float v1=0.,
+                             const mat3f & transform_uv = mat3f::identity()) {
+            float ex_radi = radius + stroke/2.0 + 5; // extended radius
+            float pad_and_stroke = 5.0f + stroke/2.0f;
+            float l = left + radius, t = top + radius;
+            float r = right - radius, b = bottom - radius;
+            float w = r-l, h = b-t;
+            float w_c = right-left + pad_and_stroke*2.0f, h_c = bottom-top + pad_and_stroke*2.0f;
+            float max_d = w_c > h_c ? w_c : h_c;
+            float l_c = left-pad_and_stroke, t_c = top-pad_and_stroke;
+            w /= max_d; h /= max_d;
+            float off_l = (max_d-(right-left))/2.0f;
+            float off_t = (max_d-(bottom-top))/2.0f;
+            l_c=left-off_l;
+            t_c=top-off_t;
+            float radius_n = radius/max_d;
+            float stroke_n = stroke/max_d;
+            float aa_fill = 1.0f/max_d;
+            float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/max_d);
+            rounded_rect_sampler cs(w, h, radius_n, stroke_n, aa_fill, aa_stroke, &sampler_fill, &sampler_stroke);
+            drawRect(cs,
+                     l_c, t_c, l_c + max_d, t_c + max_d,
+                     opacity, transform, u0, v0, u1, v1, transform_uv);
         }
 
         void drawRect2(sampler_t & sampler,
