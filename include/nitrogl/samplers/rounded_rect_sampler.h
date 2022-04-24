@@ -18,9 +18,21 @@
 
 namespace nitrogl {
 
+    /**
+     * A sampler, that uses SDF functions to draw a rounded rectangle at
+     * the center of the sample space [0..1]x[0..1] quad.
+     * Currently, the drawn onto polygon should be a quad as well to avoid
+     * any stretching effects.
+     * NOTE:
+     * - given normalized w,h,r. it will render a rounded rect with base of
+     *   dimensions WxH centered and the radius is extended outside of this
+     *   base boundary
+     * - given, that you need to render it on a perfect polygon quad, it might
+     *   be inefficient because of a lot of dead pixels
+     */
     struct rounded_rect_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
-        const char * name() const override { return "circle_sampler"; }
+        const char * name() const override { return "rounded_rect_sampler"; }
         const char * uniforms() const override {
             return R"(
 {
@@ -91,26 +103,29 @@ vec4 other_function(float t) {
             glUniform1fv(loc_inputs, 6, inputs);
         }
 
-        color_sampler _color_void {0.0, 1.0, 0.0, 1.0};
-        color_sampler _color_void_2 {0.0, 1.0, 0.0, 1.0};
-        test_sampler<> _sampler_test;
-
     public:
         float w, h;
         float radius;
         float stroke_width;
         float aa_fill, aa_stroke;
 
+        /**
+         *
+         * @tparam Ts samplers types for fill and stroke
+         * @param w [0..1], where base rectangle minus radius width
+         * @param h [0..1], where base rectangle minus radius height
+         * @param radius [0..1], radius extended from base rectangle
+         * @param stroke_width stroke width [0..1]
+         * @param aa_fill boundary anti-alias band for shape fill [0..1]
+         * @param aa_stroke boundary anti-alias band for shape stroke [0..1]
+         * @param rest samplers pointers for fill and stroke
+         */
         template <class... Ts>
         rounded_rect_sampler(float w, float h,
                              float radius=0.5f, float stroke_width=0.01f,
                              float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
                              w(w), h(h), radius(radius), stroke_width(stroke_width),
                              aa_fill(aa_fill), aa_stroke(aa_stroke), base(rest...) {
-//            _sub_samplers[0]=&_sampler_test;
-//            _sub_samplers[1]=&_color_void_2;
-//            add_sub_sampler(&_sampler_test);
-//            add_sub_sampler(&_color_void_2);
         }
     };
 }

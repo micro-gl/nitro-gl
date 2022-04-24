@@ -33,9 +33,10 @@ int main() {
             canva.clear(1.0, 1.0, 1.0, 1.0);
 //            canva.drawCircle(tex_sampler_3, sampler_color, 250, 250, 200, 10., 1.0);
             canva.drawCircle(tex_sampler_3, sampler_color,
-                             100, 100,
+                             200, 200,
                              100, 70.,
-                             1.0);
+                             1.0,
+                             mat3f::rotation(nitrogl::math::deg_to_rad(t), 100,100));
             glCheckError();
         };
 

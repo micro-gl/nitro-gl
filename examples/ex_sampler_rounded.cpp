@@ -23,8 +23,7 @@ int main() {
         auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
         auto tex_sampler_3 = texture_sampler<false>(Resources::loadTexture("assets/images/uv_256.png", true));
         color_sampler sampler_color(1.0,0.0,0.0,1.0);
-        vec2f a{0.1, 0.5}, b{0.9, 0.5}, c{0.5, 0.5};
-        rounded_rect_sampler sampler { 0.15, 1.0, 0.00, 0.03f, 0.00f, 0.01f, &tex_sampler_3, &sampler_color };
+        rounded_rect_sampler sampler { 0.15, .9, 0.00, 0.03f, 0.00f, 0.01f, &tex_sampler_3, &sampler_color };
 
         auto render = [&]() {
             static float t= 0;

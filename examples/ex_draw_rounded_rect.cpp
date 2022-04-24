@@ -32,8 +32,9 @@ int main() {
             t+=0.05;
             canva.clear(1.0, 1.0, 1.0, 1.0);
             canva.drawRoundedRect(tex_sampler_3, sampler_color,
-                                  0, 0, 500,  250,
-                                  50, 1., 1.0);
+                                  100, 100, 500,  500,
+                                  50, 1., 1.0,
+                                  mat3f::rotation(nitrogl::math::deg_to_rad(t), 0,0));
             glCheckError();
         };
 

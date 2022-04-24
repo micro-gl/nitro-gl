@@ -67,7 +67,7 @@ vec4 other_function(float t) {
     // inner circle with AA at the boundary
     /////////////
     vec4 col_base = sampler_00(uv);
-    col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_fill, d) );
+//    col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_fill, d) );
 
     /////////////
     // mix stroke
