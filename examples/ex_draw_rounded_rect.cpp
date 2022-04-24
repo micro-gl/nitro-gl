@@ -34,7 +34,7 @@ int main() {
             canva.drawRoundedRect(tex_sampler_3, sampler_color,
                                   100, 100, 500,  500,
                                   50, 1., 1.0,
-                                  mat3f::rotation(nitrogl::math::deg_to_rad(t), 0,0));
+                                  mat3f::rotation(nitrogl::math::deg_to_rad(t), 200,200));
             glCheckError();
         };
 
