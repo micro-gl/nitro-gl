@@ -31,7 +31,9 @@ if(DEFINED SDL2_FOUND)
             ex_sampler_texture.cpp
             ex_cache.cpp
             ex_sampler_circle.cpp
+            ex_sampler_rounded.cpp
             ex_draw_circle.cpp
+            ex_draw_rounded_rect.cpp
             )
 
     set(SOURCES_SHARED
