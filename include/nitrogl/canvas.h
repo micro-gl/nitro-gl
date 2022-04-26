@@ -12,7 +12,7 @@
 
 #include "color.h"
 #include "traits.h"
-#include "masks.h"
+#include "channels.h"
 #include "math.h"
 #include "stdint.h"
 #include "math/rect.h"
@@ -62,6 +62,7 @@
 #include "samplers/circle_sampler.h"
 #include "samplers/rounded_rect_sampler.h"
 #include "samplers/color_sampler.h"
+#include "samplers/channel_sampler.h"
 
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
@@ -348,6 +349,19 @@ namespace nitrogl {
             fbo_t::unbind();
             copy_to_backdrop();
             glCheckError();
+        }
+
+        void drawMask(sampler_t & sampler, nitrogl::channels::channel channel,
+                      float left, float top, float right, float bottom,
+                      float u0=0., float v0=1., float u1=1., float v1=0.,
+                      const mat3f & transform_uv = mat3f::identity()) {
+            const auto * current_blend_mode = _blend_mode;
+            const auto * current_alpha_compositor = _alpha_compositor;
+            update_composition(blend_modes::Normal(), porter_duff::DestinationIn());
+            channel_sampler cs {&sampler, channel};
+            drawRect(cs, left, top, right, bottom, 1.0f, mat3f::identity(),
+                     u0, v0, u1, v1, transform_uv);
+            update_composition(current_blend_mode, current_alpha_compositor);
         }
 
         void drawCircle(sampler_t & sampler_fill, sampler_t & sampler_stroke,

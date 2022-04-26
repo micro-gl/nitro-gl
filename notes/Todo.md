@@ -3,7 +3,7 @@
 - draw lines with SDF
 - rounded rectangle (check inigo sd functions)
 - draw text
-- draw masks
+- draw channels
 - draw shadows
 - turn off AA for an EDGE (useful when rendering batch)
 - crashes when triangle is degenerate
@@ -44,7 +44,7 @@ http://www.personal.kent.edu/~rmuhamma/Compgeometry/MyCG/PolyPart/polyPartition.
 - tools for images and fonts
 - investigate mip-mapping (I have all the theory from_sampler open gl spec)
 - explore avoid blending, and draw pixel directly mechanism
-- remove bits info from_sampler samplers ? currently only use it in masks, but this info can be embeded in color_t
+- remove bits info from_sampler samplers ? currently only use it in channels, but this info can be embeded in color_t
 - configurable custom sin/cos/tan provider
 - shader need to retain some fragCoord(x,y,z,1/w) and bounding box, so user can do cool stuff
 - 3d pipeline, make 3d clipping configurable for planes and even skip

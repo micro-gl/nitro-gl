@@ -35,6 +35,7 @@ if(DEFINED SDL2_FOUND)
             ex_draw_circle.cpp
             ex_draw_rounded_rect.cpp
             ex_sampler_masking.cpp
+            ex_draw_mask.cpp
             )
 
     set(SOURCES_SHARED

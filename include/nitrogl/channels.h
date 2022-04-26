@@ -11,8 +11,8 @@
 #pragma once
 
 namespace nitrogl {
-    namespace masks {
-        enum class chrome_mode {
+    namespace channels {
+        enum class channel {
             red_channel,
             green_channel,
             blue_channel,

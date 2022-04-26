@@ -5252,7 +5252,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
                 easy = 2;
         }
         if (!easy) {
-            if (!mr || !mg || !mb) { STBI_FREE(out); return stbi__errpuc("bad masks", "Corrupt BMP"); }
+            if (!mr || !mg || !mb) { STBI_FREE(out); return stbi__errpuc("bad channels", "Corrupt BMP"); }
             // right shift amt to put high bit in position #7
             rshift = stbi__high_bit(mr)-7; rcount = stbi__bitcount(mr);
             gshift = stbi__high_bit(mg)-7; gcount = stbi__bitcount(mg);
