@@ -13,16 +13,15 @@
 14. murmur hashcode - DONE
 15. compositing is a canvas state - DONE
 16. circle sampler - DONE
+17. rounded rect sampler - DONE
 
-17. static linear pool for samplers uniforms cache
-18. rounded rect sampler
-19. render node for triangle batches - wip
-20. test idea of missing uvs coords for triangle batches
-21. SDF shader with sampler
-22. AA with rbos or filter shader
-23. implement many samplers
-24. gradients
-25. investigate caching of uniforms per program
+19. masking sampler
+20. render node for triangle batches - wip
+21. test idea of missing uvs coords for triangle batches
+23. AA with rbos or filter shader
+24. implement many samplers
+25. gradients
+26. investigate caching of uniforms per program
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,
