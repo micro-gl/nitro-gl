@@ -14,14 +14,22 @@
 15. compositing is a canvas state - DONE
 16. circle sampler - DONE
 17. rounded rect sampler - DONE
+18. masking sampler - DONE
 
-19. masking sampler
-20. render node for triangle batches - wip
-21. test idea of missing uvs coords for triangle batches
-23. AA with rbos or filter shader
-24. implement many samplers
-25. gradients
-26. investigate caching of uniforms per program
+19. render node for triangle batches - wip
+20. draw mask
+26. gradients
+21. draw arc
+22. draw pie
+22. draw text, bitmap fonts
+22. draw polygons
+22. draw triangle batches
+22. draw paths fills
+22. draw stroke fills
+23. test idea of missing uvs coords for triangle batches
+24. AA with rbos or filter shader
+27. investigate caching of uniforms per program
+22. draw text, sdf
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

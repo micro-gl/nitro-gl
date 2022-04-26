@@ -11,21 +11,20 @@
 #pragma once
 
 #include <nitrogl/samplers/sampler.h>
-#include <nitrogl/traits.h>
 #include <nitrogl/channels.h>
+#include <nitrogl/traits.h>
 
 namespace nitrogl {
 
     /**
-     * Masking sampler. Given two samplers, one is a source sampler and another
-     * acts as a mask. This will mask the first sampler with the second sampler.
-     * One can also specify what channel in the mask to use, the chrome mode:
-     * - red/green/blue/alpha channels or even inverted channels
+     * Samples a specific channel and copies it to all channels.
+     * - You can sample red/green/blue/alpha and inverted channels
+     * - suppose alpha channel is sampled: (1, 0.2, 0, 0.5) -> (0.5, 0.5, 0.5, 0.5)
      */
-    struct masking_sampler : public multi_sampler<2> {
-        using base = multi_sampler<2>;
+    struct channel_sampler : public multi_sampler<1> {
+        using base = multi_sampler<1>;
         using channel_t = nitrogl::channels::channel;
-        const char * name() const override { return "masking_sampler"; }
+        const char * name() const override { return "channel_sampler"; }
         const char * uniforms() const override {
             return nullptr;
         }
@@ -44,66 +43,43 @@ vec4 other_function(float t) {
                 case channel_t::red_channel:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= (mask.r);
-    return base;
+    return vec4(sampler_00(uv).r);
 })";
+
                 case channel_t::green_channel:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= (mask.g);
-    return base;
+    return vec4(sampler_00(uv).g);
 })";
                 case channel_t::blue_channel:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= (mask.b);
-    return base;
+    return vec4(sampler_00(uv).b);
 })";
                 case channel_t::alpha_channel:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= mask.a;
-    return base;
+    return vec4(sampler_00(uv).a);
 })";
                 case channel_t::red_channel_inverted:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= (1.0 - mask.r);
-    return base;
+    return vec4(1.0 - sampler_00(uv).r);
 })";
                 case channel_t::green_channel_inverted:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= (1.0 - mask.g);
-    return base;
+    return vec4(1.0 - sampler_00(uv).g);
 })";
                 case channel_t::blue_channel_inverted:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= (mask.b);
-    return base;
+    return vec4(1.0 - sampler_00(uv).b);
 })";
                 case channel_t::alpha_channel_inverted:
                     return R"(
 (vec3 uv) {
-    vec4 base = sampler_00(uv);
-    vec4 mask = sampler_01(uv);
-    base.a *= (1.0 - mask.a);
-    return base;
+    return vec4(1.0 - sampler_00(uv).a);
 })";
             }
 
@@ -115,16 +91,17 @@ vec4 other_function(float t) {
         void on_upload_uniforms_request(GLuint program) override {
         }
 
+    public:
         channel_t channel;
 
         /**
          *
-         * @param what_to_mask the sampler to mask
-         * @param mask the mask sampler
-         * @param channel the channel of the mask to use
+         * @param sampler A sampler we want to sample a channel from
+         * @param channel the channel enum specifier { red, green, blue, alpha, red_inverted, etc..}
          */
-        masking_sampler(sampler_t * what_to_mask, sampler_t * mask, channel_t channel=channel_t::alpha_channel) :
-                channel(channel), base(what_to_mask, mask) {
+        explicit channel_sampler(sampler_t * sampler,
+                                 channel_t channel = channel_t::alpha_channel) :
+                                 channel(channel), base(sampler) {
         }
     };
 }
