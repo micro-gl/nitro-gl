@@ -10,9 +10,9 @@
 ========================================================================================*/
 #pragma once
 
-#include "sampler.h"
-#include "../traits.h"
-#include "../color.h"
+#include <nitrogl/samplers/sampler.h>
+#include <nitrogl/traits.h>
+#include <nitrogl/color.h>
 
 namespace nitrogl {
 

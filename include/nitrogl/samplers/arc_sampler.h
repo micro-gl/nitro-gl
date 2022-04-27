@@ -12,20 +12,15 @@
 
 #include <nitrogl/samplers/sampler.h>
 #include <nitrogl/traits.h>
+#include <nitrogl/math.h>
 
 namespace nitrogl {
 
     /**
-     * Arc sampler, that uses SDF functions to draw a rounded rectangle at
+     * Arc sampler, that uses SDF functions to draw a rounded Arc at
      * the center of the sample space [0..1]x[0..1] quad.
      * Currently, the drawn onto polygon should be a quad as well to avoid
      * any stretching effects.
-     * NOTE:
-     * - given normalized w,h,r. it will render a rounded rect with base of
-     *   dimensions WxH centered and the radius is extended outside of this
-     *   base boundary
-     * - given, that you need to render it on a perfect polygon quad, it might
-     *   be inefficient because of a lot of dead pixels
      */
     struct arc_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
@@ -33,8 +28,8 @@ namespace nitrogl {
         const char * uniforms() const override {
             return R"(
 {
-    // x1, y1, x2, y2, radius, stroke-width, aa_fill, aa_stroke
-    float inputs[6];
+    // (ax, ay, bx, by, radius, radius_b, stroke-width, is_convex, aa_fill, aa_stroke)
+    float inputs[10];
 }
 )";
         }
@@ -54,25 +49,29 @@ vec4 other_function(float t) {
     /////////////
     // inputs
     /////////////
-    float r = data.inputs[0]/1.0;
+    vec2 a = vec2(data.inputs[0], data.inputs[1]);
+    vec2 b = vec2(data.inputs[2], data.inputs[3]);
+    float r = data.inputs[4];
+    float rb = data.inputs[5];
     // stroke width,  divide by 2
-    float sw = data.inputs[1]/2.0;
+    float sw = data.inputs[6]/2.0;
     // aa fill and stroke, mul by 2 for more beautiful
-    float aa_fill = data.inputs[2]*2.0;
-    float aa_stroke = data.inputs[3]*2.0;
+    bool is_convex = data.inputs[7]>=0;
+    float aa_fill = data.inputs[8]*2.0;
+    float aa_stroke = data.inputs[9]*2.0;
     vec2 p = uv.xy - vec2(0.5f);
 
     /////////////
     // SDF function
     /////////////
-    float PI = 3.1415926538;
+//    float PI = 3.1415926538;
+//
+//    float th1 = 0.0*PI/180.0;
+//    float th2 = 90*PI/180.0;//(200.0+45)*PI/180.0;
+//    vec2 a = vec2(cos(th1), sin(th1));
+//    vec2 b = vec2(cos(th2), sin(th2));
+//    bool is_convex = (a.x*b.y - a.y*b.x)>=0; // b is left-of a
 
-    float rb = 0.1;
-    float th1 = 0.0*PI/180.0;
-    float th2 = (0.0+45)*PI/180.0;
-    vec2 a = vec2(cos(th1), sin(th1));
-    vec2 b = vec2(cos(th2), sin(th2));
-    bool is_convex = (a.x*b.y - a.y*b.x)>=0; // b is left-of a
     bool inside = false;
     if(is_convex) {
         // p left-of a, p right-of b
@@ -113,30 +112,42 @@ vec4 other_function(float t) {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-            float inputs[4] = { radius, stroke_width, aa_fill, aa_stroke };
+            // normalized angle unit vectors
+            float ax = nitrogl::math::cos(from_angle);
+            float ay = nitrogl::math::sin(from_angle);
+            float bx = nitrogl::math::cos(to_angle);
+            float by = nitrogl::math::sin(to_angle);
+            float is_convex = (ax*by - ay*bx); // b is left-of a
+            float inputs[10] = { ax, ay, bx, by, radius, radius_b, stroke_width,
+                                 is_convex, aa_fill, aa_stroke };
             GLint loc_inputs = get_uniform_location(program, "inputs");
-            glUniform1fv(loc_inputs, 6, inputs);
+            glUniform1fv(loc_inputs, 10, inputs);
         }
 
     public:
-        float radius;
+        float radius, radius_b;
         float stroke_width;
         float aa_fill, aa_stroke;
+        float from_angle, to_angle;
 
         /**
          *
          * @param fill A fill sampler
          * @param stroke A stroke sampler
-         * @param radius [0..1], radius extended from base rectangle
-         * @param stroke_width stroke width [0..1]
-         * @param aa_fill boundary anti-alias band for shape fill [0..1]
-         * @param aa_stroke boundary anti-alias band for shape stroke [0..1]
-         * @param rest samplers pointers for fill and stroke
+         * @param from_angle in radians
+         * @param to_angle in radians
+         * @param radius radius of the arc from the center
+         * @param radius_b radius of the inner circle width
+         * @param stroke_width stroke width
+         * @param aa_fill AA strength for fill
+         * @param aa_stroke  AA strength for stroke
          */
         arc_sampler(sampler_t * fill, sampler_t * stroke,
-                    float radius=0.5f, float stroke_width=0.01f,
+                    float from_angle, float to_angle,
+                    float radius=0.5f, float radius_b = 0.1f,float stroke_width=0.01f,
                     float aa_fill=0.01f, float aa_stroke=0.01f) :
-                            radius(radius), stroke_width(stroke_width),
+                        from_angle(from_angle), to_angle(to_angle),
+                        radius(radius), radius_b(radius_b), stroke_width(stroke_width),
                              aa_fill(aa_fill), aa_stroke(aa_stroke), base(fill, stroke) {
         }
     };

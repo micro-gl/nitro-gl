@@ -66,7 +66,6 @@ vec4 other_function(float t) {
     // SDF function
     /////////////
     vec2 p = (uv.xy - 0.5f);
-//    vec2 p = (2.0*uv.xy - 1.f);
     vec2 d2 = abs(p) - a;
     float d = length(max(d2,0.0)) + min(max(d2.x,d2.y),0.0) - r;//+ 0.34;
 

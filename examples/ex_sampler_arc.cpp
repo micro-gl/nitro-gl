@@ -23,7 +23,11 @@ int main() {
         auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
         auto tex_sampler_3 = texture_sampler<false>(Resources::loadTexture("assets/images/uv_256.png", true));
         color_sampler sampler_color(1.0,0.0,0.0,1.0);
-        arc_sampler arc { &tex_sampler_3, &sampler_color };
+        arc_sampler arc { &tex_sampler_3, &sampler_color,
+                          math::deg_to_rad(0.0f),
+                          math::deg_to_rad(145.0f),
+                          0.3f, 0.05f, 1.0f/250.0f,
+                          1.0f/250.0f, 1.0f/250.0f };
 
         auto render = [&]() {
             static float t= 0;
