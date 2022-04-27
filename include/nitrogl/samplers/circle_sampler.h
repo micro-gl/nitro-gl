@@ -10,10 +10,8 @@
 ========================================================================================*/
 #pragma once
 
-#include "sampler.h"
-#include "color_sampler.h"
-#include "test_sampler.h"
-#include "../traits.h"
+#include <nitrogl/samplers/sampler.h>
+#include <nitrogl/traits.h>
 
 namespace nitrogl {
 
@@ -99,7 +97,7 @@ vec4 other_function(float t) {
         float aa_fill, aa_stroke;
 
         template <class... Ts>
-        circle_sampler(float radius=0.5f, float stroke_width=0.01f,
+        explicit circle_sampler(float radius=0.5f, float stroke_width=0.01f,
                        float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
                         radius(radius), stroke_width(stroke_width), aa_fill(aa_fill),
                         aa_stroke(aa_stroke),

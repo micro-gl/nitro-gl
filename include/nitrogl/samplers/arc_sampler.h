@@ -16,7 +16,7 @@
 namespace nitrogl {
 
     /**
-     * A sampler, that uses SDF functions to draw a rounded rectangle at
+     * Arc sampler, that uses SDF functions to draw a rounded rectangle at
      * the center of the sample space [0..1]x[0..1] quad.
      * Currently, the drawn onto polygon should be a quad as well to avoid
      * any stretching effects.
@@ -27,7 +27,7 @@ namespace nitrogl {
      * - given, that you need to render it on a perfect polygon quad, it might
      *   be inefficient because of a lot of dead pixels
      */
-    struct rounded_rect_sampler : public multi_sampler<2> {
+    struct arc_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
         const char * name() const override { return "rounded_rect_sampler"; }
         const char * uniforms() const override {
@@ -54,21 +54,39 @@ vec4 other_function(float t) {
     /////////////
     // inputs
     /////////////
-    vec2 a = vec2(data.inputs[0], data.inputs[1])/2.0;
-    float r = data.inputs[2]/1.0;
+    float r = data.inputs[0]/1.0;
     // stroke width,  divide by 2
-    float sw = data.inputs[3]/2.0;
+    float sw = data.inputs[1]/2.0;
     // aa fill and stroke, mul by 2 for more beautiful
-    float aa_fill = data.inputs[4]*2.0;
-    float aa_stroke = data.inputs[5]*2.0;
+    float aa_fill = data.inputs[2]*2.0;
+    float aa_stroke = data.inputs[3]*2.0;
+    vec2 p = uv.xy - vec2(0.5f);
 
     /////////////
     // SDF function
     /////////////
-    vec2 p = (uv.xy - 0.5f);
-//    vec2 p = (2.0*uv.xy - 1.f);
-    vec2 d2 = abs(p) - a;
-    float d = length(max(d2,0.0)) + min(max(d2.x,d2.y),0.0) - r;//+ 0.34;
+    float PI = 3.1415926538;
+
+    float rb = 0.1;
+    float th1 = 0.0*PI/180.0;
+    float th2 = (0.0+45)*PI/180.0;
+    vec2 a = vec2(cos(th1), sin(th1));
+    vec2 b = vec2(cos(th2), sin(th2));
+    bool is_convex = (a.x*b.y - a.y*b.x)>=0; // b is left-of a
+    bool inside = false;
+    if(is_convex) {
+        // p left-of a, p right-of b
+        inside = (a.x*p.y - a.y*p.x)>=0 && (b.x*p.y - b.y*p.x)<0;
+    } else {
+        // not p right-of a, not p left-of a
+        inside = !((a.x*p.y - a.y*p.x)<0 && (b.x*p.y - b.y*p.x)>=0);
+    }
+
+    float d = (inside ?  abs(length(p)-r) : min(length(p-a*r), length(p-b*r)) ) - rb;
+//    return vec4(1,0,0, inside ? 1.0:0.0f);
+//    return vec4(uv.x, uv.x, uv.x, 1);
+//    return vec4(uv.y, uv.y, uv.y, 1);
+
 
     /////////////
     // inner circle with AA at the boundary
@@ -95,34 +113,31 @@ vec4 other_function(float t) {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-            float inputs[6] = { w, h, radius, stroke_width, aa_fill, aa_stroke };
+            float inputs[4] = { radius, stroke_width, aa_fill, aa_stroke };
             GLint loc_inputs = get_uniform_location(program, "inputs");
             glUniform1fv(loc_inputs, 6, inputs);
         }
 
     public:
-        float w, h;
         float radius;
         float stroke_width;
         float aa_fill, aa_stroke;
 
         /**
          *
-         * @tparam Ts samplers types for fill and stroke
-         * @param w [0..1], where base rectangle minus radius width
-         * @param h [0..1], where base rectangle minus radius height
+         * @param fill A fill sampler
+         * @param stroke A stroke sampler
          * @param radius [0..1], radius extended from base rectangle
          * @param stroke_width stroke width [0..1]
          * @param aa_fill boundary anti-alias band for shape fill [0..1]
          * @param aa_stroke boundary anti-alias band for shape stroke [0..1]
          * @param rest samplers pointers for fill and stroke
          */
-        template <class... Ts>
-        rounded_rect_sampler(float w, float h,
-                             float radius=0.5f, float stroke_width=0.01f,
-                             float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
-                             w(w), h(h), radius(radius), stroke_width(stroke_width),
-                             aa_fill(aa_fill), aa_stroke(aa_stroke), base(rest...) {
+        arc_sampler(sampler_t * fill, sampler_t * stroke,
+                    float radius=0.5f, float stroke_width=0.01f,
+                    float aa_fill=0.01f, float aa_stroke=0.01f) :
+                            radius(radius), stroke_width(stroke_width),
+                             aa_fill(aa_fill), aa_stroke(aa_stroke), base(fill, stroke) {
         }
     };
 }

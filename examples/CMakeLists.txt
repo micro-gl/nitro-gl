@@ -1,6 +1,6 @@
 # This file must be included by add_subdirectory() from parent, it doesn't work as standalone
 cmake_minimum_required(VERSION 3.12)
-project(micro-opengl-examples)
+project(nitrogl-examples)
 message(\n===========\n${PROJECT_NAME} \n===========\n)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -28,14 +28,17 @@ if(DEFINED SDL2_FOUND)
     set(SOURCES
             ex_create_numbers_db.cpp
             ex_1.cpp
-            ex_sampler_texture.cpp
             ex_cache.cpp
+
+            ex_draw_mask.cpp
+            ex_draw_rounded_rect.cpp
+            ex_draw_circle.cpp
+
+            ex_sampler_texture.cpp
+            ex_sampler_masking.cpp
             ex_sampler_circle.cpp
             ex_sampler_rounded.cpp
-            ex_draw_circle.cpp
-            ex_draw_rounded_rect.cpp
-            ex_sampler_masking.cpp
-            ex_draw_mask.cpp
+            ex_sampler_arc.cpp
             )
 
     set(SOURCES_SHARED
