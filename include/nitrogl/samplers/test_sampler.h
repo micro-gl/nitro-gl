@@ -10,11 +10,15 @@
 ========================================================================================*/
 #pragma once
 
-#include "../traits.h"
-#include "sampler.h"
+#include <nitrogl/samplers/sampler.h>
+#include <nitrogl/traits.h>
 
 namespace nitrogl {
 
+    /**
+     * test sampler to test uv coords
+     * @tparam horizontal
+     */
     template<bool horizontal=true>
     struct test_sampler : public sampler_t {
         test_sampler() : sampler_t() {}

@@ -10,9 +10,8 @@
 ========================================================================================*/
 #pragma once
 
-#include "sampler.h"
-#include "color_sampler.h"
-#include "../traits.h"
+#include <nitrogl/samplers/sampler.h>
+#include <nitrogl/traits.h>
 
 namespace nitrogl {
 
@@ -38,14 +37,14 @@ vec4 other_function(float t) {
             )";
         }
 
-        color_sampler sampler_1{1., 0.0, 0.0, 1.0};
-        color_sampler sampler_2{0.0, 1.0, 0.0, 1.0};
+//        color_sampler sampler_1{1., 0.0, 0.0, 1.0};
+//        color_sampler sampler_2{0.0, 1.0, 0.0, 1.0};
 
     public:
         mix_sampler() : multi_sampler<2>() {
-            add_sub_sampler(&sampler_1);
 //            add_sub_sampler(&sampler_1);
-            add_sub_sampler(&sampler_2);
+//            add_sub_sampler(&sampler_1);
+//            add_sub_sampler(&sampler_2);
         }
     };
 }

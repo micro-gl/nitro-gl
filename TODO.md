@@ -15,21 +15,22 @@
 16. circle sampler - DONE
 17. rounded rect sampler - DONE
 18. masking sampler - DONE
+19. draw mask - DONE
+22. draw arc - DONE
 
-19. render node for triangle batches - wip
-20. draw mask
-26. gradients
-21. draw arc
-22. draw pie
-22. draw text, bitmap fonts
-22. draw polygons
-22. draw triangle batches
-22. draw paths fills
-22. draw stroke fills
-23. test idea of missing uvs coords for triangle batches
-24. AA with rbos or filter shader
-27. investigate caching of uniforms per program
-22. draw text, sdf
+20. render node for triangle batches - wip
+21. gradients
+23. draw pie
+24. draw text, bitmap fonts
+25. draw polygons
+26. draw triangle batches
+27. draw paths fills
+28. draw stroke fills
+29. test idea of missing uvs coords for triangle batches
+30. AA with rbos or filter shader
+31. investigate caching of uniforms per program
+32. draw text, sdf
+33. pointer/l-val/r-val to pointer function
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

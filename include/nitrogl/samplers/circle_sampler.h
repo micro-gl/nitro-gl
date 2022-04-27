@@ -10,10 +10,8 @@
 ========================================================================================*/
 #pragma once
 
-#include "sampler.h"
-#include "color_sampler.h"
-#include "test_sampler.h"
-#include "../traits.h"
+#include <nitrogl/samplers/sampler.h>
+#include <nitrogl/traits.h>
 
 namespace nitrogl {
 
@@ -67,7 +65,7 @@ vec4 other_function(float t) {
     // inner circle with AA at the boundary
     /////////////
     vec4 col_base = sampler_00(uv);
-//    col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_fill, d) );
+    col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_fill, d) );
 
     /////////////
     // mix stroke
@@ -98,12 +96,12 @@ vec4 other_function(float t) {
         float stroke_width;
         float aa_fill, aa_stroke;
 
-        template <class... Ts>
-        circle_sampler(float radius=0.5f, float stroke_width=0.01f,
-                       float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
+        explicit circle_sampler(sampler_t * fill, sampler_t * stroke,
+                                float radius=0.5f, float stroke_width=0.01f,
+                                float aa_fill=0.01f, float aa_stroke=0.01f) :
                         radius(radius), stroke_width(stroke_width), aa_fill(aa_fill),
                         aa_stroke(aa_stroke),
-                        base(rest...) {
+                        base(fill, stroke) {
         }
     };
 }

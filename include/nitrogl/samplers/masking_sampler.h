@@ -123,7 +123,8 @@ vec4 other_function(float t) {
          * @param mask the mask sampler
          * @param channel the channel of the mask to use
          */
-        masking_sampler(sampler_t * what_to_mask, sampler_t * mask, channel_t channel=channel_t::alpha_channel) :
+        masking_sampler(sampler_t * what_to_mask,
+                        sampler_t * mask, channel_t channel=channel_t::alpha_channel) :
                 channel(channel), base(what_to_mask, mask) {
         }
     };

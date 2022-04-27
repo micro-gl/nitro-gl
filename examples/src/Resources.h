@@ -82,8 +82,8 @@ public:
     }
 
     static
-    nitrogl::gl_texture loadTexture(const char * path, bool pre_mul_alpha=true) {
-        auto img = loadImageFromCompressedPath(path, pre_mul_alpha);
+    nitrogl::gl_texture loadTexture(const char * path, bool pre_mul_alpha=true, bool flip_vertically = true) {
+        auto img = loadImageFromCompressedPath(path, pre_mul_alpha, flip_vertically);
         auto tex = nitrogl::gl_texture::from_unpacked_image(img.width, img.height, img.data, 8, 8, 8,
                                                         img.channels==4?8:0, pre_mul_alpha);
         delete img.data;
