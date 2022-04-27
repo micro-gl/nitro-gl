@@ -107,7 +107,8 @@ vec4 other_function(float t) {
 
         /**
          *
-         * @tparam Ts samplers types for fill and stroke
+         * @param fill A fill sampler
+         * @param stroke A stroke sampler
          * @param w [0..1], where base rectangle minus radius width
          * @param h [0..1], where base rectangle minus radius height
          * @param radius [0..1], radius extended from base rectangle
@@ -116,12 +117,12 @@ vec4 other_function(float t) {
          * @param aa_stroke boundary anti-alias band for shape stroke [0..1]
          * @param rest samplers pointers for fill and stroke
          */
-        template <class... Ts>
-        rounded_rect_sampler(float w, float h,
+        rounded_rect_sampler(sampler_t * fill, sampler_t * stroke,
+                             float w, float h,
                              float radius=0.5f, float stroke_width=0.01f,
-                             float aa_fill=0.01f, float aa_stroke=0.01f, Ts... rest) :
+                             float aa_fill=0.01f, float aa_stroke=0.01f) :
                              w(w), h(h), radius(radius), stroke_width(stroke_width),
-                             aa_fill(aa_fill), aa_stroke(aa_stroke), base(rest...) {
+                             aa_fill(aa_fill), aa_stroke(aa_stroke), base(fill, stroke) {
         }
     };
 }

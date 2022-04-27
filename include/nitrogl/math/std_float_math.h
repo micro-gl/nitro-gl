@@ -22,6 +22,12 @@ namespace nitrogl {
         inline int to_fixed(const double val, unsigned char precision) {
             return int(val * double((long long)(1ull) << precision));
         }
+        inline float min(float a, float b) { return std::fminf(a, b); }
+        inline double min(double a, double b) { return std::fmin(a, b); }
+        inline float max(float a, float b) { return std::fmaxf(a, b); }
+        inline double max(double a, double b) { return std::fmax(a, b); }
+        inline float clamp(float v, float lo, float hi) { return min(max(v, lo), hi); }
+        inline double clamp(double v, double lo, double hi) { return min(max(v, lo), hi); }
         inline float mod(float numer, float denom) { return std::fmodf(numer, denom); }
         inline double mod(double numer, double denom) { return std::fmod(numer, denom); }
         inline float sqrt(const float val) { return std::sqrt(val); }

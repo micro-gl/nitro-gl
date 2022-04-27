@@ -16,10 +16,10 @@
 17. rounded rect sampler - DONE
 18. masking sampler - DONE
 19. draw mask - DONE
+22. draw arc - DONE
 
 20. render node for triangle batches - wip
 21. gradients
-22. draw arc
 23. draw pie
 24. draw text, bitmap fonts
 25. draw polygons

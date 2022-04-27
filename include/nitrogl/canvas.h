@@ -63,6 +63,7 @@
 #include "samplers/rounded_rect_sampler.h"
 #include "samplers/color_sampler.h"
 #include "samplers/channel_sampler.h"
+#include "samplers/arc_sampler.h"
 
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
@@ -380,11 +381,45 @@ namespace nitrogl {
             float aa_fill = 1.0f/w;
             float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/w);
 
-            circle_sampler cs(radius_n, stroke_n, aa_fill, aa_stroke, &sampler_fill, &sampler_stroke);
+            circle_sampler cs(&sampler_fill, &sampler_stroke, radius_n, stroke_n, aa_fill, aa_stroke);
 
             // make the transform about left-top of shape
             auto transform_modified = transform;
 //            pad/=2.0f;
+            transform_modified.post_translate(vec2f(-pad, -pad)).pre_translate(vec2f(pad, pad));
+
+            drawRect(cs, l, t, r, b,
+                     opacity,
+                     transform_modified,
+                     u0, v0, u1, v1, transform_uv);
+        }
+
+        void drawArc(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+                        float x, float y, float radius,
+                        float from_angle, float to_angle,
+                        float inner_radius=5,
+                        float stroke=1,
+                        float opacity = 1.0,
+                        const mat3f & transform = mat3f::identity(),
+                        float u0=0., float v0=0., float u1=1., float v1=1.,
+                        const mat3f & transform_uv = mat3f::identity()) {
+            float pad = inner_radius + (stroke)/2.0f + 5.0f;
+            float ex_radi = radius + pad; // extended radius
+            float l = x - ex_radi, t = y - ex_radi;
+            float r = x + ex_radi, b = y + ex_radi;
+            float w = r-l, h = b-t;
+            float radius_n = radius/w;
+            float radius_inner_n = inner_radius/w;
+            float stroke_n = stroke/w;
+            float aa_fill = 1.0f/w;
+            float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/w);
+            from_angle = nitrogl::math::clamp(from_angle, 0.0f, math::pi<float>()*2.0f);
+            to_angle = nitrogl::math::clamp(to_angle, 0.0f, math::pi<float>()*2.0f);
+            arc_sampler cs {&sampler_fill, &sampler_stroke, from_angle, to_angle, radius_n,
+                            radius_inner_n, stroke_n, aa_fill, aa_stroke };
+            // make the transform about left-top of shape
+            auto transform_modified = transform;
+            //            pad/=2.0f;
             transform_modified.post_translate(vec2f(-pad, -pad)).pre_translate(vec2f(pad, pad));
 
             drawRect(cs, l, t, r, b,
@@ -398,9 +433,8 @@ namespace nitrogl {
                              float radius, float stroke,
                              float opacity = 1.0,
                              const mat3f & transform = mat3f::identity(),
-                             float u0=0., float v0=1., float u1=1., float v1=0.,
+                             float u0=0., float v0=0., float u1=1., float v1=1.,
                              const mat3f & transform_uv = mat3f::identity()) {
-            float ex_radi = radius + stroke/2.0 + 5; // extended radius
             float pad_and_stroke = 5.0f + stroke/2.0f;
             float l = left + radius, t = top + radius;
             float r = right - radius, b = bottom - radius;
@@ -417,8 +451,8 @@ namespace nitrogl {
             float stroke_n = stroke/max_d;
             float aa_fill = 1.0f/max_d;
             float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/max_d);
-            rounded_rect_sampler cs(w, h, radius_n, stroke_n, aa_fill, aa_stroke,
-                                    &sampler_fill, &sampler_stroke);
+            rounded_rect_sampler cs(&sampler_fill, &sampler_stroke, w, h, radius_n, stroke_n,
+                                    aa_fill, aa_stroke);
 
             // make the transform about left-top of shape
             auto transform_modified = transform;

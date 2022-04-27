@@ -56,7 +56,7 @@ vec4 other_function(float t) {
     // stroke width,  divide by 2
     float sw = data.inputs[6]/2.0;
     // aa fill and stroke, mul by 2 for more beautiful
-    bool is_convex = data.inputs[7]>=0;
+    bool is_convex = data.inputs[7]>0;
     float aa_fill = data.inputs[8]*2.0;
     float aa_stroke = data.inputs[9]*2.0;
     vec2 p = uv.xy - vec2(0.5f);
@@ -70,7 +70,7 @@ vec4 other_function(float t) {
 //    float th2 = 90*PI/180.0;//(200.0+45)*PI/180.0;
 //    vec2 a = vec2(cos(th1), sin(th1));
 //    vec2 b = vec2(cos(th2), sin(th2));
-//    bool is_convex = (a.x*b.y - a.y*b.x)>=0; // b is left-of a
+//    bool is_convex = (a.x*b.y - a.y*b.x)>0; // b is left-of a
 
     bool inside = false;
     if(is_convex) {
@@ -113,10 +113,15 @@ vec4 other_function(float t) {
 
         void on_upload_uniforms_request(GLuint program) override {
             // normalized angle unit vectors
+            const auto two_pi = nitrogl::math::pi<float>()*2.0f;
+            from_angle = nitrogl::math::mod(from_angle, two_pi);
+            to_angle = nitrogl::math::mod(to_angle, two_pi);
+
             float ax = nitrogl::math::cos(from_angle);
             float ay = nitrogl::math::sin(from_angle);
             float bx = nitrogl::math::cos(to_angle);
             float by = nitrogl::math::sin(to_angle);
+
             float is_convex = (ax*by - ay*bx); // b is left-of a
             float inputs[10] = { ax, ay, bx, by, radius, radius_b, stroke_width,
                                  is_convex, aa_fill, aa_stroke };

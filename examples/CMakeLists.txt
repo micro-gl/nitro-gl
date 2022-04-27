@@ -33,6 +33,7 @@ if(DEFINED SDL2_FOUND)
             ex_draw_mask.cpp
             ex_draw_rounded_rect.cpp
             ex_draw_circle.cpp
+            ex_draw_arc.cpp
 
             ex_sampler_texture.cpp
             ex_sampler_masking.cpp
