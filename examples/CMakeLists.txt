@@ -34,12 +34,14 @@ if(DEFINED SDL2_FOUND)
             ex_draw_rounded_rect.cpp
             ex_draw_circle.cpp
             ex_draw_arc.cpp
+            ex_draw_pie.cpp
 
             ex_sampler_texture.cpp
             ex_sampler_masking.cpp
             ex_sampler_circle.cpp
             ex_sampler_rounded.cpp
             ex_sampler_arc.cpp
+            ex_sampler_pie.cpp
             )
 
     set(SOURCES_SHARED
