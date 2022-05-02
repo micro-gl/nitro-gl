@@ -22,14 +22,14 @@ namespace nitrogl {
      * Currently, the drawn onto polygon should be a quad as well to avoid
      * any stretching effects.
      */
-    struct arc_sampler : public multi_sampler<2> {
+    struct pie_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
         const char * name() const override { return "rounded_rect_sampler"; }
         const char * uniforms() const override {
             return R"(
 {
-    // (ax, ay, bx, by, radius, radius_b, stroke-width, is_convex, aa_fill, aa_stroke)
-    float inputs[10];
+    // (ax, ay, bx, by, radius, stroke-width, is_convex, aa_fill, aa_stroke)
+    float inputs[9];
 }
 )";
         }
@@ -52,37 +52,38 @@ vec4 other_function(float t) {
     vec2 a = vec2(data.inputs[0], data.inputs[1]);
     vec2 b = vec2(data.inputs[2], data.inputs[3]);
     float r = data.inputs[4];
-    float rb = data.inputs[5];
     // stroke width,  divide by 2
-    float sw = data.inputs[6]/2.0;
+    float sw = data.inputs[5]/2.0;
     // aa fill and stroke, mul by 2 for more beautiful
-    bool is_convex = data.inputs[7]>0;
-    float aa_fill = data.inputs[8]*2.0;
-    float aa_stroke = data.inputs[9]*2.0;
+    float convex = data.inputs[6];
+    float aa_fill = data.inputs[7]*2.0;
+    float aa_stroke = data.inputs[8]*2.0;
     vec2 p = uv.xy - vec2(0.5f);
 
     /////////////
     // SDF function
     /////////////
 //    float PI = 3.1415926538;
-//
 //    float th1 = 0.0*PI/180.0;
-//    float th2 = 90*PI/180.0;//(200.0+45)*PI/180.0;
-//    vec2 a = vec2(cos(th1), sin(th1));
-//    vec2 b = vec2(cos(th2), sin(th2));
-//    bool is_convex = (a.x*b.y - a.y*b.x)>0; // b is left-of a
+//    float th2 = 290*PI/180.0;//(200.0+45)*PI/180.0;
+//    a = vec2(cos(th1), sin(th1));
+//    b = vec2(cos(th2), sin(th2));
+//    convex = sign(b.y*a.x-b.x*a.y);
 
-    bool inside = false;
-    if(is_convex) {
-        // p left-of a, p right-of b
-        inside = (a.x*p.y - a.y*p.x)>=0 && (b.x*p.y - b.y*p.x)<0;
-    } else {
-        // not p right-of a, not p left-of a
-        inside = !((a.x*p.y - a.y*p.x)<0 && (b.x*p.y - b.y*p.x)>=0);
-    }
+    // circle sdf
+    float sdf_circle = length(p) - r;
+    // cone
+	float m1 = length(p - a*clamp(dot(p,a), 0.0, r) );
+	float m2 = length(p - b*clamp(dot(p,b), 0.0, r) );
+    float s1 = sign(a.x*p.y - a.y*p.x); // p left of a
+    float s2 = sign(b.x*p.y - b.y*p.x); // p left of b
+    bool in_cone = ((convex>0.0) && (s1>=0.0 && s2<0.0)) ||
+                   ((convex<=0.0) && (s1>=0.0 || s2<0.0));
+    float sig = in_cone ? -1.0 : 1.0;
+    float sdf_open_cone = min(m1, m2)*sig;
 
-    // I distinguish if the texel is inside the pie or not. Then, I sub rb to inflate it
-    float d = (inside ?  abs(length(p)-r) : min(length(p-a*r), length(p-b*r)) ) - rb;
+    float d = max(sdf_circle, sdf_open_cone);
+
 //    return vec4(1,0,0, inside ? 1.0:0.0f);
 //    return vec4(uv.x, uv.x, uv.x, 1);
 //    return vec4(uv.y, uv.y, uv.y, 1);
@@ -124,14 +125,14 @@ vec4 other_function(float t) {
             float by = nitrogl::math::sin(to_angle);
 
             float is_convex = (ax*by - ay*bx); // b is left-of a
-            float inputs[10] = { ax, ay, bx, by, radius, radius_b, stroke_width,
+            float inputs[9] = { ax, ay, bx, by, radius, stroke_width,
                                  is_convex, aa_fill, aa_stroke };
             GLint loc_inputs = get_uniform_location(program, "inputs");
-            glUniform1fv(loc_inputs, 10, inputs);
+            glUniform1fv(loc_inputs, 9, inputs);
         }
 
     public:
-        float radius, radius_b;
+        float radius;
         float stroke_width;
         float aa_fill, aa_stroke;
         float from_angle, to_angle;
@@ -143,18 +144,17 @@ vec4 other_function(float t) {
          * @param from_angle in radians
          * @param to_angle in radians
          * @param radius radius of the arc from the center
-         * @param radius_b radius of the inner circle width
          * @param stroke_width stroke width
          * @param aa_fill AA strength for fill
          * @param aa_stroke  AA strength for stroke
          */
-        arc_sampler(sampler_t * fill, sampler_t * stroke,
+        pie_sampler(sampler_t * fill, sampler_t * stroke,
                     float from_angle, float to_angle,
-                    float radius=0.5f, float radius_b = 0.1f,float stroke_width=0.01f,
+                    float radius=0.5f, float stroke_width=0.01f,
                     float aa_fill=0.01f, float aa_stroke=0.01f) :
                         from_angle(from_angle), to_angle(to_angle),
-                        radius(radius), radius_b(radius_b), stroke_width(stroke_width),
-                             aa_fill(aa_fill), aa_stroke(aa_stroke), base(fill, stroke) {
+                        radius(radius), stroke_width(stroke_width),
+                        aa_fill(aa_fill), aa_stroke(aa_stroke), base(fill, stroke) {
         }
     };
 }
