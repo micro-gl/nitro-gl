@@ -10,8 +10,8 @@
 ========================================================================================*/
 #pragma once
 
-#include "nitrogl/ogl/shader_program.h"
-#include "nitrogl/math/mat4.h"
+#include "../ogl/shader_program.h"
+#include "../math/mat4.h"
 
 namespace nitrogl {
 
@@ -100,8 +100,8 @@ void main()
     bd_texel.rgb /= bd_texel.a;
 #endif
 
-    // sample from un-multiplied-alpha sampler
-    vec4 sampler_out = __SAMPLER_MAIN(PS_uvs_sampler);
+    // sample from un-multiplied-alpha sampler, also, perspective correct the uvs with q coord
+    vec4 sampler_out = __SAMPLER_MAIN(PS_uvs_sampler/PS_uvs_sampler.z);
     // apply opacity
     sampler_out.a *= data_main.opacity;
     // blend mode with un-multiplied-alpha backdrop

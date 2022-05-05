@@ -313,8 +313,7 @@ namespace nitrogl {
                       float opacity = 1.0,
                       mat3f transform = mat3f::identity(),
                       float u0=0., float v0=0., float u1=1., float v1=1.,
-                      const mat3f & transform_uv = mat3f::identity()
-                      ) {
+                      const mat3f & transform_uv = mat3f::identity()) {
             static float t =0;
             t+=0.01;
             glViewport(0, 0, width(), height());
@@ -324,7 +323,6 @@ namespace nitrogl {
                                                         float(height()), 0, -1, 1);
             // make the transform about it's origin, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
-
             // buffers
             float puvs[24] = {
                     left,  bottom, u0, v0, 0.0, 1.0, // xyuvpq
@@ -332,9 +330,7 @@ namespace nitrogl {
                     right, top,    u1, v1, 0.0, 1.0,
                     left,  top,    u0, v1, 0.0, 1.0,
             };
-
             auto & program = get_main_shader_program_for_sampler(sampler);
-
             // data
             p4_render_node::data_type data = {
                     puvs, 24,
@@ -349,10 +345,8 @@ namespace nitrogl {
             glDisable(GL_BLEND);
             _node_p4.render(program, sampler, data);
             glEnable(GL_BLEND);
-
             fbo_t::unbind();
             copy_to_backdrop();
-            glCheckError();
         }
 
         void drawMask(sampler_t & sampler, nitrogl::channels::channel channel,
@@ -463,6 +457,78 @@ namespace nitrogl {
                      u0, v0, u1, v1, transform_uv);
         }
 
+        void drawQuadrilateral(sampler_t & sampler,
+                               float v0_x, float v0_y,
+                               float v1_x, float v1_y,
+                               float v2_x, float v2_y,
+                               float v3_x, float v3_y,
+                               float opacity = 1.0,
+                               mat3f transform = mat3f::identity(),
+                               float u0=0., float v0=0., float u1=1., float v1=1.,
+                               const mat3f & transform_uv = mat3f::identity()) {
+            float q0 = 1.0f, q1 = 1.0f, q2 = 1.0f, q3 = 1.0f;
+            float p0x = v0_x, p0y = v0_y;
+            float p1x = v1_x, p1y = v1_y;
+            float p2x = v2_x, p2y = v2_y;
+            float p3x = v3_x, p3y = v3_y;
+            float ax = p2x - p0x, ay = p2y - p0y;
+            float bx = p3x - p1x, by = p3y - p1y;
+            float t, s;
+            float cross = ax * by - ay * bx;
+            if (cross != 0.0f) {
+                float cy = p0y - p1y;
+                float cx = p0x - p1x;
+                s = (ax * cy - ay * cx) / cross;
+                if (s > 0.0f && s < 1.0f) {
+                    t = (bx * cy - by * cx) / cross;
+                    if (t > 0.0f && t < 1.0f) { // here casting t, s to float
+                        q0 = 1.0f / (1.0f - t);
+                        q1 = 1.0f / (1.0f - s);
+                        q2 = 1.0f / t;
+                        q3 = 1.0f / s;
+                    }
+                }
+            }
+            float u0_=u0, v0_=v1, u1_=u1, v1_=v1;
+            float u2_ = u1, v2_=v0, u3_=u0, v3_=v0;
+            float u0_q0 = u0_*q0, v0_q0 = v0_*q0;
+            float u1_q1 = u1_*q1, v1_q1 = v1_*q1;
+            float u2_q2 = u2_*q2, v2_q2 = v2_*q2;
+            float u3_q3 = u3_*q3, v3_q3 = v3_*q3;
+            //
+            glViewport(0, 0, width(), height());
+            _fbo.bind();
+            // inverted y projection, canvas coords to opengl
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0, -1, 1);
+            // make the transform about it's origin, a nice feature
+            transform.post_translate(vec2f(-v0_x, -v0_y)).pre_translate(vec2f(v0_x, v0_y));
+            // buffers
+            float puvs[24] = {
+                    v0_x,  v0_y, u0_q0, v0_q0, 0.0, q0, // xyuvpq
+                    v1_x,  v1_y, u1_q1, v1_q1, 0.0, q1,
+                    v2_x,  v2_y, u2_q2, v2_q2, 0.0, q2,
+                    v3_x,  v3_y, u3_q3, v3_q3, 0.0, q3,
+            };
+            auto & program = get_main_shader_program_for_sampler(sampler);
+            // data
+            p4_render_node::data_type data = {
+                    puvs, 24,
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv,
+                    _tex_backdrop,
+                    width(), height(),
+                    opacity
+            };
+            glDisable(GL_BLEND);
+            _node_p4.render(program, sampler, data);
+            glEnable(GL_BLEND);
+            fbo_t::unbind();
+            copy_to_backdrop();
+        }
+        
         void drawRoundedRect(sampler_t & sampler_fill, sampler_t & sampler_stroke,
                              float left, float top, float right, float bottom,
                              float radius, float stroke,
