@@ -31,14 +31,14 @@ namespace nitrogl {
             if(is_texture_pre_mul_alpha)
                 return R"(
 (vec3 uv) {
-    vec4 tex = texture(data.texture, uv.xy/uv.z);
+    vec4 tex = texture(data.texture, uv.xy);
     return vec4(tex.rgb/tex.a, tex.a);
 }
 )";
             else
                 return R"(
 (vec3 uv) {
-    return texture(data.texture, uv.xy/uv.z);
+    return texture(data.texture, uv.xy);
 }
 )";
         }

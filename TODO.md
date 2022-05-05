@@ -17,10 +17,12 @@
 18. masking sampler - DONE
 19. draw mask - DONE
 22. draw arc - DONE
+23. draw pie - DONE
+21. quadrilateral - DONE
 
 20. render node for triangle batches - wip
+21. bezier patches
 21. gradients
-23. draw pie
 24. draw text, bitmap fonts
 25. draw polygons
 26. draw triangle batches
