@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../math.h"
+#include "../math/vertex2.h"
 
 namespace nitrogl {
     namespace functions {
@@ -18,6 +19,16 @@ namespace nitrogl {
         template<typename number>
         static number length(const number &p_x, const number & p_y) {
             return nitrogl::math::sqrt(p_x*p_x + p_y*p_y);
+        }
+
+        template<typename number>
+        static number length(const vertex2<number> & v) {
+            return nitrogl::math::sqrt(v.x*v.x + v.y*v.y);
+        }
+
+        template<typename number>
+        static number distance(const vertex2<number> & a, const vertex2<number> & b) {
+            return length<number>(a-b);
         }
 
         template<typename number>
