@@ -19,10 +19,14 @@
 22. draw arc - DONE
 23. draw pie - DONE
 21. quadrilateral - DONE
+21. line gradient - DONE
+21. fast 2 colors gradient - DONE
 
 20. render node for triangle batches - wip
 21. bezier patches
-21. gradients
+21. circle gradient
+21. angular gradient
+21. linear classifier sampler
 24. draw text, bitmap fonts
 25. draw polygons
 26. draw triangle batches
