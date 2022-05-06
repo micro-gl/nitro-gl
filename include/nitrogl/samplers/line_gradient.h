@@ -20,16 +20,11 @@
 namespace nitrogl {
 
     /**
-     * A sampler, that uses SDF functions to draw a rounded rectangle at
-     * the center of the sample space [0..1]x[0..1] quad.
-     * Currently, the drawn onto polygon should be a quad as well to avoid
-     * any stretching effects.
-     * NOTE:
-     * - given normalized w,h,r. it will render a rounded rect with base of
-     *   dimensions WxH centered and the radius is extended outside of this
-     *   base boundary
-     * - given, that you need to render it on a perfect polygon quad, it might
-     *   be inefficient because of a lot of dead pixels
+     * A Gradient sampler.
+     *
+     * Notes:
+     * - Can hold up to 10 colors
+     * - You can also change rotation
      */
     struct line_gradient : public sampler_t {
         const char * name() const override { return "line_gradient"; }
