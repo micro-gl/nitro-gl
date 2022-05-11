@@ -47,7 +47,7 @@ int main() {
 
         auto render = [&]() {
             static float t= 0;
-            t+=0.005;
+            t+=0.05;
 
             // some cool animations
 //            gradient.setNewRadial({0.5f, 0.5f}, (1.25f+std::sin(t/100.0f))/2.0f);
@@ -63,8 +63,8 @@ int main() {
                                       math::deg_to_rad(0.0f),
                                       math::deg_to_rad(t),
                                       10.0f, 1.0f,
-                                      1.0);//
-////                          mat3f::rotation(nitrogl::math::deg_to_rad(t), 100,100));
+                                      1.0,
+                          mat3f::rotation(nitrogl::math::deg_to_rad(t), 100,100));
 
             glCheckError();
         };
