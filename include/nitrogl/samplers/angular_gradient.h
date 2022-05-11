@@ -29,7 +29,7 @@ namespace nitrogl {
         const char * uniforms() const override {
             return R"(
 {
-    float inputs[10*6+3];
+    float inputs[15*6+5];
 }
 )";
         }
@@ -44,7 +44,7 @@ vec4 other_function(float t) {
 
         const char * main() const override {
             return R"(
-(vec3 uv) {
+(in vec3 uv) {
     //////////////
     // main input
     //////////////
@@ -52,6 +52,8 @@ vec4 other_function(float t) {
     int count = int(data.inputs[0]);
     int window_size = int(data.inputs[1]);
     int offset = int(data.inputs[2]);
+    int from_rad = int(data.inputs[3]);
+    int to_rad = int(data.inputs[4]);
     vec2 p = uv.xy - 0.5f;
 
 #define IDX(a) (offset + (a) * (window_size))
@@ -64,26 +66,38 @@ vec4 other_function(float t) {
     for (pos=0; pos<count; ++pos) {
         int idx = IDX(pos);
         // distance to this angular stop
-        float d = angle - data.inputs[idx+0];
+        float d = clamp(angle, from_rad, to_rad) - data.inputs[idx+0];
         if(d<0) break;
         distance_to_closest_stop=d;
     }
 
-    // left and right extremes
-    if(pos==count) {
-        int idx = IDX(count-1);
-        return vec4(data.inputs[idx+2], data.inputs[idx+3], data.inputs[idx+4], data.inputs[idx+5]);
-    } else if(pos==0) {
-        int idx = offset;
-        return vec4(data.inputs[idx+2], data.inputs[idx+3], data.inputs[idx+4], data.inputs[idx+5]);
-    }
+//    // left and right extremes
+//    if(pos==count) {
+//        int idx = IDX(count-1);
+//        return vec4(data.inputs[idx+2], data.inputs[idx+3], data.inputs[idx+4], data.inputs[idx+5]);
+//    } else if(pos==0) {
+//        int idx = offset;
+//        return vec4(data.inputs[idx+2], data.inputs[idx+3], data.inputs[idx+4], data.inputs[idx+5]);
+//    }
 
-    int l_idx = IDX(pos-1);
-    int r_idx = l_idx + window_size;
+    pos=(pos-1 + count) % count;
+    int l_idx = IDX(pos);
+    int r_idx = IDX((pos+1)% count);
     float segment_length= data.inputs[r_idx+1];
     float factor= distance_to_closest_stop/segment_length;
-    vec4 col_l = vec4(data.inputs[l_idx+2], data.inputs[l_idx+3], data.inputs[l_idx+4], data.inputs[l_idx+5]);
-    vec4 col_r = vec4(data.inputs[r_idx+2], data.inputs[r_idx+3], data.inputs[r_idx+4], data.inputs[r_idx+5]);
+//    factor= 1.0-smoothstep(0.0, 1./10, 1.0-factor);
+//    factor= smoothstep(0.0, 1.0,  factor);
+    float edge0 = 1.0f;//1.0f-0.05;
+    float edge1 = 1.0f;
+//    factor = 0.0;//clamp((factor - edge0) / (edge1 - edge0), 0.0, 1.0);
+//    factor= smoothstep(1.0-1./10., 1.0,  factor);
+//    factor= mix(0.0, 1.0, factor);
+//    factor= step(0.5, abs(factor));
+//    float factor= 1.0;//step(0.0, 1.0, distance_to_closest_stop/segment_length);
+    vec4 col_l = vec4(data.inputs[l_idx+2], data.inputs[l_idx+3],
+                      data.inputs[l_idx+4], data.inputs[l_idx+5]);
+    vec4 col_r = vec4(data.inputs[r_idx+2], data.inputs[r_idx+3],
+                      data.inputs[r_idx+4], data.inputs[r_idx+5]);
     vec4 final = mix(col_l, col_r, factor);
     return final;
 }
@@ -96,12 +110,32 @@ vec4 other_function(float t) {
         }
         static constexpr int offset() {
             // [0]=index, [1]=window_size, [2]=offset
-            return  3;
+            return  5;
         }
         constexpr int overall_size() const {
             return  offset() + _index*window_size();
         }
     public:
+
+        static angular_gradient from_rainbow() {
+            angular_gradient gradient { nitrogl::math::deg_to_rad(0.0f),
+                                        nitrogl::math::deg_to_rad(360.f) };
+            float h = 0.083333f;
+            gradient.addStop(h*0, {0.5,1.0,0, 1});
+            gradient.addStop(h*1, {1.0,1.0,0, 1});
+            gradient.addStop(h*2, {1.0,0.5,0, 1});
+            gradient.addStop(h*3, {1.0,0,0, 1});
+            gradient.addStop(h*4, {1.0,0,0.5, 1});
+            gradient.addStop(h*5, {1.0,0,1.0, 1});
+            gradient.addStop(h*6, {0.5,0,1, 1});
+            gradient.addStop(h*7, {0.0,0,1, 1});
+            gradient.addStop(h*8, {0.0,0.5,1, 1});
+            gradient.addStop(h*9, {0,1,1, 1});
+            gradient.addStop(h*10, {0,1,0.5, 1});
+            gradient.addStop(h*11, {0,1,0, 1});
+            gradient.addStop(h*12, {0.5,1,0, 1});
+            return gradient;
+        }
 
         void on_cache_uniforms_locations(GLuint program) override {
         }
@@ -112,6 +146,8 @@ vec4 other_function(float t) {
             inputs[0] = float(_index);
             inputs[1] = float(window_size()); // window size
             inputs[2] = float(offset()); // window size
+            inputs[3] = float(_interval.x); // from radian
+            inputs[4] = float(_interval.y); // to radian
             for (int ix = 0; ix < _index; ++ix) {
                 const auto & stop = _stops[ix];
                 int jx = offset() + ix * window_size();
@@ -127,8 +163,8 @@ vec4 other_function(float t) {
         }
 
         struct stop_t {
-            float angle=0.0f;
-            float segment_length=0.0f;
+            float angle=0.0f, where=0.0f;
+            float segment_length=10000.0f;
             color_t color{};
         };
 
@@ -137,7 +173,7 @@ vec4 other_function(float t) {
             const auto how_many = _index;
             reset();
             for (int ix = 0; ix < how_many; ++ix)
-                addStop(_stops[ix].angle, _stops[ix].color);
+                addStop(_stops[ix].where, _stops[ix].color);
         }
 
         void updateStop(int index, float where, color_t color) {
@@ -151,7 +187,8 @@ vec4 other_function(float t) {
 
             auto & stop = _stops[index];
 
-            stop.angle = where * (_interval.y-_interval.x) * nitrogl::math::pi<float>()/180.0f;
+            stop.where = where;
+            stop.angle = _interval.x + where * (_interval.y-_interval.x);
             stop.color = color;
 
             if(index>0) {
@@ -170,11 +207,11 @@ vec4 other_function(float t) {
     private:
         vec2f _interval;
         int _index = 0;
-        stop_t _stops[10] {};
+        stop_t _stops[15] {};
 
     public:
-        explicit angular_gradient(float from_deg=0.0f, float to_deg=360.0f) :
-                _interval(from_deg, to_deg) {
+        explicit angular_gradient(float from_deg_radian=0.0f, float to_deg_radian=2.0f*nitrogl::math::pi<float>()) :
+            _interval(from_deg_radian, to_deg_radian) {
             setNewInterval(_interval);
         };
 
