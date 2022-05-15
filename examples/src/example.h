@@ -102,7 +102,11 @@ void example_run(const canvas_type & canvas, const render_callback &render) {
                     quit = true;
                 break;
         };
+        Uint64 start = SDL_GetPerformanceCounter();
         render();
+        Uint64 end = SDL_GetPerformanceCounter();
+        float elapsed = float(end - start) / (float)SDL_GetPerformanceFrequency();
+//        std::cout << "Current FPS: " << std::to_string(1.0f / elapsed) << std::endl;
         SDL_GL_SwapWindow(window);
     }
     SDL_GL_DeleteContext(ctx);

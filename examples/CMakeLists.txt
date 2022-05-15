@@ -48,6 +48,7 @@ if(DEFINED SDL2_FOUND)
             ex_sampler_gradient_line.cpp
             ex_sampler_axial_2_colors_gradient.cpp
             ex_sampler_gradient_circular.cpp
+            ex_sampler_gradient_angular.cpp
             )
 
     set(SOURCES_SHARED

@@ -76,7 +76,7 @@ out vec4 FragColor;
         constexpr static const char * const frag_main = R"foo(
 
 // inplace: Cs = (1 - αb) x Cs + αb x B(Cb, Cs)
-vec4 __blend_in_place(vec4 src, vec4 backdrop, vec3 B) {
+vec4 __blend_in_place(in vec4 src, in vec4 backdrop, in vec3 B) {
     vec4 result;
     result.rgb = (1.0 - backdrop.a) * src.rgb + backdrop.a * clamp(B, 0.0, 1.0);
     result.a = src.a;
@@ -213,7 +213,7 @@ void main()
         void update_time(GLuint value) const
         { glUniform1ui(uniforms.time, value); }
         void update_backdrop_texture(const gl_texture & texture) const {
-            const auto unit = gl_texture::next_texture_unit();
+            const auto unit = 0;//gl_texture::next_texture_unit();
             texture.use(unit);
             glUniform1i(uniforms.tex_backdrop, unit);
         }

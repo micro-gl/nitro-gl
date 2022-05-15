@@ -25,6 +25,7 @@ int main() {
             static float t = 0;
             t+=0.5f;
             canva.clear(1.0, 1.0, 1.0, 1.0);
+            for (int ix = 0; ix < 1; ++ix)
             canva.drawPie(tex_sampler_3, sampler_color,
                           200, 200,
                           100,
@@ -32,9 +33,9 @@ int main() {
                           math::deg_to_rad(t),
                           1.0f,
                           1.0
-//                          mat3f::rotation(nitrogl::math::deg_to_rad(t), 100,100)
+                          //                          mat3f::rotation(nitrogl::math::deg_to_rad(t), 100,100)
                           );
-            glCheckError();
+//            glCheckError();
         };
 
         example_run(canva, render);

@@ -28,6 +28,14 @@ namespace nitrogl {
             return next;
         }
 
+        static GLint next_texture_unit_minus_zero() {
+            static GLint next=0;
+            static GLint max=-1;
+            if(max<0) glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max);
+            next = (++next)%(max-2);
+            return next+1;
+        }
+
         static gl_texture un_generated_dummy() { return gl_texture(); }
         /**
          * create a texture definition from a tightly unpacked byte-array of pixels (no padding between rows).

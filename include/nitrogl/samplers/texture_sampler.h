@@ -16,7 +16,6 @@
 
 namespace nitrogl {
 
-    template<bool is_texture_pre_mul_alpha=true>
     struct texture_sampler : public sampler_t {
         const char * name() const override { return "texture_sampler"; }
         const char * uniforms() const override {
@@ -27,17 +26,30 @@ namespace nitrogl {
 )";
         }
 
+        nitrogl::uintptr_type hash_code() const override {
+            // on some opengl hardware, when the slot uniform changes,
+            // the driver patches or recompiles the shader because texture is
+            // a non-opaque data type. Therefore, slot MUST change the hash code
+            // of the sampler. Therefore, EVERY UNIQUE SLOT HAS TO GENERATE A UNIQUE SHADER !!!
+            // Otherwise, performance will be very bad if user uses the same shader with dynamic
+            // slot uniform, this will cause patching --> very bad performance
+            microc::iterative_murmur<nitrogl::uintptr_type> murmur;
+            murmur.begin_cast(main());
+            murmur.next(slot);
+            return murmur.end();
+        }
+
         const char * main() const override {
-            if(is_texture_pre_mul_alpha)
+            if(texture.is_premul_alpha())
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 tex = texture(data.texture, uv.xy);
     return vec4(tex.rgb/tex.a, tex.a);
 }
 )";
             else
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return texture(data.texture, uv.xy);
 }
 )";
@@ -47,14 +59,18 @@ namespace nitrogl {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-            const auto tex_unit = gl_texture::next_texture_unit();
-            texture.use(tex_unit);
-            glUniform1i(get_uniform_location(program, "texture"), tex_unit);
+            texture.use(slot);
+            glUniform1i(get_uniform_location(program, "texture"), slot);
         }
 
     public:
+        GLint slot;
         gl_texture texture;
-        explicit texture_sampler(const gl_texture & texture) : texture(texture), sampler_t() {}
-        explicit texture_sampler(gl_texture && texture) : texture(nitrogl::traits::move(texture)), sampler_t() {}
+        explicit texture_sampler(const gl_texture & texture, GLint slot=gl_texture::next_texture_unit_minus_zero()) :
+                slot(slot), texture(texture), sampler_t() {
+        }
+        explicit texture_sampler(gl_texture && texture, GLint slot=gl_texture::next_texture_unit_minus_zero()) :
+                slot(slot), texture(nitrogl::traits::move(texture)), sampler_t() {
+        }
     };
 }

@@ -87,10 +87,10 @@ namespace nitrogl {
             program.update_backdrop_texture(d.backdrop_texture);
             program.update_window_size(d.window_width, d.window_height);
             program.updateOpacity(d.opacity);
-            // sampler uniforms
+//             sampler uniforms
             sampler.upload_uniforms(program.id());
 
-            glCheckError();
+//            glCheckError();
 
             // upload data
             _vbo_pos_uvs.uploadData(d.pos_and_uvs_interleaved,
