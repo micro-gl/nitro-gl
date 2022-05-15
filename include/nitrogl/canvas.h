@@ -61,12 +61,12 @@
 
 // samplers
 #include "samplers/sampler.h"
-#include "samplers/circle_sampler.h"
-#include "samplers/rounded_rect_sampler.h"
+#include "nitrogl/samplers/shapes/circle_sampler.h"
+#include "nitrogl/samplers/shapes/rounded_rect_sampler.h"
 #include "samplers/color_sampler.h"
 #include "samplers/channel_sampler.h"
-#include "samplers/arc_sampler.h"
-#include "samplers/pie_sampler.h"
+#include "nitrogl/samplers/shapes/arc_sampler.h"
+#include "nitrogl/samplers/shapes/pie_sampler.h"
 
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
@@ -351,7 +351,7 @@ namespace nitrogl {
 
         void drawMask(sampler_t & sampler, nitrogl::channels::channel channel,
                       float left, float top, float right, float bottom,
-                      float u0=0., float v0=1., float u1=1., float v1=0.,
+                      float u0=0., float v0=0., float u1=1., float v1=1.,
                       const mat3f & transform_uv = mat3f::identity()) {
             const auto * current_blend_mode = _blend_mode;
             const auto * current_alpha_compositor = _alpha_compositor;
@@ -366,7 +366,7 @@ namespace nitrogl {
                         float x, float y, float radius, float stroke,
                         float opacity = 1.0,
                         const mat3f & transform = mat3f::identity(),
-                        float u0=0., float v0=1., float u1=1., float v1=0.,
+                        float u0=0., float v0=0., float u1=1., float v1=1.,
                         const mat3f & transform_uv = mat3f::identity()) {
             float pad = stroke/2.0f + 5.0f;
             float ex_radi = radius + pad; // extended radius

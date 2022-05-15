@@ -23,6 +23,7 @@
 21. fast 2 colors gradient - DONE
 21. circle gradient - DONE
 21. angular gradient - DONE
+21. capsule shape sampler - DONE
 
 20. render node for triangle batches - wip
 21. bezier patches

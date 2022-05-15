@@ -8,8 +8,8 @@
 #include <nitrogl/samplers/test_sampler.h>
 #include <nitrogl/samplers/mix_sampler.h>
 #include <nitrogl/samplers/texture_sampler.h>
-#include <nitrogl/samplers/circle_sampler.h>
-#include <nitrogl/samplers/axial_2_colors_gradient.h>
+#include <nitrogl/samplers/shapes/circle_sampler.h>
+#include <nitrogl/samplers/gradients/axial_2_colors_gradient.h>
 #include <nitrogl/canvas.h>
 
 using namespace nitrogl;
@@ -20,9 +20,9 @@ int main() {
         auto tex = gl_texture(500,500);
         glCheckError();
         canvas canva(500,500);
-        auto tex_sampler_1 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", true));
-        auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
-        auto tex_sampler_3 = texture_sampler<false>(Resources::loadTexture("assets/images/uv_256.png", true));
+        auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
+        auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
+        auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
 
         axial_2_colors_gradient gradient{{1,0,0,1},
                                          {0,0,1,1},

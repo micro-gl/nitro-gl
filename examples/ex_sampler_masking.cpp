@@ -19,11 +19,11 @@ int main() {
         auto tex = gl_texture(500,500);
         glCheckError();
         canvas canva(500,500);
-        auto tex_sampler_1 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", true));
-        auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
-        auto tex_sampler_3 = texture_sampler<false>(Resources::loadTexture("assets/images/uv_256.png", true));
-        auto tex_sampler_4 = texture_sampler<true>(Resources::loadTexture("assets/images/dog_32bit_premul.png", true));
-        auto tex_sampler_5 = texture_sampler<true>(Resources::loadTexture("assets/images/bw_8bits.png", false));
+        auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
+        auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
+        auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
+        auto tex_sampler_4 = texture_sampler(Resources::loadTexture("assets/images/dog_32bit_premul.png", true));
+        auto tex_sampler_5 = texture_sampler(Resources::loadTexture("assets/images/bw_8bits.png", false));
         color_sampler sampler_color(1.0,0.0,0.0,1.0);
         masking_sampler sampler_1 {&tex_sampler_3, &tex_sampler_4 };
         masking_sampler sampler_2 {&tex_sampler_3, &tex_sampler_5, channels::channel::red_channel };
