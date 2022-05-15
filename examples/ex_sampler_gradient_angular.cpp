@@ -27,7 +27,8 @@ int main() {
 
         angular_gradient gradient { math::deg_to_rad(0.0f),
                                    math::deg_to_rad(360.0f) };
-        float h = 0.083333f;
+        float h = 1.0f/13;
+
         gradient.addStop(h*0, {0.5,1.0,0, 1});
         gradient.addStop(h*1, {1.0,1.0,0, 1});
         gradient.addStop(h*2, {1.0,0.5,0, 1});
@@ -40,14 +41,14 @@ int main() {
         gradient.addStop(h*9, {0,1,1, 1});
         gradient.addStop(h*10, {0,1,0.5, 1});
         gradient.addStop(h*11, {0,1,0, 1});
-        gradient.addStop(1.0f, {0.5,1,0, 1});
+        gradient.addStop(h*12, {0.5,1,0, 1});
 
 //        gradient.addStop(0.0f, {1,0,0, 1});
 //        gradient.addStop(1.0f, {0,1,0, 1});
 
         auto render = [&]() {
             static float t= 0;
-            t+=0.05;
+            t+=0.01;
 
             // some cool animations
 //            gradient.setNewRadial({0.5f, 0.5f}, (1.25f+std::sin(t/100.0f))/2.0f);
@@ -63,8 +64,8 @@ int main() {
                                       math::deg_to_rad(0.0f),
                                       math::deg_to_rad(t),
                                       10.0f, 1.0f,
-                                      1.0,
-                          mat3f::rotation(nitrogl::math::deg_to_rad(t), 100,100));
+                                      1.0);//,
+//                          mat3f::rotation(nitrogl::math::deg_to_rad(t), 100,100));
 
             glCheckError();
         };

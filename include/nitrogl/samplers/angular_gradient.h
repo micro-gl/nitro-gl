@@ -71,22 +71,11 @@ vec4 other_function(float t) {
         distance_to_closest_stop=d;
     }
 
-//    // left and right extremes
-//    if(pos==count) {
-//        int idx = IDX(count-1);
-//        return vec4(data.inputs[idx+2], data.inputs[idx+3], data.inputs[idx+4], data.inputs[idx+5]);
-//    } else if(pos==0) {
-//        int idx = offset;
-//        return vec4(data.inputs[idx+2], data.inputs[idx+3], data.inputs[idx+4], data.inputs[idx+5]);
-//    }
-
     pos=(pos-1 + count) % count;
     int l_idx = IDX(pos);
     int r_idx = IDX((pos+1)% count);
     float segment_length= data.inputs[r_idx+1];
     float factor= distance_to_closest_stop/segment_length;
-//    factor= 1.0-smoothstep(0.0, 1./10, 1.0-factor);
-//    factor= smoothstep(0.0, 1.0,  factor);
     float edge0 = 1.0f;//1.0f-0.05;
     float edge1 = 1.0f;
 //    factor = 0.0;//clamp((factor - edge0) / (edge1 - edge0), 0.0, 1.0);
@@ -117,10 +106,10 @@ vec4 other_function(float t) {
         }
     public:
 
-        static angular_gradient from_rainbow() {
-            angular_gradient gradient { nitrogl::math::deg_to_rad(0.0f),
-                                        nitrogl::math::deg_to_rad(360.f) };
-            float h = 0.083333f;
+        static angular_gradient from_rainbow(float from_deg_radian=0.0f,
+                                             float to_deg_radian=2.0f*nitrogl::math::pi<float>()) {
+            angular_gradient gradient { from_deg_radian, to_deg_radian };
+            float h = 1.0f/13;
             gradient.addStop(h*0, {0.5,1.0,0, 1});
             gradient.addStop(h*1, {1.0,1.0,0, 1});
             gradient.addStop(h*2, {1.0,0.5,0, 1});
