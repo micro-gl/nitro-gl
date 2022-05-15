@@ -17,7 +17,7 @@
 namespace nitrogl {
 
     /**
-     * Arc sampler, that uses SDF functions to draw a rounded Arc at
+     * Pie Sampler, that uses SDF functions to draw a rounded Arc at
      * the center of the sample space [0..1]x[0..1] quad.
      * Currently, the drawn onto polygon should be a quad as well to avoid
      * any stretching effects.

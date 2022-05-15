@@ -8,8 +8,8 @@
 #include <nitrogl/samplers/test_sampler.h>
 #include <nitrogl/samplers/mix_sampler.h>
 #include <nitrogl/samplers/texture_sampler.h>
-#include <nitrogl/samplers/circle_sampler.h>
-#include <nitrogl/samplers/angular_gradient.h>
+#include <nitrogl/samplers/shapes/circle_sampler.h>
+#include <nitrogl/samplers/gradients/angular_gradient.h>
 #include <nitrogl/canvas.h>
 
 using namespace nitrogl;

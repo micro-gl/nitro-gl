@@ -19,11 +19,11 @@ int main() {
         auto tex = gl_texture(500,500);
         glCheckError();
         canvas canva(500,500);
-        auto tex_sampler_1 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", true));
-        auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
-        auto tex_sampler_3 = texture_sampler<false>(Resources::loadTexture("assets/images/uv_256.png", true));
-        auto tex_sampler_4 = texture_sampler<true>(Resources::loadTexture("assets/images/dog_32bit_premul.png", true));
-        auto tex_sampler_5 = texture_sampler<true>(Resources::loadTexture("assets/images/bw_8bits.png", false));
+        auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
+        auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
+        auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
+        auto tex_sampler_4 = texture_sampler(Resources::loadTexture("assets/images/dog_32bit_premul.png", true));
+        auto tex_sampler_5 = texture_sampler(Resources::loadTexture("assets/images/bw_8bits.png", false));
         color_sampler sampler_color(1.0,0.0,0.0,1.0);
         const auto * bbb = glGetString(GL_RENDERER);
         auto render = [&]() {
@@ -31,16 +31,15 @@ int main() {
             t+=0.05;
             canva.clear(1.0, 1.0, 1.0, 1.0);
             for (int ix = 0; ix < 15; ++ix)
-                canva.drawRect(tex_sampler_3, 0, 0, 100, 100, 1.0);
-//            canva.drawRect(tex_sampler_3, 0, 0, 500, 500, 1.0);
-//            canva.drawMask(tex_sampler_4, channels::channel::alpha_channel_inverted,
-//                           0, 0, 250, 250);
-//            canva.drawMask(tex_sampler_4, channels::channel::alpha_channel,
-//                           250, 0, 500, 250);
-//            canva.drawMask(tex_sampler_5, channels::channel::red_channel_inverted,
-//                           0, 250, 250, 500);
-//            canva.drawMask(tex_sampler_5, channels::channel::red_channel,
-//                           250, 250, 500, 500);
+            canva.drawRect(tex_sampler_3, 0, 0, 500, 500, 1.0);
+            canva.drawMask(tex_sampler_4, channels::channel::alpha_channel_inverted,
+                           0, 0, 250, 250);
+            canva.drawMask(tex_sampler_4, channels::channel::alpha_channel,
+                           250, 0, 500, 250);
+            canva.drawMask(tex_sampler_5, channels::channel::red_channel_inverted,
+                           0, 250, 250, 500);
+            canva.drawMask(tex_sampler_5, channels::channel::red_channel,
+                           250, 250, 500, 500);
 //            glCheckError();
         };
 

@@ -8,7 +8,7 @@
 #include <nitrogl/samplers/test_sampler.h>
 #include <nitrogl/samplers/mix_sampler.h>
 #include <nitrogl/samplers/texture_sampler.h>
-#include <nitrogl/samplers/circle_sampler.h>
+#include <nitrogl/samplers/shapes/circle_sampler.h>
 #include <nitrogl/canvas.h>
 
 using namespace nitrogl;
@@ -19,9 +19,9 @@ int main() {
         auto tex = gl_texture(500,500);
         glCheckError();
         canvas canva(500,500);
-        auto tex_sampler_1 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", true));
-        auto tex_sampler_2 = texture_sampler<true>(Resources::loadTexture("assets/images/test.png", false));
-        auto tex_sampler_3 = texture_sampler<false>(Resources::loadTexture("assets/images/uv_256.png", true));
+        auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
+        auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
+        auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
         color_sampler sampler_color(1.0,0.0,0.0,1.0/2);
 //        circle_sampler circle { 0.45f, 0.01f, 0.01f, &tex_sampler_3, &tex_sampler_3 };
 
@@ -29,7 +29,7 @@ int main() {
 
         auto render = [&]() {
             static float t= 0;
-            t+=0.05;
+            t+=0.005;
             canva.clear(1.0, 1.0, 1.0, 1.0);
             canva.drawRoundedRect(tex_sampler_3, sampler_color,
                                   100, 100, 500,  500,
