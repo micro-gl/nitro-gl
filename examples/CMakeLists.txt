@@ -45,6 +45,7 @@ if(DEFINED SDL2_FOUND)
             ex_sampler_arc.cpp
             ex_sampler_pie.cpp
             ex_sampler_capsule.cpp
+            ex_sampler_linear_classifier.cpp
 
             ex_sampler_gradient_line.cpp
             ex_sampler_axial_2_colors_gradient.cpp

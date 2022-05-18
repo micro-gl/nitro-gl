@@ -16,7 +16,7 @@ namespace nitrogl {
 #define PI        3.14159265358979323846264338327950288
 
         template<typename number>
-        number abs(const number &val) {
+        number abs_cpu(const number &val) {
             return val < 0 ? -val : val;
         }
 
@@ -46,7 +46,7 @@ namespace nitrogl {
         number sqrt_cpu(const number val, const number epsilon) {
             int ix = 0;
             number x = val, y = number(1);
-            while ((abs<number>(x - y) > epsilon) and (ix++<10)) {
+            while ((abs_cpu<number>(x - y) > epsilon) and (ix++<10)) {
                 x = (x + y) / number(2);
                 y = val / x;
             }
