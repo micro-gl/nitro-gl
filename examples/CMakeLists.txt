@@ -37,8 +37,11 @@ if(DEFINED SDL2_FOUND)
             ex_draw_pie.cpp
             ex_draw_quadrilateral.cpp
 
+            ex_sampler_color.cpp
             ex_sampler_texture.cpp
             ex_sampler_masking.cpp
+
+            ex_sampler_block.cpp
 
             ex_sampler_circle.cpp
             ex_sampler_rounded.cpp
