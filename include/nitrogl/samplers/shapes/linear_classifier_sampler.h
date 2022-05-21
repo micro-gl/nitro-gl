@@ -29,7 +29,7 @@ namespace nitrogl {
         const char * uniforms() const override {
             return R"(
 {
-    // p0_x, p0_y, p1_x, p1_y, boundary_band
+    // p0_x, p0_y, p1_x, p1_y, boundary_width
     float inputs[5];
 }
 )";
@@ -61,6 +61,7 @@ vec4 other_function(float t) {
     vec2 pa = p-a, ba = b-a;
     float h = dot(pa, ba)/dot(ba, ba);
     float d = sign(dot(pa, vec2(ba.y, -ba.x)))*length(pa - ba*h);
+//    float d = sign(h)*length(pa - ba*h);
     d = max(0.0, d);
     // negative distances will become zero
     float alpha = smoothstep(0.0, boundary_width, d);
