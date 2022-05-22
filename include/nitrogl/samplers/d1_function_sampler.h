@@ -17,7 +17,9 @@
 namespace nitrogl {
 
     /**
-     * A Capsule Shape Sampler, maps perfectly to a [0,1]x[0,1] quad
+     * A 2D Piece-wise Function sampler:
+     * 1. Composed out of finite segments
+     * 2. up to 100 points or 99 segments
      *
      */
     struct d1_function_sampler : public multi_sampler<2> {
@@ -57,51 +59,42 @@ vec4 other_function(float t) {
     float aa_stroke = data.inputs[5]*2.0;
     vec2 p = uv.xy;
 
-//#define IDX(a) (offset + (a) * (window_size))
-//#define IDX2(a) vec2(offset + (a) * (window_size))
-
     /////////////
     // SDF function
     /////////////
-    float d = 1000000.0;
+    // compute squared SDF for each line segment. Defer sqrt() operation to
+    // the end for performance reasons. I wish I could have skipped the branching,
+    // BUT SDFs union/intersection ops with min/max dont work well for me.
+    float d_squared = 1000000.0;
     float sign_ = 0.0;
-//    int jx=6;
-    for(int ix=0; ix<count-1; ++ix) {
-        int jx = 6 + 2*ix;
+    for(int ix=0, jx=offset; ix<count-1; ++ix, jx+=2) {
         vec2 a = vec2(data.inputs[jx], data.inputs[jx+1]);
         vec2 b = vec2(data.inputs[jx+2], data.inputs[jx+3]);
         vec2 pa = p-a, ba = b-a;
         float h = clamp(dot(pa, ba)/dot(ba, ba), 0.0 , 1.0);
-//        sign_ = sign(dot(pa, vec2(ba.y, -ba.x)));
-        float d2 = length(pa - ba*h);
-        if(d2 <= d) {
-            d=d2; sign_=sign(dot(pa, vec2(-ba.y, ba.x)));
+        vec2 ot = pa - ba*h; // this is the shortest vector
+        float d2_squared = dot(ot, ot);
+        if(d2_squared <= d_squared) {
+            d_squared=d2_squared; sign_=sign(dot(pa, vec2(-ba.y, ba.x)));
         }
-//    jx+=1;
-    //    float d = sign(h)*length(pa - ba*h);
-//        d = min(d2, d);
     }
-
-    d *= sign_;
-
-    float fac = step(0.0, d);
-    return vec4(0.0,0.0,0.0,1.0-fac);
+    // defer the sqrt() function to here
+    float d = sqrt(d_squared)*sign_;
 
     /////////////
-    // inner circle with AA at the boundary
+    // inner fill with AA at the boundary
     /////////////
     vec4 col_base = sampler_00(uv);
     col_base.a *= (1.0 - smoothstep(0.0, 0.0 + aa_fill, d) );
-    return col_base;
 
     /////////////
-    // mix stroke
+    // stroke on boundary with AA
     /////////////
     vec4 col_src = sampler_01(uv);
     col_src.a *= (1.0 - smoothstep(sw, sw + aa_stroke, abs(d) ));
 
     /////////////
-    // source-over compositing stroke over circle
+    // source-over compositing stroke over fill
     /////////////
     vec4 col = __internal_porter_duff(1.0, 1.0-col_src.a, col_src, col_base);
     return vec4(col.rgb/col.a, col.a); // un-multiply alpha
