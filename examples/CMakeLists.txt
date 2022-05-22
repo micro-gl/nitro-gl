@@ -42,6 +42,7 @@ if(DEFINED SDL2_FOUND)
             ex_sampler_masking.cpp
 
             ex_sampler_block.cpp
+            ex_sampler_d1_function.cpp
 
             ex_sampler_circle.cpp
             ex_sampler_rounded.cpp

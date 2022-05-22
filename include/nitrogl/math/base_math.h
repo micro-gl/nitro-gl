@@ -14,14 +14,18 @@ namespace nitrogl {
     namespace math {
 
 #define PI        3.14159265358979323846264338327950288
+#define TWO_PI    6.2831853072
 
         template<typename number>
         number abs_cpu(const number &val) {
             return val < 0 ? -val : val;
         }
 
-        template<typename number>
-        static number pi() {
+        template<typename number> static number two_pi() {
+            return number{float(TWO_PI)};
+        }
+
+        template<typename number> static number pi() {
             return number{float(PI)};
         }
 

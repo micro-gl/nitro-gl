@@ -81,7 +81,7 @@ void example_init(const on_init_callback &on_init) {
     on_init(window, context);
 }
 
-template<class canvas_type=void, class render_callback>
+template<bool show_fps=false, class canvas_type=void, class render_callback>
 void example_run(const canvas_type & canvas, const render_callback &render) {
     auto ctx = SDL_GL_GetCurrentContext();
     SDL_Window * window = SDL_GL_GetCurrentWindow();
@@ -102,11 +102,16 @@ void example_run(const canvas_type & canvas, const render_callback &render) {
                     quit = true;
                 break;
         };
-        Uint64 start = SDL_GetPerformanceCounter();
-        render();
-        Uint64 end = SDL_GetPerformanceCounter();
-        float elapsed = float(end - start) / (float)SDL_GetPerformanceFrequency();
-//        std::cout << "Current FPS: " << std::to_string(1.0f / elapsed) << std::endl;
+        if(show_fps) {
+            Uint64 start = SDL_GetPerformanceCounter();
+            render();
+            Uint64 end = SDL_GetPerformanceCounter();
+            float elapsed = float(end - start) / (float)SDL_GetPerformanceFrequency();
+            std::cout << "Current FPS: " << std::to_string(1.0f / elapsed) << std::endl;
+        } else {
+            render();
+        }
+
         SDL_GL_SwapWindow(window);
     }
     SDL_GL_DeleteContext(ctx);
