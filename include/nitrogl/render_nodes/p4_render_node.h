@@ -10,10 +10,9 @@
 ========================================================================================*/
 #pragma once
 
-#include "nitrogl/ogl/shader_program.h"
-#include "nitrogl/_internal/main_shader_program.h"
-#include "nitrogl/color.h"
-#include <array>
+#include "../ogl/shader_program.h"
+#include "../_internal/main_shader_program.h"
+#include "../samplers/sampler.h"
 
 namespace nitrogl {
 
@@ -24,9 +23,9 @@ namespace nitrogl {
 
     public:
         using program_type = main_shader_program;
-        using size_type = nitrogl::size_t;
+        using size_type = GLsizeiptr;
         struct data_type {
-            float * pos_and_uvs_interleaved; //{(x,y,u,v,p,q), (x,y,u,v,p,q), ....}
+            float * pos_and_uvs_qs_interleaved; //{(x,y,u,v,q), (x,y,u,v,q), ....}
             size_type size;
             const mat4f & mat_model;
             const mat4f & mat_view;
@@ -40,42 +39,43 @@ namespace nitrogl {
 
         struct GVA {
             GVA()=default;
-            nitrogl::generic_vertex_attrib_t data[2];
-            static constexpr unsigned size() { return 2; }
+            nitrogl::generic_vertex_attrib_t data[3];
+            static constexpr unsigned size() { return 3; }
         };
 
         GVA gva{};
-        vbo_t _vbo_pos_uvs;
-        vao_t _vao;
-        ebo_t _ebo;
+        vbo_t _vbo_pos_uvs{};
+        vao_t _vao{};
+        ebo_t _ebo{};
 
     public:
         p4_render_node()=default;
         ~p4_render_node()=default;
 
         void init() {
-            // configure the vao, vbo, generic vertex attribs
+            // configure the vao, vbo, generic vertex attribs [(x,y,u,v,q) ....]
             gva = {{
                 { 0, GL_FLOAT, 2, OFFSET(0),
-                  6*sizeof (GLfloat),_vbo_pos_uvs.id()},
-                { 1, GL_FLOAT, 4, OFFSET(2*sizeof (GLfloat)),
-                  6*sizeof (GLfloat), _vbo_pos_uvs.id()}
+                  5*sizeof (GLfloat),_vbo_pos_uvs.id()},
+                { 1, GL_FLOAT, 2, OFFSET(2*sizeof (GLfloat)),
+                5*sizeof (GLfloat), _vbo_pos_uvs.id()},
+                { 2, GL_FLOAT, 1, OFFSET(4*sizeof (GLfloat)),
+                  5*sizeof (GLfloat), _vbo_pos_uvs.id()}
             }};
 
             // elements buffer
             GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
             _vao.bind();
-            _ebo.bind();
             _ebo.uploadData(e, sizeof(e), GL_STATIC_DRAW);
 
 #ifdef SUPPORTS_VAO
             program_type::point_generic_vertex_attributes(gva.data,
-                     program_type::shader_vertex_attributes().data, gva.size());
+                     program_type::shader_vertex_attributes().data, GVA::size());
             vao_t::unbind();
 #endif
         }
 
-        void render(const program_type & program, sampler_t & sampler, const data_type & data) {
+        void render(const program_type & program, sampler_t & sampler, const data_type & data) const {
             const auto & d = data;
             program.use();
             // vertex uniforms
@@ -83,18 +83,23 @@ namespace nitrogl {
             program.updateViewMatrix(d.mat_view);
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
+            program.update_has_missing_uvs(false);
+            program.update_has_missing_qs(false);
+
             // fragment uniforms
             program.update_backdrop_texture(d.backdrop_texture);
             program.update_window_size(d.window_width, d.window_height);
             program.updateOpacity(d.opacity);
-//             sampler uniforms
+
+            // sampler uniforms
             sampler.upload_uniforms(program.id());
 
 //            glCheckError();
 
+            static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
             // upload data
-            _vbo_pos_uvs.uploadData(d.pos_and_uvs_interleaved,
-                                d.size*sizeof(float),
+            _vbo_pos_uvs.uploadData(d.pos_and_uvs_qs_interleaved,
+                                    d.size*FLOAT_SIZE,
                                 GL_DYNAMIC_DRAW);
 
 #ifdef SUPPORTS_VAO

@@ -48,42 +48,42 @@ vec4 other_function(float t) {
         const char * main() const override {
             if(degree==axial_degree::_0 || degree==axial_degree::_360) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], uv.x);
 })";
             } else if (degree==axial_degree::_45) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], (uv.x+uv.y)/2.0);
 })";
             } else if (degree==axial_degree::_90) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], uv.y);
 })";
             } else if (degree==axial_degree::_135) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], 1.0 - ((uv.x-uv.y)/2.0 + 0.5f));
 })";
             } else if (degree==axial_degree::_180) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], 1.0 - uv.x);
 })";
             } else if (degree==axial_degree::_225) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], 1.0 - (uv.x+uv.y)/2.0);
 })";
             } else if (degree==axial_degree::_270) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], 1.0 - uv.y);
 })";
             } else if (degree==axial_degree::_315) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return mix(data.colors[0], data.colors[1], 0.5f + (uv.x-uv.y)/2.0 );
 })";
             }

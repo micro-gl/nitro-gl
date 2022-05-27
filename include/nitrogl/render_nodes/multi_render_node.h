@@ -15,8 +15,8 @@
 #include "../ogl/vbo.h"
 #include "../ogl/ebo.h"
 #include "../_internal/main_shader_program.h"
-#include "../color.h"
 #include "../samplers/sampler.h"
+#include "../math.h"
 
 namespace nitrogl {
 
@@ -24,31 +24,42 @@ namespace nitrogl {
 
     public:
         using program_type = main_shader_program;
-        using size_type = nitrogl::size_t;
+        using size_type = GLsizeiptr;
         struct data_type {
             float * pos;
-            float * uvs_sampler;
+            float * uvs;
+            float * qs;
             GLuint * indices;
+
             size_type pos_size;
-            size_type uvs_sampler_size;
-            GLsizei indices_size;
+            size_type uvs_size;
+            size_type qs_size;
+            size_type indices_size;
+
             GLenum triangles_type;
+
             const mat4f & mat_model;
             const mat4f & mat_view;
             const mat4f & mat_proj;
             const mat3f & mat_uvs_sampler;
+            const gl_texture & backdrop_texture;
+            const GLuint window_width;
+            const GLuint window_height;
+            const float opacity;
+            rectf bbox;
         };
 
         struct GVA {
             GVA()=default;
-            nitrogl::generic_vertex_attrib_t data[2];
-            constexpr unsigned size() const { return 2; }
+            static constexpr unsigned SIZE = 3;
+            static constexpr unsigned size() { return SIZE; }
+            nitrogl::generic_vertex_attrib_t data[SIZE];
         };
 
         GVA gva{};
-        vbo_t _vbo_pos, _vbo_uvs_sampler;
-        vao_t _vao;
-        ebo_t _ebo;
+        vbo_t _vbo_pos{}, _vbo_uvs{}, _vbo_qs{};
+        vao_t _vao{};
+        ebo_t _ebo{};
 
     public:
         multi_render_node()=default;
@@ -58,44 +69,64 @@ namespace nitrogl {
             // configure the vao, vbo, generic vertex attribs
             gva = {{
                 { 0, GL_FLOAT, 2, OFFSET(0), 0, _vbo_pos.id()},
-                { 1, GL_FLOAT, 2, OFFSET(0), 0, _vbo_uvs_sampler.id()}
+                { 1, GL_FLOAT, 2, OFFSET(0), 0, _vbo_uvs.id()},
+                { 2, GL_FLOAT, 1, OFFSET(0), 0, _vbo_qs.id()}
             }};
 
 #ifdef SUPPORTS_VAO
             _vao.bind();
             _ebo.bind();
             program_type::point_generic_vertex_attributes(gva.data,
-                     program_type::shader_vertex_attributes().data, gva.size());
+                     program_type::shader_vertex_attributes().data, GVA::size());
             vao_t::unbind();
 #endif
         }
 
-        void render(const program_type & program, sampler_t & sampler, const data_type & data) {
+        void render(const program_type & program, sampler_t & sampler, const data_type & data) const {
             const auto & d = data;
-            program.use();
+            const bool has_missing_uvs = d.uvs == nullptr;
+            const bool has_missing_qs = d.qs == nullptr;
+
+            // vertex uniforms
             program.updateModelMatrix(d.mat_model);
             program.updateViewMatrix(d.mat_view);
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
-            program.updateOpacity(1.0f);
-            sampler.upload_uniforms(program.id());
-            glCheckError();
+            program.update_has_missing_uvs(has_missing_uvs);
 
-            // upload data
-            _vbo_pos.uploadData(d.pos,
-                                d.pos_size*sizeof(float),
+            // fragment uniforms
+            program.update_backdrop_texture(d.backdrop_texture);
+            program.update_window_size(d.window_width, d.window_height);
+            program.updateOpacity(d.opacity);
+            program.update_has_missing_uvs(has_missing_uvs);
+            program.update_has_missing_qs(has_missing_qs);
+            if(has_missing_uvs)
+                program.updateBBox(d.bbox.left, d.bbox.top, d.bbox.right, d.bbox.bottom);
+
+            // sampler uniforms
+            sampler.upload_uniforms(program.id());
+
+            static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
+            // upload pos
+            _vbo_pos.uploadData(d.pos,d.pos_size*FLOAT_SIZE,
                                 GL_DYNAMIC_DRAW);
-            _vbo_uvs_sampler.uploadData(d.uvs_sampler,
-                                        d.uvs_sampler_size*sizeof(float),
-                                        GL_DYNAMIC_DRAW);
+            // upload uvs
+            if(!has_missing_uvs)
+                _vbo_uvs.uploadData(d.uvs,d.uvs_size * FLOAT_SIZE,
+                                    GL_DYNAMIC_DRAW);
+            // upload qs (RARE !!)
+            if(!has_missing_qs)
+                _vbo_uvs.uploadData(d.qs,d.qs_size * FLOAT_SIZE,
+                                    GL_DYNAMIC_DRAW);
+            // upload indices
             _ebo.uploadData(d.indices,
-                            sizeof(GLuint)*d.indices_size,
+                            GLsizeiptr(sizeof(GLuint))*d.indices_size,
                             GL_DYNAMIC_DRAW);
 
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
-            glDrawElements(d.triangles_type, d.indices_size, GL_UNSIGNED_INT, OFFSET(0));
+            glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
             vao_t::unbind();
 #else
             _ebo.bind();

@@ -13,31 +13,33 @@
 14. murmur hashcode - DONE
 15. compositing is a canvas state - DONE
 16. circle sampler - DONE
-17. rounded rect sampler - DONE
+17. rounded rect_i sampler - DONE
 18. masking sampler - DONE
 19. draw mask - DONE
-22. draw arc - DONE
-23. draw pie - DONE
-21. quadrilateral - DONE
-21. line gradient - DONE
-21. fast 2 colors gradient - DONE
-21. circle gradient - DONE
-21. angular gradient - DONE
-21. capsule shape sampler - DONE
-21. linear classifier sampler - DONE
+20. draw arc - DONE
+21. draw pie - DONE
+22. quadrilateral - DONE
+23. line gradient - DONE
+24. fast 2 colors gradient - DONE
+25. circle gradient - DONE
+26. angular gradient - DONE
+27. capsule shape sampler - DONE
+28. linear classifier sampler - DONE
+29. 
+30. test idea of missing uvs coords for triangle batches
 
-20. render node for triangle batches - wip
-21. bezier patches
-24. draw text, bitmap fonts
-25. draw polygons
-26. draw triangle batches
-27. draw paths fills
-28. draw stroke fills
-29. test idea of missing uvs coords for triangle batches
-30. AA with rbos or filter shader
-31. investigate caching of uniforms per program
-32. draw text, sdf
-33. pointer/l-val/r-val to pointer function
+31. render node for triangle batches - wip
+32. bezier patches
+33. draw text, bitmap fonts
+34. draw polygons
+35. draw triangle batches
+36. draw paths fills
+37. draw stroke fills
+38. test idea of missing uvs coords for triangle batches
+39. AA with rbos or filter shader
+40. investigate caching of uniforms per program
+41. draw text, sdf
+42. pointer/l-val/r-val to pointer function
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,
