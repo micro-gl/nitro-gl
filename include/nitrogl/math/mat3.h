@@ -12,7 +12,6 @@
 
 #include "matrix.h"
 #include "../math.h"
-//#include "vertex2.h"
 
 namespace nitrogl {
 

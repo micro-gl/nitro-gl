@@ -24,14 +24,29 @@ int main() {
         auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
         color_sampler sampler_color(1.0,0.0,0.0,1.0/2);
 
+        const float SIZE = 200;
+        vec2f vertices[4] = {
+                {0,0},
+                {SIZE,0},
+                {SIZE,SIZE},
+                {0,SIZE}
+        };
+
+//        unsigned int indices[6] = { 0, 1, 2, 2, 3, 0 } ;
+        unsigned int indices[4] = { 0, 1, 2, 3 } ;
+        const auto type = nitrogl::triangles::indices::TRIANGLES_FAN;
+
         auto render = [&]() {
             static float t = 0.0f;
-            t+=0.005;
+            t+=0.00005f;
             canva.clear(1.0, 1.0, 1.0, 1.0);
             canva.drawTriangles(tex_sampler_3,
-                           100, 100, 200,  200,
-                           1.0f,
-                           mat3f::rotation(nitrogl::math::deg_to_rad(t), 50,50));
+                                type,
+                                indices, 4,
+                                vertices, 4,
+                                nullptr, 0,
+                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
+                                );
             glCheckError();
         };
 

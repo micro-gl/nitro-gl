@@ -26,10 +26,10 @@ namespace nitrogl {
         using program_type = main_shader_program;
         using size_type = GLsizeiptr;
         struct data_type {
-            float * pos;
-            float * uvs;
-            float * qs;
-            GLuint * indices;
+            const vec2f * pos;
+            const vec2f * uvs;
+            const float * qs;
+            const GLuint * indices;
 
             size_type pos_size;
             size_type uvs_size;
@@ -66,7 +66,7 @@ namespace nitrogl {
         ~multi_render_node()=default;
 
         void init() {
-            // configure the vao, vbo, generic vertex attribs
+            // configure the vao, vbo, generic vertex attribs, non interleaved
             gva = {{
                 { 0, GL_FLOAT, 2, OFFSET(0), 0, _vbo_pos.id()},
                 { 1, GL_FLOAT, 2, OFFSET(0), 0, _vbo_uvs.id()},
@@ -87,41 +87,70 @@ namespace nitrogl {
             const bool has_missing_uvs = d.uvs == nullptr;
             const bool has_missing_qs = d.qs == nullptr;
 
+            program.use();
             // vertex uniforms
+            glCheckError();
             program.updateModelMatrix(d.mat_model);
+            glCheckError();
             program.updateViewMatrix(d.mat_view);
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
+            glCheckError();
             program.update_has_missing_uvs(has_missing_uvs);
+            glCheckError();
 
             // fragment uniforms
             program.update_backdrop_texture(d.backdrop_texture);
             program.update_window_size(d.window_width, d.window_height);
             program.updateOpacity(d.opacity);
+            glCheckError();
             program.update_has_missing_uvs(has_missing_uvs);
+            glCheckError();
             program.update_has_missing_qs(has_missing_qs);
+            glCheckError();
             if(has_missing_uvs)
                 program.updateBBox(d.bbox.left, d.bbox.top, d.bbox.right, d.bbox.bottom);
+            glCheckError();
 
             // sampler uniforms
             sampler.upload_uniforms(program.id());
+            glCheckError();
 
             static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
+            static constexpr auto VEC2_SIZE = GLsizeiptr (sizeof(vec2f));
+
             // upload pos
-            _vbo_pos.uploadData(d.pos,d.pos_size*FLOAT_SIZE,
+            _vbo_pos.uploadData(d.pos, d.pos_size*VEC2_SIZE*FLOAT_SIZE,
                                 GL_DYNAMIC_DRAW);
             // upload uvs
-            if(!has_missing_uvs)
-                _vbo_uvs.uploadData(d.uvs,d.uvs_size * FLOAT_SIZE,
-                                    GL_DYNAMIC_DRAW);
-            // upload qs (RARE !!)
-            if(!has_missing_qs)
-                _vbo_uvs.uploadData(d.qs,d.qs_size * FLOAT_SIZE,
-                                    GL_DYNAMIC_DRAW);
-            // upload indices
-            _ebo.uploadData(d.indices,
-                            GLsizeiptr(sizeof(GLuint))*d.indices_size,
+
+            const vec2f * uvs = d.uvs;
+            GLsizeiptr uvs_count = d.uvs_size;
+            const float * qs = d.qs;
+            GLsizeiptr qs_count = d.qs_size;
+
+            // generate dummy uvs and qs if needed, because we have to supply something
+            // otherwise, open-gl crashes for me if they are completely empty
+            {
+                static const vec2f dummy_uvs[1] = {{0,0}};
+                static const float dummy_qs[1] = { 1.0f };
+                if(has_missing_uvs) {
+                    uvs = dummy_uvs;
+                    uvs_count = 1;
+                }
+                if(has_missing_qs) {
+                    qs = dummy_qs;
+                    qs_count = 1;
+                }
+            }
+            _vbo_uvs.uploadData(d.uvs, uvs_count*VEC2_SIZE * FLOAT_SIZE,
                             GL_DYNAMIC_DRAW);
+            _vbo_qs.uploadData(d.qs,qs_count * FLOAT_SIZE,
+                                GL_DYNAMIC_DRAW);
+            // upload indices
+            _ebo.uploadData(d.indices, GLsizeiptr(sizeof(GLuint))*d.indices_size,
+                            GL_DYNAMIC_DRAW);
+            glCheckError();
 
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO

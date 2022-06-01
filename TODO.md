@@ -25,8 +25,7 @@
 26. angular gradient - DONE
 27. capsule shape sampler - DONE
 28. linear classifier sampler - DONE
-29. 
-30. test idea of missing uvs coords for triangle batches
+30. test idea of missing uvs coords for triangle batches - DONE
 
 31. render node for triangle batches - wip
 32. bezier patches

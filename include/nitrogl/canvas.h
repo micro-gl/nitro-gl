@@ -75,7 +75,7 @@ namespace nitrogl {
 
     class canvas {
     public:
-        using index = unsigned int;
+        using index = GLuint;//unsigned int;
         using precision = unsigned char;
         using opacity_t = unsigned char;
 
@@ -310,63 +310,64 @@ namespace nitrogl {
          * 1. if uvs is null, we will compute them for you
          * 2. if indices is null, indices will be inferred as well
          * @param sampler the sampler to sample from
-         * @param transform vertices transform
-         * @param vertices The vertices array pointer
-         * @param uvs The UVs array pointer
-         * @param indices The indices array pointer
-         * @param size The size of indices array (or vertices array if indices==null)
          * @param type Type of triangles {Triangles, Fan, Strip}
+         * @param indices The indices array pointer
+         * @param indices_size The size of indices array
+         * @param vertices The vertices array pointer
+         * @param vertices_size The size of vertices array
+         * @param uvs (Optional) The UVs array pointer
+         * @param uvs_size (Optional) The size of uvs array
+         * @param transform vertices transform
          * @param opacity Opacity
          * @param transform_uv UVs transform
-         * @param u0/v0/u1/v1 UVs window
+         * @param u0/v0/u1/v1 (Not working right now) UVs window
          */
         void drawTriangles(sampler_t & sampler,
-                           mat3f transform = mat3f::identity(),
-                           const vec2f * vertices= nullptr,
+                           enum triangles::indices type,
+                           const index * indices,
+                           index indices_size,
+                           const vec2f * vertices,
+                           index vertices_size,
                            const vec2f * uvs=nullptr,
-                           const index * indices= nullptr,
-                           index size=0,
-                           enum indices type=indices::TRIANGLES,
+                           index uvs_size=0,
+                           mat3f transform = mat3f::identity(),
                            float opacity=1.0f,
                            const mat3f & transform_uv = mat3f::identity(),
                            float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
-            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, indices, size);
+            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, indices, indices_size);
             const bool has_missing_uvs = uvs== nullptr;
-//
-//            static float t =0;
-//            t+=0.01;
-//            glViewport(0, 0, GLsizei(width()), GLsizei(height()));
-//            _fbo.bind();
-//            // inverted y projection, canvas coords to opengl
-//            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
-//                                                        float(height()), 0.0f,
-//                                                        -1.0f, 1.0f);
-//            // make the transform about its origin, a nice feature
-//            transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
-//            // buffers
-//            float puvs[24] = {
-//                    left,  bottom, u0, v0, 0.0f, 1.0f, // xyuvpq
-//                    right, bottom, u1, v0, 0.0f, 1.0f,
-//                    right, top,    u1, v1, 0.0f, 1.0f,
-//                    left,  top,    u0, v1, 0.0f, 1.0f,
-//                    };
-//            auto & program = get_main_shader_program_for_sampler(sampler);
-//            // data
-//            p4_render_node::data_type data = {
-//                    puvs, 24,
-//                    mat4f(transform), // promote it to mat4x4
-//                    mat4f::identity(),
-//                    mat_proj,
-//                    transform_uv,
-//                    _tex_backdrop,
-//                    width(), height(),
-//                    opacity
-//            };
-//            glDisable(GL_BLEND);
-//            _node_p4.render(program, sampler, data);
-//            glEnable(GL_BLEND);
-//            fbo_t::unbind();
-//            copy_to_backdrop();
+
+            static float t =0;
+            t+=0.01;
+            glViewport(0, 0, GLsizei(width()), GLsizei(height()));
+            _fbo.bind();
+            // inverted y projection, canvas coords to opengl
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0.0f,
+                                                        -1.0f, 1.0f);
+            // make the transform about its origin, a nice feature
+            transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
+            // buffers
+            auto & program = get_main_shader_program_for_sampler(sampler);
+            // data
+            multi_render_node::data_type data = {
+                    vertices, uvs, nullptr, indices,
+                    vertices_size, uvs_size, 0, indices_size,
+                    GLenum(type),
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv,
+                    _tex_backdrop,
+                    width(), height(),
+                    opacity,
+                    bbox
+            };
+            glDisable(GL_BLEND);
+            _node_multi.render(program, sampler, data);
+            glEnable(GL_BLEND);
+            fbo_t::unbind();
+            copy_to_backdrop();
         }
 
         void drawRect(sampler_t & sampler,

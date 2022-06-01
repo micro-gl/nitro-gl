@@ -44,7 +44,7 @@ namespace nitrogl {
         };
 
         GVA gva{};
-        vbo_t _vbo_pos_uvs{};
+        vbo_t _vbo_pos_uvs_qs{};
         vao_t _vao{};
         ebo_t _ebo{};
 
@@ -53,14 +53,14 @@ namespace nitrogl {
         ~p4_render_node()=default;
 
         void init() {
-            // configure the vao, vbo, generic vertex attribs [(x,y,u,v,q) ....]
+            // configure the vao, vbo, generic vertex attribs [(x,y,u,v,q) ....], interleaved
             gva = {{
                 { 0, GL_FLOAT, 2, OFFSET(0),
-                  5*sizeof (GLfloat),_vbo_pos_uvs.id()},
+                  5*sizeof (GLfloat), _vbo_pos_uvs_qs.id()},
                 { 1, GL_FLOAT, 2, OFFSET(2*sizeof (GLfloat)),
-                5*sizeof (GLfloat), _vbo_pos_uvs.id()},
+                5*sizeof (GLfloat), _vbo_pos_uvs_qs.id()},
                 { 2, GL_FLOAT, 1, OFFSET(4*sizeof (GLfloat)),
-                  5*sizeof (GLfloat), _vbo_pos_uvs.id()}
+                  5*sizeof (GLfloat), _vbo_pos_uvs_qs.id()}
             }};
 
             // elements buffer
@@ -98,9 +98,9 @@ namespace nitrogl {
 
             static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
             // upload data
-            _vbo_pos_uvs.uploadData(d.pos_and_uvs_qs_interleaved,
-                                    d.size*FLOAT_SIZE,
-                                GL_DYNAMIC_DRAW);
+            _vbo_pos_uvs_qs.uploadData(d.pos_and_uvs_qs_interleaved,
+                                       d.size*FLOAT_SIZE,
+                                       GL_DYNAMIC_DRAW);
 
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO

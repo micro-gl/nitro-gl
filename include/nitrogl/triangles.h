@@ -16,16 +16,10 @@
 namespace nitrogl {
     namespace triangles {
 
-        enum class indices {
-            TRIANGLES,
-            TRIANGLES_WITH_BOUNDARY,
-            // triangle fan, first vertex is the main vertex to which all triangles
-            // are expended into
-            TRIANGLES_FAN,
-            TRIANGLES_FAN_WITH_BOUNDARY,
-            // triangle strip
-            TRIANGLES_STRIP,
-            TRIANGLES_STRIP_WITH_BOUNDARY,
+        enum indices {
+            TRIANGLES=GL_TRIANGLES,
+            TRIANGLES_FAN=GL_TRIANGLE_FAN,
+            TRIANGLES_STRIP=GL_TRIANGLE_STRIP,
         };
 
         enum class TriangleEdgeType { Top, Left, Right };
@@ -92,17 +86,14 @@ namespace nitrogl {
 #define IND(a) ((indices) ? indices[(a)] : (a))
             switch (type) {
                 case indices::TRIANGLES:
-                case indices::TRIANGLES_WITH_BOUNDARY:
                     for (index ix = 0, idx=0; ix < size; ix+=3,idx++)
                         callback(idx, IND(ix + 0), IND(ix + 1), IND(ix + 2), 0, 1, 2);
                     break;
                 case indices::TRIANGLES_FAN:
-                case indices::TRIANGLES_FAN_WITH_BOUNDARY:
                     for (index ix = 1; ix < size-1; ++ix)
                         callback(ix-1, IND(0), IND(ix), IND(ix + 1), 0, 1, 2);
                     break;
                 case indices::TRIANGLES_STRIP:
-                case indices::TRIANGLES_STRIP_WITH_BOUNDARY:
                 {
                     bool even = true;
                     for (index ix = 0; ix < size-2; ++ix) {
@@ -138,6 +129,7 @@ namespace nitrogl {
                 rect.right = functions::max(rect.right, pt.x);
                 rect.bottom = functions::max(rect.bottom, pt.y);
             }
+            return rect;
         }
 
     };
