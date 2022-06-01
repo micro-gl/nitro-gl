@@ -26,19 +26,37 @@ int main() {
 
         const float SIZE = 200;
         vec2f vertices[4] = {
-                {0,0},
-                {SIZE,0},
-                {SIZE,SIZE},
-                {0,SIZE}
+                {0, 0},
+                {SIZE, 0},
+                {SIZE, SIZE},
+                {0, SIZE}
         };
 
-//        unsigned int indices[6] = { 0, 1, 2, 2, 3, 0 } ;
-        unsigned int indices[4] = { 0, 1, 2, 3 } ;
-        const auto type = nitrogl::triangles::indices::TRIANGLES_FAN;
-
-        auto render = [&]() {
+        auto render_triangles = [&]() {
             static float t = 0.0f;
             t+=0.00005f;
+
+            static const unsigned int indices[6] = { 0, 1, 2, 2, 3, 0 } ;
+            static const auto type = nitrogl::triangles::indices::TRIANGLES;
+
+            canva.clear(1.0, 1.0, 1.0, 1.0);
+            canva.drawTriangles(tex_sampler_3,
+                                type,
+                                indices, 6,
+                                vertices, 4,
+                                nullptr, 0,
+                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
+                                );
+            glCheckError();
+        };
+
+        auto render_triangles_fan = [&]() {
+            static float t = 0.0f;
+            t+=0.00005f;
+
+            static const unsigned int indices[4] = { 0, 1, 2, 3 } ;
+            static const auto type = nitrogl::triangles::indices::TRIANGLES_FAN;
+
             canva.clear(1.0, 1.0, 1.0, 1.0);
             canva.drawTriangles(tex_sampler_3,
                                 type,
@@ -50,7 +68,25 @@ int main() {
             glCheckError();
         };
 
-        example_run<true>(canva, render);
+        auto render_triangles_strip = [&]() {
+            static float t = 0.0f;
+            t+=0.00005f;
+
+            static const unsigned int indices[4] = { 0, 1, 3, 2 } ;
+            static const auto type = nitrogl::triangles::indices::TRIANGLES_STRIP;
+
+            canva.clear(1.0, 1.0, 1.0, 1.0);
+            canva.drawTriangles(tex_sampler_3,
+                                type,
+                                indices, 4,
+                                vertices, 4,
+                                nullptr, 0,
+                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
+                                );
+            glCheckError();
+        };
+
+        example_run<true>(canva, render_triangles_strip);
     };
 
     example_init(on_init);

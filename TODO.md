@@ -26,15 +26,13 @@
 27. capsule shape sampler - DONE
 28. linear classifier sampler - DONE
 30. test idea of missing uvs coords for triangle batches - DONE
+31. render node for triangle batches - DONE
 
-31. render node for triangle batches - wip
 32. bezier patches
 33. draw text, bitmap fonts
 34. draw polygons
-35. draw triangle batches
 36. draw paths fills
 37. draw stroke fills
-38. test idea of missing uvs coords for triangle batches
 39. AA with rbos or filter shader
 40. investigate caching of uniforms per program
 41. draw text, sdf
