@@ -15,8 +15,9 @@ namespace nitrogl {
     template<typename number>
     struct rect_t {
         using cref = const number &;
-        number left=0, top=0, right=0, bottom=0;
-        rect_t(cref left=0, cref top=0, cref right=0, cref bottom=0) :
+        number left, top, right, bottom;
+        explicit rect_t(cref left=number(0), cref top=number(0),
+                        cref right=number(0), cref bottom=number(0)) :
                         left{left}, top{top}, right{right}, bottom{bottom}{}
         rect_t(const rect_t& r) : rect_t{r.left, r.top, r.right, r.bottom} {}
         rect_t & translate(const number l, const number t) {
@@ -45,11 +46,14 @@ namespace nitrogl {
             auto t = top>r2.top ? top : r2.top;
             auto r = right < r2.right ? right : r2.right;
             auto b = bottom < r2.bottom ? bottom : r2.bottom;
-            return {l, t, r, b};
+            return rect_t{l, t, r, b};
         }
         bool intersects(const rect_t & r2) const { return !intersect(r2).empty(); }
         number width() const { return right-left; }
         number height() const { return bottom-top; }
-        bool empty() const { return width()<=0 || height()<=0; }
+        bool empty() const { return width()<=number(0) || height()<=number(0); }
     };
+
+    using rectf = rect_t<float>;
+    using rect_i = rect_t<int>;
 }

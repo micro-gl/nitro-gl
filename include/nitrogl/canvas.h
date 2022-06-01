@@ -14,15 +14,11 @@
 #include "traits.h"
 #include "channels.h"
 #include "math.h"
-#include "stdint.h"
-#include "math/rect.h"
-#include "math/vertex2.h"
-#include "math/mat3.h"
-#include "math/mat3.h"
+//#include "stdint.h"
 //#include "porter_duff/None.h"
 //#include "compositing/Normal.h"
 #ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
-#include "micro-tess/include/micro-tess/triangles.h"
+//#include "micro-tess/include/micro-tess/triangles.h"
 #include "micro-tess/include/micro-tess/polygons.h"
 #include "micro-tess/include/micro-tess/path.h"
 #include "micro-tess/include/micro-tess/monotone_polygon_triangulation.h"
@@ -30,7 +26,7 @@
 #include "micro-tess/include/micro-tess/bezier_patch_tesselator.h"
 #include "micro-tess/include/micro-tess/dynamic_array.h"
 #else
-#include <micro-tess/triangles.h>
+//#include <micro-tess/triangles.h>
 #include <micro-tess/polygons.h>
 #include <micro-tess/path.h>
 #include <micro-tess/monotone_polygon_triangulation.h>
@@ -44,6 +40,7 @@
 #include "functions/orient2d.h"
 #include "functions/bits.h"
 #include "functions/distance.h"
+#include "triangles.h"
 //#include "text/bitmap_font.h"
 
 #include "ogl/gl_texture.h"
@@ -61,12 +58,12 @@
 
 // samplers
 #include "samplers/sampler.h"
-#include "nitrogl/samplers/shapes/circle_sampler.h"
-#include "nitrogl/samplers/shapes/rounded_rect_sampler.h"
+#include "samplers/shapes/circle_sampler.h"
+#include "samplers/shapes/rounded_rect_sampler.h"
 #include "samplers/color_sampler.h"
 #include "samplers/channel_sampler.h"
-#include "nitrogl/samplers/shapes/arc_sampler.h"
-#include "nitrogl/samplers/shapes/pie_sampler.h"
+#include "samplers/shapes/arc_sampler.h"
+#include "samplers/shapes/pie_sampler.h"
 
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
@@ -78,16 +75,15 @@ namespace nitrogl {
 
     class canvas {
     public:
-        using rect = nitrogl::rect_t<int>;
-        using index = unsigned int;
+        using index = GLuint;//unsigned int;
         using precision = unsigned char;
         using opacity_t = unsigned char;
 
         // rasterizer integers
         using rint_big = int64_t;
         struct window_t {
-            rect canvas_rect;
-            rect clip_rect;
+            rect_i canvas_rect;
+            rect_i clip_rect;
         };
 
     private:
@@ -175,7 +171,7 @@ namespace nitrogl {
          * @param r right distance to x=0
          * @param b bottom distance to y=0
          */
-        void updateClipRect(int l, int t, int r, int b) { _window.clip_rect = {l, t, r, b}; }
+        void updateClipRect(int l, int t, int r, int b) { _window.clip_rect = rect_i{l, t, r, b}; }
 
         /**
          * where to position the bitmap relative to the canvas, this feature
@@ -188,7 +184,7 @@ namespace nitrogl {
          * @param bottom relative to y=0
          */
         void updateCanvasWindow(int left, int top, int right, int bottom) {
-            _window.canvas_rect = {left, top, left + right, top + bottom };
+            _window.canvas_rect = rect_i{left, top, left + right, top + bottom };
             if(_window.clip_rect.empty()) _window.clip_rect=_window.canvas_rect;
         }
 
@@ -197,11 +193,11 @@ namespace nitrogl {
         }
 
         /**
-         * given that we know the canvas size and the clip rect, calculate
+         * given that we know the canvas size and the clip rect_i, calculate
          * the sub rectangle (intersection), where drawing is visible
          */
-        rect calculateEffectiveDrawRect() const {
-            rect r = _window.canvas_rect.intersect(_window.clip_rect);
+        rect_i calculateEffectiveDrawRect() const {
+            rect_i r = _window.canvas_rect.intersect(_window.clip_rect);
             r.bottom-=1;r.right-=1;
             return r;
         }
@@ -209,14 +205,14 @@ namespace nitrogl {
         /**
          * get the clipping rectangle
          */
-        const rect & clipRect() const { return _window.clip_rect; }
+        const rect_i & clipRect() const { return _window.clip_rect; }
 
         /**
          * get the canvas rectangle, should be (0, 0, width, height), unless
          * the sub windowing feature was used.
          * @return a rectangle
          */
-        const rect & canvasWindowRect() const { return _window.canvas_rect; }
+        const rect_i & canvasWindowRect() const { return _window.canvas_rect; }
 
         // get canvas width
         unsigned int width() const { return _window.canvas_rect.width(); };
@@ -243,21 +239,21 @@ namespace nitrogl {
             copy_region_to_texture(_tex_backdrop, left, top, left, top, right, bottom);
         }
         void copy_to_backdrop() const {
-            copy_region_to_backdrop(0, 0, width(), height());
+            copy_region_to_backdrop(0, 0, int(width()), int(height()));
         }
 
         void copy_region_to_texture(const gl_texture &texture,
                             int textureLeft, int textureTop,
                             int left, int top, int right, int bottom) const {
             // should take 1ms per copy
-            rect t = rect(textureLeft, textureTop, texture.width(), texture.height());
-            rect c = rect(left, top, right, bottom)
+            rect_i t = rect_i(textureLeft, textureTop, texture.width(), texture.height());
+            rect_i c = rect_i(left, top, right, bottom)
                         .translate(textureLeft, textureTop)
                         .intersect(t)
                         .translate(-textureLeft, -textureTop)
                         .intersect(canvasWindowRect());
             // invert to opengl coordinates (0,0) is bottom-left
-            int y_canvas = height() - c.bottom;
+            int y_canvas = int(height()) - c.bottom;
             int y_texture = texture.height() - (textureTop + c.height());
             _fbo.bind();
             texture.use(0);
@@ -308,32 +304,99 @@ namespace nitrogl {
 
     public:
 
-        void drawRect(sampler_t & sampler,
-                      float left, float top, float right, float bottom,
-                      float opacity = 1.0,
-                      mat3f transform = mat3f::identity(),
-                      float u0=0., float v0=0., float u1=1., float v1=1.,
-                      const mat3f & transform_uv = mat3f::identity()) {
+        /**
+         * Draw a batch of indexed triangles.
+         * NOTES:
+         * 1. if uvs is null, we will compute them for you
+         * 2. if indices is null, indices will be inferred as well
+         * @param sampler the sampler to sample from
+         * @param type Type of triangles {Triangles, Fan, Strip}
+         * @param indices The indices array pointer
+         * @param indices_size The size of indices array
+         * @param vertices The vertices array pointer
+         * @param vertices_size The size of vertices array
+         * @param uvs (Optional) The UVs array pointer
+         * @param uvs_size (Optional) The size of uvs array
+         * @param transform vertices transform
+         * @param opacity Opacity
+         * @param transform_uv UVs transform
+         * @param u0/v0/u1/v1 (Not working right now) UVs window
+         */
+        void drawTriangles(sampler_t & sampler,
+                           enum triangles::indices type,
+                           const index * indices,
+                           index indices_size,
+                           const vec2f * vertices,
+                           index vertices_size,
+                           const vec2f * uvs=nullptr,
+                           index uvs_size=0,
+                           mat3f transform = mat3f::identity(),
+                           float opacity=1.0f,
+                           const mat3f & transform_uv = mat3f::identity(),
+                           float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, indices, indices_size);
+            const bool has_missing_uvs = uvs== nullptr;
+
             static float t =0;
             t+=0.01;
-            glViewport(0, 0, width(), height());
+            glViewport(0, 0, GLsizei(width()), GLsizei(height()));
             _fbo.bind();
             // inverted y projection, canvas coords to opengl
             auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
-                                                        float(height()), 0, -1, 1);
-            // make the transform about it's origin, a nice feature
+                                                        float(height()), 0.0f,
+                                                        -1.0f, 1.0f);
+            // make the transform about its origin, a nice feature
+            transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
+            // buffers
+            auto & program = get_main_shader_program_for_sampler(sampler);
+            // data
+            multi_render_node::data_type data = {
+                    vertices, uvs, nullptr, indices,
+                    vertices_size, uvs_size, 0, indices_size,
+                    GLenum(type),
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv,
+                    _tex_backdrop,
+                    width(), height(),
+                    opacity,
+                    bbox
+            };
+            glDisable(GL_BLEND);
+            _node_multi.render(program, sampler, data);
+            glEnable(GL_BLEND);
+            fbo_t::unbind();
+            copy_to_backdrop();
+        }
+
+        void drawRect(sampler_t & sampler,
+                      float left, float top, float right, float bottom,
+                      float opacity = 1.0f,
+                      mat3f transform = mat3f::identity(),
+                      float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
+                      const mat3f & transform_uv = mat3f::identity()) {
+            static float t =0;
+            t+=0.01;
+            glViewport(0, 0, GLsizei(width()), GLsizei(height()));
+            _fbo.bind();
+            // inverted y projection, canvas coords to opengl
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0.0f,
+                                                        -1.0f, 1.0f);
+            // make the transform about its origin, a nice feature
             transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
             // buffers
-            float puvs[24] = {
-                    left,  bottom, u0, v0, 0.0, 1.0, // xyuvpq
-                    right, bottom, u1, v0, 0.0, 1.0,
-                    right, top,    u1, v1, 0.0, 1.0,
-                    left,  top,    u0, v1, 0.0, 1.0,
+            float puvs[20] = {
+                    left,  bottom, u0, v0, 1.0f, // xyuvq
+                    right, bottom, u1, v0, 1.0f,
+                    right, top,    u1, v1, 1.0f,
+                    left,  top,    u0, v1, 1.0f,
             };
             auto & program = get_main_shader_program_for_sampler(sampler);
             // data
             p4_render_node::data_type data = {
-                    puvs, 24,
+                    puvs, 20,
                     mat4f(transform), // promote it to mat4x4
                     mat4f::identity(),
                     mat_proj,
@@ -504,16 +567,16 @@ namespace nitrogl {
             // make the transform about it's origin, a nice feature
             transform.post_translate(vec2f(-v0_x, -v0_y)).pre_translate(vec2f(v0_x, v0_y));
             // buffers
-            float puvs[24] = {
-                    v0_x,  v0_y, u0_q0, v0_q0, 0.0, q0, // xyuvpq
-                    v1_x,  v1_y, u1_q1, v1_q1, 0.0, q1,
-                    v2_x,  v2_y, u2_q2, v2_q2, 0.0, q2,
-                    v3_x,  v3_y, u3_q3, v3_q3, 0.0, q3,
+            float puvs[20] = {
+                    v0_x,  v0_y, u0_q0, v0_q0, q0, // xyuvq
+                    v1_x,  v1_y, u1_q1, v1_q1, q1,
+                    v2_x,  v2_y, u2_q2, v2_q2, q2,
+                    v3_x,  v3_y, u3_q3, v3_q3, q3,
             };
             auto & program = get_main_shader_program_for_sampler(sampler);
             // data
             p4_render_node::data_type data = {
-                    puvs, 24,
+                    puvs, 20,
                     mat4f(transform), // promote it to mat4x4
                     mat4f::identity(),
                     mat_proj,
@@ -570,6 +633,7 @@ namespace nitrogl {
                       float u0=0., float v0=0., float u1=1., float v1=1.,
                       const mat3f & transform_uv = mat3f::identity(),
                       opacity_t opacity = 255) {
+            /*
             static float t =0;
             t+=0.01;
             glViewport(0, 0, width(), height());
@@ -587,7 +651,7 @@ namespace nitrogl {
                     right, top,
                     left, top
             };
-            float uvs_sampler[8] = {
+            float uvs[8] = {
                     u0, v0,
                     u1, v0,
                     u1, v1,
@@ -609,7 +673,7 @@ namespace nitrogl {
 
             // data
             multi_render_node::data_type data = {
-                    points, uvs_sampler, e,
+                    points, uvs, e,
                     8, 8, 6, GL_TRIANGLES,
                     mat4f(transform), // promote it to mat4x4
                     mat4f::identity(),
@@ -622,6 +686,7 @@ namespace nitrogl {
             copy_region_to_backdrop(int(left), int(top),
                                     int(right+0.5f), int(bottom+0.5f));
             fbo_t::unbind();
+             */
         }
 
 //        // integer blenders

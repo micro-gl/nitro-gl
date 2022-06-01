@@ -725,7 +725,7 @@ void canvas<P, CODER>::drawTriangle_shader_homo_internal(shader_base<impl, verte
     // bounding box in raster space
 #define ceil_fixed(val, bits) ((val)&((1<<bits)-1) ? ((val>>bits)+1) : (val>>bits))
 #define floor_fixed(val, bits) ((val)>>bits)
-    rect bbox;
+    rect_i bbox;
     l64 mask = ~((l64(1)<<sub_pixel_precision)-1);
     l64 minX = floor_fixed(functions::min<l64>(v0_x, v1_x, v2_x)&mask, sub_pixel_precision);
     l64 minY = floor_fixed(functions::min<l64>(v0_y, v1_y, v2_y)&mask, sub_pixel_precision);
@@ -917,7 +917,7 @@ void canvas<bitmap_, options>::drawTriangle_internal(const sampling::sampler_t<S
     // bounding box
 #define ceil_fixed(val, bits) ((val)&((1<<bits)-1) ? ((val>>bits)+1) : (val>>bits))
 #define floor_fixed(val, bits) ((val)>>bits)
-    rect bbox;
+    rect_i bbox;
     l64 mask = ~((l64(1)<<sub_pixel_precision)-1);
     bbox.left = floor_fixed(functions::min<l64>(v0_x, v1_x, v2_x)&mask, sub_pixel_precision);
     bbox.top = floor_fixed(functions::min<l64>(v0_y, v1_y, v2_y)&mask, sub_pixel_precision);
@@ -1096,9 +1096,9 @@ void canvas<bitmap_, options>::drawRect_internal(const sampling::sampler_t<S> & 
     color_t col_bmp{};
     const precision p= sub_pixel_precision;
     if(left==right || top==bottom) return;
-    const rect bbox_r = {floor_fixed(left, p), floor_fixed(top, p),
+    const rect_i bbox_r = {floor_fixed(left, p), floor_fixed(top, p),
                  ceil_fixed(right, p)-0, ceil_fixed(bottom, p)-0};
-    const rect bbox_r_c = bbox_r.intersect(effectiveRect);
+    const rect_i bbox_r_c = bbox_r.intersect(effectiveRect);
     if(bbox_r_c.empty()) return;
     // calculate uvs with original unclipped deltas, this way we can always accurately predict blocks
     const int du = (u1-u0)/(bbox_r.right-bbox_r.left-0);
@@ -1192,8 +1192,8 @@ void canvas<bitmap_, options>::drawRoundedRect_internal(const sampling::sampler_
     const l64 mask= (1<<sub_pixel_precision)-1;
     // dimensions in two spaces, one in raster spaces for optimization
     const l64 left_=(left+0), top_=(top+0), right_=(right), bottom_=(bottom);
-    const rect bbox_r = {left_>>p, top_>>p,(right_+aa_range)>>p, (bottom_+aa_range)>>p};
-    const rect bbox_r_c = bbox_r.intersect(effectiveRect);
+    const rect_i bbox_r = {left_>>p, top_>>p,(right_+aa_range)>>p, (bottom_+aa_range)>>p};
+    const rect_i bbox_r_c = bbox_r.intersect(effectiveRect);
     if(bbox_r_c.empty()) return;
     const l64 du = (u1-u0)/(bbox_r.right-bbox_r.left);
     const l64 dv = (v1-v0)/(bbox_r.bottom-bbox_r.top);
@@ -1349,7 +1349,7 @@ void canvas<bitmap_, options>::drawTriangle_shader_homo_internal(shader_base<imp
     // bounding box in raster space
 #define ceil_fixed(val, bits) ((val)&((1<<bits)-1) ? ((val>>bits)+1) : (val>>bits))
 #define floor_fixed(val, bits) ((val)>>bits)
-    rect bbox;
+    rect_i bbox;
     l64 mask = ~((l64(1)<<sub_pixel_precision)-1);
     bbox.left = floor_fixed(functions::min<l64>(v0_x, v1_x, v2_x)&mask, sub_pixel_precision);
     bbox.top = floor_fixed(functions::min<l64>(v0_y, v1_y, v2_y)&mask, sub_pixel_precision);

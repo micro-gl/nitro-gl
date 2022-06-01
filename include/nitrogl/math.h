@@ -22,6 +22,13 @@
 #include "math/non_std_float_math.h"
 #endif
 
+#include "math/mat3.h"
+#include "math/mat4.h"
+#include "math/rect.h"
+#include "math/vertex2.h"
+#include "math/vertex3.h"
+#include "math/vertex4.h"
+
 namespace nitrogl {
     namespace math {
     };

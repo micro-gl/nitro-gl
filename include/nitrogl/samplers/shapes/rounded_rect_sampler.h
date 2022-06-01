@@ -21,7 +21,7 @@ namespace nitrogl {
      * Currently, the drawn onto polygon should be a quad as well to avoid
      * any stretching effects.
      * NOTE:
-     * - given normalized w,h,r. it will render a rounded rect with base of
+     * - given normalized w,h,r. it will render a rounded rect_i with base of
      *   dimensions WxH centered and the radius is extended outside of this
      *   base boundary
      * - given, that you need to render it on a perfect polygon quad, it might

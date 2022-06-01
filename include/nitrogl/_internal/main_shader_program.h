@@ -25,20 +25,46 @@ uniform mat4 mat_model;
 uniform mat4 mat_view;
 uniform mat4 mat_proj;
 uniform mat3 mat_transform_uvs;
+uniform vec4 bbox;
+uniform bool has_missing_uvs;
+uniform bool has_missing_q;
 
 // in = vertex attributes
 in vec2 VS_pos; // position of vertex
-in vec4 VS_uvs_sampler; // uv of vertex, extras will be taken from (0, 0, 0, 1) if vbo input is smaller
+in vec2 VS_uvs_sampler; // uv of vertex, extras will be taken from (0, 0, 0, 1) if vbo input is smaller
+in float VS_q_sampler; // q of vertex, good for projections
 
 // out = varying
 out vec3 PS_uvs_sampler;
 
 void main()
 {
-    PS_uvs_sampler = vec3((mat_transform_uvs * vec3(VS_uvs_sampler.st, 1.0)).st,
-                           VS_uvs_sampler.q); // remove 3rd component from VS_uvs_sampler
+    // Uniform Branching in vertex shader is OK, not a bottleneck
+    float q = has_missing_q ? 1.0 : VS_q_sampler;
+    // missing uv
+    vec2 uv_missing = (VS_pos - bbox.xy)/bbox.zw;
+    uv_missing.y = 1.0 - uv_missing.y;
+    // final uv
+    vec2 uv = has_missing_uvs ? uv_missing : VS_uvs_sampler;
+    PS_uvs_sampler = vec3((mat_transform_uvs * vec3(uv, 1.0)).st, q);
     gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
 }
+
+//
+//void main()
+//{
+//    // Branching in vertex shader is OK, not a bottleneck
+//    if(has_missing_uvs) {
+//        vec2 uv = (VS_pos - bbox.xy)/bbox.zw;
+//        uv.y = 1.0 - uv.y;
+//        PS_uvs_sampler = vec3(mat_transform_uvs * vec3(uv, 1.0));
+//    }
+//    else {
+//        float q = has_missing_q ? 1.0 : VS_q_sampler;
+//        PS_uvs_sampler = vec3((mat_transform_uvs * vec3(VS_uvs_sampler.st, 1.0)).st, q);
+//    }
+//    gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
+//}
 )foo";
 
         constexpr static const char * const frag_version = "#version 330 core\n";
@@ -124,14 +150,15 @@ void main()
     public:
 
         struct VAS {
-            shader_program::shader_vertex_attr_t data[2];
-            static constexpr unsigned size() { return 2; }
+            shader_program::shader_vertex_attr_t data[3];
+            static constexpr unsigned size() { return 3; }
         };
 
         // I have to have this uniform location cache. It is different
         // from shader to shader instance, so I have no way around saving it.
         struct uniforms_type {
             GLint mat_model=-1, mat_view=-1, mat_proj=-1, mat_transform_uvs=-1,
+            bbox=-1, has_missing_uvs=-1, has_missing_q=-1,
             opacity=-1, time=-1, tex_backdrop=-1, window_size=-1;
         };
 
@@ -149,7 +176,9 @@ void main()
                 {"VS_pos", 0,
                  shader_program::shader_attribute_component_type::Float},
                  {"VS_uvs_sampler", 1,
-                  shader_program::shader_attribute_component_type::Float}
+                  shader_program::shader_attribute_component_type::Float},
+                  {"VS_q_sampler", 2,
+                   shader_program::shader_attribute_component_type::Float},
             }};
             return vas;
         }
@@ -190,6 +219,9 @@ void main()
             uniforms.mat_view = uniformLocationByName("mat_view");
             uniforms.mat_proj = uniformLocationByName("mat_proj");
             uniforms.mat_transform_uvs = uniformLocationByName("mat_transform_uvs");
+            uniforms.has_missing_uvs = uniformLocationByName("has_missing_uvs");
+            uniforms.has_missing_q = uniformLocationByName("has_missing_q");
+            uniforms.bbox = uniformLocationByName("bbox");
 
             uniforms.opacity = uniformLocationByName("data_main.opacity");
             uniforms.time = uniformLocationByName("data_main.time");
@@ -206,8 +238,12 @@ void main()
         {  glUniformMatrix4fv(uniforms.mat_proj, 1, GL_FALSE, matrix.data()); }
         void updateUVsTransformMatrix(const nitrogl::mat3f & matrix) const
         {  glUniformMatrix3fv(uniforms.mat_transform_uvs, 1, GL_FALSE, matrix.data()); }
-//        void updateTextureSampler(const GLchar * name, GLint texture_index) const
-//        { glUniform1i(name, texture_index); }
+        void updateBBox(float left, float top, float right, float bottom) const
+        {  glUniform4f(uniforms.bbox, left, top, right-left, bottom-top); }
+        void update_has_missing_uvs(bool value) const
+        {  glUniform1i(uniforms.has_missing_uvs, value); }
+        void update_has_missing_qs(bool value) const
+        {  glUniform1i(uniforms.has_missing_q, value); }
         void updateOpacity(GLfloat opacity) const
         { glUniform1f(uniforms.opacity, opacity); }
         void update_time(GLuint value) const

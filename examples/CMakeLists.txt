@@ -30,12 +30,15 @@ if(DEFINED SDL2_FOUND)
             ex_1.cpp
             ex_cache.cpp
 
+            ex_draw_triangles.cpp
+
             ex_draw_mask.cpp
             ex_draw_rounded_rect.cpp
             ex_draw_circle.cpp
             ex_draw_arc.cpp
             ex_draw_pie.cpp
             ex_draw_quadrilateral.cpp
+            ex_draw_rect.cpp
 
             ex_sampler_color.cpp
             ex_sampler_texture.cpp

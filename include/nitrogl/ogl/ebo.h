@@ -39,7 +39,7 @@ namespace nitrogl {
         ~ebo_t() { del(); unbind(); }
 
         bool wasGenerated() const { return _id; }
-        void uploadData(GLuint * array, GLsizeiptr array_size_bytes, GLenum usage=GL_STATIC_DRAW) const {
+        void uploadData(const GLuint * array, GLsizeiptr array_size_bytes, GLenum usage=GL_STATIC_DRAW) const {
             if(_id==0) return;
             bind();
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, array_size_bytes, array, usage);
