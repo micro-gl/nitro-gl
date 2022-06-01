@@ -143,9 +143,9 @@ namespace nitrogl {
                     qs_count = 1;
                 }
             }
-            _vbo_uvs.uploadData(d.uvs, uvs_count*VEC2_SIZE * FLOAT_SIZE,
+            _vbo_uvs.uploadData(uvs, uvs_count*VEC2_SIZE*FLOAT_SIZE,
                             GL_DYNAMIC_DRAW);
-            _vbo_qs.uploadData(d.qs,qs_count * FLOAT_SIZE,
+            _vbo_qs.uploadData(qs,qs_count*FLOAT_SIZE,
                                 GL_DYNAMIC_DRAW);
             // upload indices
             _ebo.uploadData(d.indices, GLsizeiptr(sizeof(GLuint))*d.indices_size,

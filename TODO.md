@@ -25,18 +25,19 @@
 26. angular gradient - DONE
 27. capsule shape sampler - DONE
 28. linear classifier sampler - DONE
-30. test idea of missing uvs coords for triangle batches - DONE
-31. render node for triangle batches - DONE
+29. test idea of missing uvs coords for triangle batches - DONE
+30. render node for triangle batches - DONE
+31. 
+32. draw polygons
 
-32. bezier patches
-33. draw text, bitmap fonts
-34. draw polygons
-36. draw paths fills
-37. draw stroke fills
-39. AA with rbos or filter shader
-40. investigate caching of uniforms per program
-41. draw text, sdf
-42. pointer/l-val/r-val to pointer function
+33. bezier patches
+34. draw text, bitmap fonts
+35. draw paths fills
+36. draw stroke fills
+37. AA with rbos or filter shader
+38. investigate caching of uniforms per program
+39. draw text, sdf
+40. pointer/l-val/r-val to pointer function
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,
