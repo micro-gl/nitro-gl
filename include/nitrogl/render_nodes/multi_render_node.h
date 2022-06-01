@@ -89,32 +89,23 @@ namespace nitrogl {
 
             program.use();
             // vertex uniforms
-            glCheckError();
             program.updateModelMatrix(d.mat_model);
-            glCheckError();
             program.updateViewMatrix(d.mat_view);
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
-            glCheckError();
             program.update_has_missing_uvs(has_missing_uvs);
-            glCheckError();
 
             // fragment uniforms
             program.update_backdrop_texture(d.backdrop_texture);
             program.update_window_size(d.window_width, d.window_height);
             program.updateOpacity(d.opacity);
-            glCheckError();
             program.update_has_missing_uvs(has_missing_uvs);
-            glCheckError();
             program.update_has_missing_qs(has_missing_qs);
-            glCheckError();
             if(has_missing_uvs)
                 program.updateBBox(d.bbox.left, d.bbox.top, d.bbox.right, d.bbox.bottom);
-            glCheckError();
 
             // sampler uniforms
             sampler.upload_uniforms(program.id());
-            glCheckError();
 
             static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
             static constexpr auto VEC2_SIZE = GLsizeiptr (sizeof(vec2f));
@@ -150,7 +141,6 @@ namespace nitrogl {
             // upload indices
             _ebo.uploadData(d.indices, GLsizeiptr(sizeof(GLuint))*d.indices_size,
                             GL_DYNAMIC_DRAW);
-            glCheckError();
 
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
@@ -162,7 +152,7 @@ namespace nitrogl {
             // this crates exccess 2 binds for vbos
             main_shader_program::point_generic_vertex_attributes(gva.data,
                     main_shader_program::vertex_attributes().data, gva.size());
-            glDrawElements(GL_TRIANGLES, d.indices_size, GL_UNSIGNED_INT, OFFSET(0));
+            glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
             _program.disableLocations(va.data, va.size());
 #endif
             // un-use shader
