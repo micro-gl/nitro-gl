@@ -10,7 +10,7 @@
 ========================================================================================*/
 #pragma once
 
-namespace microtess {
+namespace nitrogl {
     namespace polygons {
 
         enum class hints {

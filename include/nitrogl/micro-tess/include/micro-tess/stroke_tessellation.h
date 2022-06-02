@@ -158,7 +158,7 @@ namespace microtess {
                 path_length+=offset-dash_array[dash_arr_length-1];
             }
 
-            while (position<path_length) { // build the pos buffers
+            while (position<path_length) { // build the points buffers
                 points_segments.clear();
                 const bool stroke=(dash_index%2)==0;
                 if(stroke) {
@@ -449,7 +449,7 @@ namespace microtess {
             // Use the sign of the determinant of vectors (AB,AM), where M(X,Y)
             // is the query point:
             // position = sign((Bx - Ax) * (Y - Ay) - (By - Ay) * (X - Ax))
-            //    Input:  three pos p, a, b
+            //    Input:  three points p, a, b
             //    Return: >0 for P left of the line through a and b
             //            =0 for P  on the line
             //            <0 for P  right of the line
@@ -483,7 +483,7 @@ namespace microtess {
                          container_output_vertices &output_vertices,
                          container_output_indices &output_indices,
                          container_output_boundary *boundary_buffer) {
-            // this procedure will create pos on a half circle adaptively
+            // this procedure will generate points on a half circle adaptively
             const auto dir= to-from;
             bool done= (dir.x*dir.x + dir.y*dir.y)<=max_distance_squared;
             if(done) return;
@@ -598,7 +598,7 @@ namespace microtess {
                         output_indices.push_back(join_index); b1;
                     } else if(line_join==stroke_line_join::miter_clip) {
                         // no found intersection inside the half clip space, so we use
-                        // the two clipped pos calculated
+                        // the two clipped points calculated
                         output_vertices.push_back(a_ray.b); output_indices.push_back(output_vertices.size()-1); b2;
                         output_indices.push_back(join_index); b1;
                         output_vertices.push_back(b_ray.b); output_indices.push_back(output_vertices.size()-1); b2;

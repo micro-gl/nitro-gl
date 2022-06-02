@@ -142,7 +142,7 @@ namespace microtess {
                                                               number tolerance_distance_pixels,
                                                               output &output) {
             if (is_cubic_bezier_flat(points, tolerance_distance_pixels)) {
-                //            output.push_back(pos[0]);
+                //            output.push_back(points[0]);
                 output.push_back(points[3]);
             } else {
                 vertex split_left[4];
