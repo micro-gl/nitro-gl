@@ -64,7 +64,7 @@ dynamic_array<vec2f> poly_1_x_monotone() {
 int main() {
 
     auto on_init = [](SDL_Window *, void *) {
-        auto tex = gl_texture(600,600);
+        auto tex = gl_texture(100,200);
         glCheckError();
         canvas canva(600,600);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
@@ -74,7 +74,7 @@ int main() {
 
         const auto polygon = poly_diamond();
         const auto polygon_x_monotone = poly_1_x_monotone();
-        const auto polygon_rect = poly_rect(256+128,256+128+128);
+        const auto polygon_rect = poly_rect(100,200);
         auto render = [&]() {
             static float t = 0.0f;
             t+=0.00005f;

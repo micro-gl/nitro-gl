@@ -63,14 +63,24 @@ namespace nitrogl {
             glUniform1i(get_uniform_location(program, "texture"), slot);
         }
 
-    public:
+        void update_intrinsic(bool on) {
+            intrinsic_width = on ? float(texture.width()) : -1.0f;
+            intrinsic_height = on ? float(texture.height()) : -1.0f;
+        }
+
         GLint slot;
         gl_texture texture;
-        explicit texture_sampler(const gl_texture & texture, GLint slot=gl_texture::next_texture_unit_minus_zero()) :
+        explicit texture_sampler(const gl_texture & texture,
+                                 GLint slot=gl_texture::next_texture_unit_minus_zero(),
+                                 bool intrinsic=false) :
                 slot(slot), texture(texture), sampler_t() {
+            update_intrinsic(intrinsic);
         }
-        explicit texture_sampler(gl_texture && texture, GLint slot=gl_texture::next_texture_unit_minus_zero()) :
+        explicit texture_sampler(gl_texture && texture,
+                                 GLint slot=gl_texture::next_texture_unit_minus_zero(),
+                                 bool intrinsic=false) :
                 slot(slot), texture(nitrogl::traits::move(texture)), sampler_t() {
+            update_intrinsic(intrinsic);
         }
     };
 }

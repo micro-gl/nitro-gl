@@ -300,6 +300,26 @@ namespace nitrogl {
             return program;
         }
 
+        static mat3f & prepare_uv_transform(mat3f & transform_uv,
+                                     float bbox_width, float bbox_height,
+                                     float intrinsic_width=0.0f, float intrinsic_height=0.0f,
+                                     float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            //
+            // Always remember, our basic UVS are ALWAYS relative to the bounding box of
+            // the geometry and are stretched on it. Then, we fix by tiling and then focusing
+            // on a UV window. Remember, pre_transformations are right-most (and are fast)
+            // First create affine uv transform to the window
+            transform_uv.pre_translate(vec2f(u0, v0)).pre_scale(vec2f{u1-u0, v1-v0});
+            if(intrinsic_width>0 && intrinsic_height>0) {
+                // If we have intrinsic dimensions, apply uv transform fix to tile the sampler,
+                // otherwise it will be just stretched.
+                float scaled_w = intrinsic_width * (u1-u0);
+                float scaled_h = intrinsic_height * (v1-v0);
+                transform_uv.pre_scale(vec2f{bbox_width/scaled_w, bbox_height/scaled_h});
+            }
+            return transform_uv;
+        }
+
     public:
 
         /**
@@ -318,7 +338,7 @@ namespace nitrogl {
          * @param transform vertices transform
          * @param opacity Opacity
          * @param transform_uv UVs transform
-         * @param u0/v0/u1/v1 (Not working right now) UVs window
+         * @param u0/v0/u1/v1 UVs window
          */
         void drawTriangles(sampler_t & sampler,
                            enum triangles::indices type,
@@ -333,26 +353,11 @@ namespace nitrogl {
                            mat3f transform_uv = mat3f::identity(),
                            float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
             const auto bbox = nitrogl::triangles::triangles_bbox(vertices, indices, indices_size);
-            //
-            // Always remember, our basic UVS are ALWAYS relative to the bounding box of
-            // the geometry and are stretched on it. Then, we fix by tiling and then focusing
-            // on a UV window. Remember, pre_transformations are right-most (and are fast)
-            // First create affine uv transform to the window
-            u0=0.5f, v0=0.5f, u1=1.f, v1=1.f;
-            mat3f tuv = mat3f::identity();
-            float intristic_w = 256.0f, intristic_h = 256.0f;
-            transform_uv.pre_translate(vec2f(u0, v0)).pre_scale(vec2f{u1-u0, v1-v0});
-            if(intristic_w>=0 && intristic_h>=0) {
-                // If we have intrinsic dimensions, apply uv transform fix to tile the sampler,
-                // otherwise it will be just stretched.
-                float scaled_w = intristic_w * (u1-u0);
-                float scaled_h = intristic_h * (v1-v0);
-                transform_uv.pre_scale(vec2f{bbox.width()/scaled_w, bbox.height()/scaled_h});
-            }
+            prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
+                                 sampler.intrinsic_width, sampler.intrinsic_height,
+                                 u0, v0, u1, v1);
 
             //
-            static float t =0;
-            t+=0.01;
             glViewport(0, 0, GLsizei(width()), GLsizei(height()));
             _fbo.bind();
             // inverted y projection, canvas coords to opengl
@@ -504,9 +509,10 @@ namespace nitrogl {
                       float opacity = 1.0f,
                       mat3f transform = mat3f::identity(),
                       float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
-                      const mat3f & transform_uv = mat3f::identity()) {
-            static float t =0;
-            t+=0.01;
+                      mat3f transform_uv = mat3f::identity()) {
+            prepare_uv_transform(transform_uv, right-left, bottom-top,
+                                 sampler.intrinsic_width, sampler.intrinsic_height,
+                                 u0, v0, u1, v1);
             glViewport(0, 0, GLsizei(width()), GLsizei(height()));
             _fbo.bind();
             // inverted y projection, canvas coords to opengl
@@ -517,10 +523,10 @@ namespace nitrogl {
             transform.post_translate(vec2f(left, top)).pre_translate(vec2f(-left, -top));
             // buffers
             float puvs[20] = {
-                    left,  bottom, u0, v0, 1.0f, // xyuvq
-                    right, bottom, u1, v0, 1.0f,
-                    right, top,    u1, v1, 1.0f,
-                    left,  top,    u0, v1, 1.0f,
+                    left,  bottom, 0.0f, 0.0f, 1.0f, // xyuvq
+                    right, bottom, 1.0f, 0.0f, 1.0f,
+                    right, top,    1.0f, 1.0f, 1.0f,
+                    left,  top,    0.0f, 1.0f, 1.0f,
             };
             auto & program = get_main_shader_program_for_sampler(sampler);
             // data
@@ -656,7 +662,7 @@ namespace nitrogl {
                                float v3_x, float v3_y,
                                float opacity = 1.0,
                                mat3f transform = mat3f::identity(),
-                               float u0=0., float v0=0., float u1=1., float v1=1.,
+                               float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
                                const mat3f & transform_uv = mat3f::identity()) {
             float q0 = 1.0f, q1 = 1.0f, q2 = 1.0f, q3 = 1.0f;
             float p0x = v0_x, p0y = v0_y;
@@ -756,172 +762,6 @@ namespace nitrogl {
                      opacity, transform_modified,
                      u0, v0, u1, v1, transform_uv);
         }
-
-        void drawRect_multi_node(float left, float top, float right, float bottom,
-                      mat3f transform = mat3f::identity(),
-                      float u0=0., float v0=0., float u1=1., float v1=1.,
-                      const mat3f & transform_uv = mat3f::identity(),
-                      opacity_t opacity = 255) {
-            /*
-            static float t =0;
-            t+=0.01;
-            glViewport(0, 0, width(), height());
-            _fbo.bind();
-            // inverted y projection, canvas coords to opengl
-            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
-                                                        float(height()), 0, -1, 1);
-            // make the transform about it's center of mass, a nice feature
-            transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
-
-            // buffers
-            float points[8] = {
-                    left, bottom,
-                    right, bottom,
-                    right, top,
-                    left, top
-            };
-            float uvs[8] = {
-                    u0, v0,
-                    u1, v0,
-                    u1, v1,
-                    u0, v1
-            };
-            float uvs_sampler2[8] = {
-                    0.3, 0.3,
-                    0.6, 0.3,
-                    0.6, 0.6,
-                    0.3, 0.6
-            };
-
-            static GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
-
-            // get shader from cache
-            test_sampler<> sampler;
-            main_shader_program program;
-            shader_compositor::composite_main_program_from_sampler(program, sampler);
-
-            // data
-            multi_render_node::data_type data = {
-                    points, uvs, e,
-                    8, 8, 6, GL_TRIANGLES,
-                    mat4f(transform), // promote it to mat4x4
-                    mat4f::identity(),
-                    mat_proj,
-                    transform_uv
-            };
-            _node_multi.render(program, sampler, data);
-
-            //
-            copy_region_to_backdrop(int(left), int(top),
-                                    int(right+0.5f), int(bottom+0.5f));
-            fbo_t::unbind();
-             */
-        }
-
-//        // integer blenders
-//        /**
-//         * blend and composite a given color at position to the backdrop of the canvas
-//         *
-//         * @tparam BlendMode the blend mode type
-//         * @tparam PorterDuff the alpha compositing type
-//         * @tparam a_src the bits of the alpha channel of the color
-//         * @param val the color to blend
-//         * @param index the position of where to compose in the canvas
-//         * @param opacity 8 bit opacity [0..255]
-//         */
-//        template<typename BlendMode=blendmode::Normal,
-//                typename PorterDuff=porterduff::FastSourceOverOnOpaque,
-//                uint8_t a_src>
-//        void blendColor(const color_t &val, int x, int y, opacity_t opacity);
-//
-//        template<typename BlendMode=blendmode::Normal,
-//                typename PorterDuff=porterduff::FastSourceOverOnOpaque,
-//                uint8_t a_src>
-////    __attribute__((noinline))
-//        static void blendColor(const color_t &val, int index, opacity_t opacity, canvas & canva) {
-//            // correct index position when window is not at the (0,0) costs one subtraction.
-//            // we use it for sampling the backdrop if needed and for writing the output pixel
-//            index -= canva._window.index_correction;
-//
-//            // we assume that the color conforms to the same pixel-coder. but we are flexible
-//            // for alpha channel. if coder does not have an alpha channel, the color itself may
-//            // have non-zero alpha channel, for which we emulate 8-bit alpha processing and also pre
-//            // multiply result with alpha
-//            constexpr bool hasBackdropAlphaChannel = pixel_coder::rgba::a != 0;
-//            constexpr bool hasSrcAlphaChannel = a_src != 0;
-//            constexpr uint8_t canvas_a_bits = hasBackdropAlphaChannel ? pixel_coder::rgba::a : (a_src ? a_src : 8);
-//            constexpr uint8_t src_a_bits = a_src ? a_src : 8;
-//            constexpr uint8_t alpha_bits = src_a_bits;
-//            constexpr unsigned int alpha_max_value = uint16_t (1 << alpha_bits) - 1;
-//            constexpr bool is_source_over = microgl::traits::is_same<PorterDuff, porterduff::FastSourceOverOnOpaque>::value;
-//            constexpr bool none_compositing = microgl::traits::is_same<PorterDuff, porterduff::None<>>::value;
-//            constexpr bool skip_blending =microgl::traits::is_same<BlendMode, blendmode::Normal>::value;
-//            constexpr bool premultiply_result = !hasBackdropAlphaChannel;
-//            const bool skip_all= skip_blending && none_compositing && opacity == 255;
-//            static_assert(src_a_bits==canvas_a_bits, "src_a_bits!=canvas_a_bits");
-//
-//            const color_t & src = val;
-//            static color_t result{};
-//
-//            if(!skip_all) {
-//                pixel output;
-//                static color_t backdrop{}, blended{};
-//                // normal blend and none composite do not require a backdrop
-//                if(!(skip_blending && none_compositing))
-//                    canva._bitmap_canvas.decode(index, backdrop); // not using getPixelColor to avoid extra subtraction
-//
-//                // support compositing even if the surface is opaque.
-//                if(!hasBackdropAlphaChannel) backdrop.a = alpha_max_value;
-//
-//                if(is_source_over && src.a==0) return;
-//
-//                // if we are normal then do nothing
-//                if(!skip_blending && backdrop.a!=0) { //  or backdrop alpha is zero is also valid
-//                    BlendMode::template blend<pixel_coder::rgba::r,
-//                            pixel_coder::rgba::g,
-//                            pixel_coder::rgba::b>(backdrop, src, blended);
-//                    // if backdrop alpha!= max_alpha let's first composite the blended color, this is
-//                    // an intermediate step before Porter-Duff
-//                    if(backdrop.a < alpha_max_value) {
-//                        // if((backdrop.a ^ _max_alpha_value)) {
-//                        unsigned int comp = alpha_max_value - backdrop.a;
-//                        // this is of-course a not accurate interpolation, we should
-//                        // divide by 255. bit shifting is like dividing by 256 and is FASTER.
-//                        // you will pay a price when bit count is low, this is where the error
-//                        // is very noticeable.
-//                        blended.r = (comp * src.r + backdrop.a * blended.r) >> alpha_bits;
-//                        blended.g = (comp * src.g + backdrop.a * blended.g) >> alpha_bits;
-//                        blended.b = (comp * src.b + backdrop.a * blended.b) >> alpha_bits;
-//                    }
-//                }
-//                else {
-//                    // skipped blending therefore use src color
-//                    blended.r = src.r; blended.g = src.g; blended.b = src.b;
-//                }
-//
-//                // support alpha channel in case, source pixel does not have
-//                blended.a = hasSrcAlphaChannel ? src.a : alpha_max_value;
-//
-//                // I fixed opacity is always 8 bits no matter what the alpha depth of the native canvas
-//                if(opacity < 255)
-//                    blended.a =  (int(blended.a) * int(opacity)*int(257) + 257)>>16; // blinn method
-//
-//                // finally alpha composite with Porter-Duff equations,
-//                // this should be zero-cost for None option with compiler optimizations
-//                // if we do not own a native alpha channel, then please keep the composited result
-//                // with premultiplied alpha, this is why we composite for None option, because it performs
-//                // alpha multiplication
-//                PorterDuff::template composite<alpha_bits, premultiply_result>(backdrop, blended, result);
-//                canva.coder().encode(result, output);
-//                canva._bitmap_canvas.writeAt(index, output);
-//            }
-//            else {
-//                pixel output;
-//                canva.coder().encode(val, output);
-//                canva._bitmap_canvas.writeAt(index, output);
-//            }
-//        }
-
 
     };
 
