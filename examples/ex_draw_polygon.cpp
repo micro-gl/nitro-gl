@@ -13,80 +13,82 @@
 
 using namespace nitrogl;
 
+dynamic_array<vec2f> poly_hole() {
+    using il = std::initializer_list<vec2f>;
+    vec2f p0 = {100, 100};
+    vec2f p1 = {300, 100};
+    vec2f p2 = {300, 300};
+    vec2f p3 = {100, 300};
+
+    vec2f p4 = {150, 150};
+    vec2f p7 = {150, 250};
+    vec2f p6 = {250, 250};
+    vec2f p5 = {250, 150};
+
+    //    return {p4, p5, p6, p7};
+    return il{p0, p1, p2, p3,   p4, p7, p6, p5, p4,p3};//,p5_,p4_};
+}
+
+dynamic_array<vec2f> poly_diamond() {
+    using il = std::initializer_list<vec2f>;
+    return il{{300, 100}, {400, 300}, {300, 400}, {100,300}};
+}
+
+dynamic_array<vec2f> poly_rect(float w, float h) {
+    using il = std::initializer_list<vec2f>;
+    return il{{0, 0}, {w, 0}, {w, h}, {0,h}};
+}
+
+dynamic_array<vec2f> poly_1_x_monotone() {
+    using il = std::initializer_list<vec2f>;
+    return il{
+        {50,100},
+        {100,50},
+        {150,100},
+        {200,50},
+        {300,100},
+        {400,50},
+        {500,100},
+
+        {500,200},
+        {400,100+50},
+        {300,100+100},
+        {200,100+50},
+        {150,100+100},
+        {100,100+50},
+        {50,100+100},
+
+        };
+}
+
 int main() {
 
     auto on_init = [](SDL_Window *, void *) {
-        auto tex = gl_texture(500,500);
+        auto tex = gl_texture(600,600);
         glCheckError();
-        canvas canva(500,500);
+        canvas canva(600,600);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
         auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
         color_sampler sampler_color(1.0,0.0,0.0,1.0/2);
 
-        const float SIZE = 200;
-        vec2f vertices[4] = {
-                {0, 0},
-                {SIZE, 0},
-                {SIZE, SIZE},
-                {0, SIZE}
-        };
-
-        auto render_triangles = [&]() {
+        const auto polygon = poly_diamond();
+        const auto polygon_x_monotone = poly_1_x_monotone();
+        const auto polygon_rect = poly_rect(256+128,256+128+128);
+        auto render = [&]() {
             static float t = 0.0f;
             t+=0.00005f;
 
-            static const unsigned int indices[6] = { 0, 1, 2, 2, 3, 0 } ;
-            static const auto type = nitrogl::triangles::indices::TRIANGLES;
-
             canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawTriangles(tex_sampler_3,
-                                type,
-                                indices, 6,
-                                vertices, 4,
-                                nullptr, 0,
-                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
-                                );
+            canva.drawPolygon<polygons::CONVEX>(tex_sampler_3, polygon_rect.data(), polygon_rect.size());
+//            canva.drawPolygon<polygons::SIMPLE>(tex_sampler_3, polygon.data(), polygon.size());
+//            canva.drawPolygon<polygons::X_MONOTONE>(tex_sampler_3,
+//                                                    polygon_x_monotone.data(),
+//                                                    polygon_x_monotone.size());
             glCheckError();
         };
 
-        auto render_triangles_fan = [&]() {
-            static float t = 0.0f;
-            t+=0.00005f;
-
-            static const unsigned int indices[4] = { 0, 1, 2, 3 } ;
-            static const auto type = nitrogl::triangles::indices::TRIANGLES_FAN;
-
-            canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawTriangles(tex_sampler_3,
-                                type,
-                                indices, 4,
-                                vertices, 4,
-                                nullptr, 0,
-                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
-                                );
-            glCheckError();
-        };
-
-        auto render_triangles_strip = [&]() {
-            static float t = 0.0f;
-            t+=0.00005f;
-
-            static const unsigned int indices[4] = { 0, 1, 3, 2 } ;
-            static const auto type = nitrogl::triangles::indices::TRIANGLES_STRIP;
-
-            canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawTriangles(tex_sampler_3,
-                                type,
-                                indices, 4,
-                                vertices, 4,
-                                nullptr, 0,
-                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
-                                );
-            glCheckError();
-        };
-
-        example_run<true>(canva, render_triangles_strip);
+        example_run<false>(canva, render);
     };
 
     example_init(on_init);

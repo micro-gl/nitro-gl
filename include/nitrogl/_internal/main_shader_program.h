@@ -43,6 +43,7 @@ void main()
     float q = has_missing_q ? 1.0 : VS_q_sampler;
     // missing uv
     vec2 uv_missing = (VS_pos - bbox.xy)/bbox.zw;
+//    vec2 uv_missing = (VS_pos - bbox.xy)/vec2(256,256);
     uv_missing.y = 1.0 - uv_missing.y;
     // final uv
     vec2 uv = has_missing_uvs ? uv_missing : VS_uvs_sampler;
@@ -50,21 +51,6 @@ void main()
     gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
 }
 
-//
-//void main()
-//{
-//    // Branching in vertex shader is OK, not a bottleneck
-//    if(has_missing_uvs) {
-//        vec2 uv = (VS_pos - bbox.xy)/bbox.zw;
-//        uv.y = 1.0 - uv.y;
-//        PS_uvs_sampler = vec3(mat_transform_uvs * vec3(uv, 1.0));
-//    }
-//    else {
-//        float q = has_missing_q ? 1.0 : VS_q_sampler;
-//        PS_uvs_sampler = vec3((mat_transform_uvs * vec3(VS_uvs_sampler.st, 1.0)).st, q);
-//    }
-//    gl_Position = mat_proj * mat_view * mat_model * vec4(VS_pos, 1.0, 1.0);
-//}
 )foo";
 
         constexpr static const char * const frag_version = "#version 330 core\n";

@@ -19,17 +19,17 @@
 //#include "compositing/Normal.h"
 #ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
 //#include "micro-tess/include/micro-tess/triangles.h"
-#include "micro-tess/include/micro-tess/polygons.h"
 #include "micro-tess/include/micro-tess/path.h"
 #include "micro-tess/include/micro-tess/monotone_polygon_triangulation.h"
+#include "micro-tess/include/micro-tess/fan_triangulation.h"
 #include "micro-tess/include/micro-tess/ear_clipping_triangulation.h"
 #include "micro-tess/include/micro-tess/bezier_patch_tesselator.h"
 #include "micro-tess/include/micro-tess/dynamic_array.h"
 #else
 //#include <micro-tess/triangles.h>
-#include <micro-tess/polygons.h>
 #include <micro-tess/path.h>
 #include <micro-tess/monotone_polygon_triangulation.h>
+#include  <micro-tess/fan_triangulation.h>
 #include <micro-tess/ear_clipping_triangulation.h>
 #include <micro-tess/bezier_patch_tesselator.h>
 #include <micro-tess/dynamic_array.h>
@@ -41,6 +41,7 @@
 #include "functions/bits.h"
 #include "functions/distance.h"
 #include "triangles.h"
+#include "polygons.h"
 //#include "text/bitmap_font.h"
 
 #include "ogl/gl_texture.h"
@@ -67,9 +68,6 @@
 
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
-
-using namespace microtess::triangles;
-using namespace microtess::polygons;
 
 namespace nitrogl {
 
@@ -332,11 +330,27 @@ namespace nitrogl {
                            index uvs_size=0,
                            mat3f transform = mat3f::identity(),
                            float opacity=1.0f,
-                           const mat3f & transform_uv = mat3f::identity(),
+                           mat3f transform_uv = mat3f::identity(),
                            float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
             const auto bbox = nitrogl::triangles::triangles_bbox(vertices, indices, indices_size);
-            const bool has_missing_uvs = uvs== nullptr;
+            //
+            // Always remember, our basic UVS are ALWAYS relative to the bounding box of
+            // the geometry and are stretched on it. Then, we fix by tiling and then focusing
+            // on a UV window. Remember, pre_transformations are right-most (and are fast)
+            // First create affine uv transform to the window
+            u0=0.5f, v0=0.5f, u1=1.f, v1=1.f;
+            mat3f tuv = mat3f::identity();
+            float intristic_w = 256.0f, intristic_h = 256.0f;
+            transform_uv.pre_translate(vec2f(u0, v0)).pre_scale(vec2f{u1-u0, v1-v0});
+            if(intristic_w>=0 && intristic_h>=0) {
+                // If we have intrinsic dimensions, apply uv transform fix to tile the sampler,
+                // otherwise it will be just stretched.
+                float scaled_w = intristic_w * (u1-u0);
+                float scaled_h = intristic_h * (v1-v0);
+                transform_uv.pre_scale(vec2f{bbox.width()/scaled_w, bbox.height()/scaled_h});
+            }
 
+            //
             static float t =0;
             t+=0.01;
             glViewport(0, 0, GLsizei(width()), GLsizei(height()));
@@ -357,7 +371,7 @@ namespace nitrogl {
                     mat4f(transform), // promote it to mat4x4
                     mat4f::identity(),
                     mat_proj,
-                    transform_uv,
+                    transform_uv, //transform_uv,
                     _tex_backdrop,
                     width(), height(),
                     opacity,
@@ -368,6 +382,121 @@ namespace nitrogl {
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
+        }
+
+        /**
+         * Draw a polygon of any type via tesselation given a hint.
+         * Notes:
+         * - Uses different algorithms for different polygon types:
+         *      - Planar Subdivision for COMPLEX, SELF_INTERSECTING
+         *      - Ear Clipping for SIMPLE, CONCAVE
+         *      - Monotone triangulation for X_MONOTONE, Y_MONOTONE
+         *      - Fan triangulation for CONVEX
+         * - Use the hints properly to max your performance
+         *
+         * @tparam hint                     the type of polygon {SIMPLE, CONCAVE, X_MONOTONE, Y_MONOTONE, CONVEX, COMPLEX, SELF_INTERSECTING}
+         * @tparam tessellation_allocator   type of allocator
+         *
+         * @param sampler       sampler reference
+         * @param transform     3x3 matrix transform
+         * @param points        vertex array pointer
+         * @param size          size of vertex array
+         * @param opacity       opacity [0..255]
+         * @param u0            uv coord
+         * @param v0            uv coord
+         * @param u1            uv coord
+         * @param v1            uv coord
+         */
+        template <nitrogl::polygons hint=nitrogl::polygons::SIMPLE,
+                  class tessellation_allocator=microtess::std_rebind_allocator<>>
+        void drawPolygon(sampler_t & sampler,
+                         const vec2f * points,
+                         index size,
+                         const mat3f & transform = mat3f::identity(),
+                         const mat3f & transform_uv = mat3f::identity(),
+                         float opacity=1.0f,
+                         float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
+                         const tessellation_allocator & allocator=tessellation_allocator()) {
+
+            microtess::triangles::indices type;
+            using indices_allocator_t = typename tessellation_allocator::template rebind<index>::other;
+            using boundary_allocator_t = typename tessellation_allocator::template rebind<microtess::triangles::boundary_info>::other;
+            using indices_t = dynamic_array<index, indices_allocator_t>;
+            using boundaries_t = dynamic_array<microtess::triangles::boundary_info, boundary_allocator_t>;
+
+            indices_t indices{indices_allocator_t(allocator)};
+            boundaries_t * boundary_buffer_ptr=nullptr;
+
+            switch (hint) {
+                case nitrogl::polygons::CONCAVE:
+                case nitrogl::polygons::SIMPLE:
+                {
+                    using ect=microtess::ear_clipping_triangulation<float, indices_t, boundaries_t, tessellation_allocator>;
+                    ect::compute(points, size, indices, boundary_buffer_ptr, type, allocator);
+                    break;
+                }
+                case nitrogl::polygons::X_MONOTONE:
+                case nitrogl::polygons::Y_MONOTONE:
+                {
+                    using mpt=microtess::monotone_polygon_triangulation<float, indices_t, boundaries_t, tessellation_allocator>;
+                    typename mpt::monotone_axis axis=hint==polygons::X_MONOTONE ? mpt::monotone_axis::x_monotone :
+                            mpt::monotone_axis::y_monotone;
+                    mpt::compute(points, size, axis, indices, boundary_buffer_ptr, type, allocator);
+                    break;
+                }
+                case nitrogl::polygons::CONVEX:
+                {
+                    using ft = microtess::fan_triangulation<float, indices_t, boundaries_t>;
+                    ft::compute(points, size, indices, boundary_buffer_ptr, type);
+                    break;
+                }
+                case nitrogl::polygons::NON_SIMPLE:
+                case nitrogl::polygons::SELF_INTERSECTING:
+                case nitrogl::polygons::COMPLEX:
+                case nitrogl::polygons::MULTIPLE_POLYGONS:
+                {
+                    microtess::path<float, dynamic_array, tessellation_allocator> path(allocator);
+                    path.addPoly(points, size);
+//                    drawPathFill<BlendMode, PorterDuff, antialias, debug, number1, number2, Sampler,
+//                                 dynamic_array, tessellation_allocator> (
+//                            sampler, transform, path, microtess::fill_rule::non_zero,
+//                            microtess::tess_quality::better, opacity, u0, v0, u1, v1);
+                    return;
+                }
+                default:
+                    return;
+            }
+            // convert from micro-tess indices type to nitro-gl indices type
+            nitrogl::triangles::indices type_out;
+            switch (type) {
+                case microtess::triangles::indices::TRIANGLES_WITH_BOUNDARY:
+                case microtess::triangles::indices::TRIANGLES:
+                {
+                    type_out = nitrogl::triangles::indices::TRIANGLES;
+                    break;
+                }
+                case microtess::triangles::indices::TRIANGLES_FAN:
+                case microtess::triangles::indices::TRIANGLES_FAN_WITH_BOUNDARY:
+                {
+                    type_out = nitrogl::triangles::indices::TRIANGLES_FAN;
+                    break;
+                }
+                case microtess::triangles::indices::TRIANGLES_STRIP:
+                case microtess::triangles::indices::TRIANGLES_STRIP_WITH_BOUNDARY:
+                {
+                    type_out = nitrogl::triangles::indices::TRIANGLES_STRIP;
+                    break;
+                }
+            }
+            drawTriangles(sampler,
+                    type_out,
+                    indices.data(), indices.size(),
+                    points, size,
+                    nullptr, 0,
+                    transform,
+                    opacity,
+                    transform_uv,
+                    u0, v0, u1, v1);
         }
 
         void drawRect(sampler_t & sampler,
@@ -385,7 +514,7 @@ namespace nitrogl {
                                                         float(height()), 0.0f,
                                                         -1.0f, 1.0f);
             // make the transform about its origin, a nice feature
-            transform.post_translate(vec2f(-left, -top)).pre_translate(vec2f(left, top));
+            transform.post_translate(vec2f(left, top)).pre_translate(vec2f(-left, -top));
             // buffers
             float puvs[20] = {
                     left,  bottom, u0, v0, 1.0f, // xyuvq
@@ -446,7 +575,7 @@ namespace nitrogl {
             // make the transform about left-top of shape
             auto transform_modified = transform;
 //            pad/=2.0f;
-            transform_modified.post_translate(vec2f(-pad, -pad)).pre_translate(vec2f(pad, pad));
+            transform_modified.post_translate(vec2f(pad, pad)).pre_translate(vec2f(-pad, -pad));
 
             drawRect(cs, l, t, r, b,
                      opacity,
@@ -480,7 +609,7 @@ namespace nitrogl {
             // make the transform about left-top of shape
             auto transform_modified = transform;
             //            pad/=2.0f;
-            transform_modified.post_translate(vec2f(-pad, -pad)).pre_translate(vec2f(pad, pad));
+            transform_modified.post_translate(vec2f(pad, pad)).pre_translate(vec2f(-pad, -pad));
 
             drawRect(cs, l, t, r, b,
                      opacity,
@@ -512,7 +641,7 @@ namespace nitrogl {
             // make the transform about left-top of shape
             auto transform_modified = transform;
             //            pad/=2.0f;
-            transform_modified.post_translate(vec2f(-pad, -pad)).pre_translate(vec2f(pad, pad));
+            transform_modified.post_translate(vec2f(pad, pad)).pre_translate(vec2f(-pad, -pad));
 
             drawRect(cs, l, t, r, b,
                      opacity,
@@ -565,7 +694,7 @@ namespace nitrogl {
             auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
                                                         float(height()), 0, -1, 1);
             // make the transform about it's origin, a nice feature
-            transform.post_translate(vec2f(-v0_x, -v0_y)).pre_translate(vec2f(v0_x, v0_y));
+            transform.post_translate(vec2f(v0_x, v0_y)).pre_translate(vec2f(-v0_x, -v0_y));
             // buffers
             float puvs[20] = {
                     v0_x,  v0_y, u0_q0, v0_q0, q0, // xyuvq
@@ -620,7 +749,7 @@ namespace nitrogl {
 
             // make the transform about left-top of shape
             auto transform_modified = transform;
-            transform_modified.post_translate(vec2f(-off_l, -off_t)).pre_translate(vec2f(off_l, off_t));
+            transform_modified.post_translate(vec2f(off_l, off_t)).pre_translate(vec2f(-off_l, -off_t));
 
             drawRect(cs,
                      l_c, t_c, l_c + max_d, t_c + max_d,

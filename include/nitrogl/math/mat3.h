@@ -131,6 +131,10 @@ namespace nitrogl {
         mat3(const matrix<T2, 3, 3, column_major> & mat) : base__(mat) {}
         virtual ~mat3() = default;
 
+        mat3 operator*(const mat3 &  value) const {
+            return base__::operator*(value);
+        };
+
         template<class vertex>
         vertex operator*(const vertex & point) const {
             vertex res;
@@ -163,7 +167,9 @@ namespace nitrogl {
         }
 
         // optimized pre/post multiplications
-        template<class vertex> mat3 & post_translate(const vertex & v) {
+        // pre is applying the transformation to the right, before the current one
+        // post is to the left, after the current one
+        template<class vertex> mat3 & pre_translate(const vertex & v) {
             auto & m = (*this);
             constexpr bool c = column_major;
             // last column
@@ -172,7 +178,7 @@ namespace nitrogl {
             m[8] = m[c?2:6]*v.x + m[c?5:7]*v.y + m[8];
             return *this;
         }
-        template<class vertex> mat3 & pre_translate(const vertex & v) {
+        template<class vertex> mat3 & post_translate(const vertex & v) {
             auto & m = (*this);
             constexpr bool c = column_major;
             m[0]+=v.x*m[c?2:6]; m[c?3:1]+=v.x*m[c?5:7]; m[c?6:2]+=v.x*m[8]; // 1st row
@@ -180,14 +186,17 @@ namespace nitrogl {
             return *this;
         }
 
-        template<class vertex> mat3 & post_scale(const vertex & v) {
+        template<class vertex> mat3 & pre_scale(const vertex & v) {
             auto & m = (*this);
             constexpr bool c = column_major;
+//            m[0]*=v.x; m[c?1:3]*=v.x; m[c?2:6]*=v.x; // 1st column
+//            m[c?3:1]*=v.y; m[4]*=v.y; m[c?5:7]*=v.y; // 2nd column
+
             m[0]*=v.x; m[c?1:3]*=v.x; m[c?2:6]*=v.x; // 1st column
             m[c?3:1]*=v.y; m[4]*=v.y; m[c?5:7]*=v.y; // 2nd column
             return *this;
         }
-        template<class vertex> mat3 & pre_scale(const vertex & v) {
+        template<class vertex> mat3 & post_scale(const vertex & v) {
             auto & m = (*this);
             constexpr bool c = column_major;
             m[0]*=v.x; m[c?3:1]*=v.x; m[c?6:2]*=v.x; // 1st row
