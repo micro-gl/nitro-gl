@@ -69,18 +69,19 @@ int main() {
         canvas canva(600,600);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
-        auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
+        auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true), true);
         color_sampler sampler_color(1.0,0.0,0.0,1.0/2);
 
-        const auto polygon = poly_diamond();
+        const auto polygon_diamond = poly_diamond();
         const auto polygon_x_monotone = poly_1_x_monotone();
         const auto polygon_rect = poly_rect(100,200);
+        const auto & polygon = polygon_x_monotone;
         auto render = [&]() {
             static float t = 0.0f;
             t+=0.00005f;
 
             canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawPolygon<polygons::CONVEX>(tex_sampler_3, polygon_rect.data(), polygon_rect.size());
+            canva.drawPolygon<polygons::CONVEX>(tex_sampler_3, polygon.data(), polygon.size());
 //            canva.drawPolygon<polygons::SIMPLE>(tex_sampler_3, polygon.data(), polygon.size());
 //            canva.drawPolygon<polygons::X_MONOTONE>(tex_sampler_3,
 //                                                    polygon_x_monotone.data(),

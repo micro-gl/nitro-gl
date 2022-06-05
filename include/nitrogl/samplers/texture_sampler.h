@@ -71,14 +71,14 @@ namespace nitrogl {
         GLint slot;
         gl_texture texture;
         explicit texture_sampler(const gl_texture & texture,
-                                 GLint slot=gl_texture::next_texture_unit_minus_zero(),
-                                 bool intrinsic=false) :
+                                 bool intrinsic=false,
+                                 GLint slot=gl_texture::next_texture_unit_minus_zero()) :
                 slot(slot), texture(texture), sampler_t() {
             update_intrinsic(intrinsic);
         }
         explicit texture_sampler(gl_texture && texture,
-                                 GLint slot=gl_texture::next_texture_unit_minus_zero(),
-                                 bool intrinsic=false) :
+                                 bool intrinsic=false,
+                                 GLint slot=gl_texture::next_texture_unit_minus_zero()) :
                 slot(slot), texture(nitrogl::traits::move(texture)), sampler_t() {
             update_intrinsic(intrinsic);
         }
