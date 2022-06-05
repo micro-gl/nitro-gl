@@ -34,11 +34,13 @@ namespace nitrogl {
         struct location_of_uniform_not_found {};
         unsigned int _sub_samplers_count;
 
-        sampler_t() : _sub_samplers_count(0),
-            _traversal_info{-1, false} {
+        sampler_t() : _sub_samplers_count(0), _traversal_info{-1, false},
+                        intrinsic_width(0.0f), intrinsic_height(0.0f) {
         }
 
     public:
+        float intrinsic_width;
+        float intrinsic_height;
         traversal_info_t _traversal_info;
         traversal_info_t & traversal_info() {
             return _traversal_info;

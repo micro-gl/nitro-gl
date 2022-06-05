@@ -579,7 +579,7 @@ namespace microtess {
                         right_bottom.y = current_vertex.y;
                 }
             }
-            // extend bbox 10 pos
+            // extend bbox 10 points
             left_top.x -= number(10);
             left_top.y -= number(10);
             right_bottom.x += number(10);
@@ -947,7 +947,7 @@ namespace microtess {
         static auto classify_conflict_against_two_faces(const half_edge *face_separator,
                 const vertex &c, const vertex &d, const vertex &extra_direction_for_split={0,0})
                         -> half_edge_face * {
-            // note:: edge's face always pos to the face that lies to it's left.
+            // note:: edge's face always points to the face that lies to it's left.
             // 1. if the first point lie completely to the left of the edge, then they belong to f1, other wise f2
             // 2. if they lie exactly on the edge, then we test_texture the second end-point
             // 2.1 if the second lies completely in f1, then the first vertex is in f1, otherwise f2
@@ -956,7 +956,7 @@ namespace microtess {
             const auto & b = face_separator->twin->origin->coords+extra_direction_for_split;
             const int cls = classify_point(c, a, b);
             if(cls>0) // if strictly left of
-                return face_separator->face; // face pos always to the face left of edge
+                return face_separator->face; // face points always to the face left of edge
             else if(cls<0)// if strictly right of
                 return face_separator->twin->face;
             else { // is exactly on separator
@@ -1204,7 +1204,7 @@ namespace microtess {
             //    the vertical wall between them.
             // 3. infer the correct trapeze where "b" is in and perform roughly the same
             //    operation
-            // 4. connect the two pos, so they again split a face (in case they are not vertical)
+            // 4. connect the two points, so they again split a face (in case they are not vertical)
             // 5. if (a,b) lies on a wall, then simply update winding between
             face_split_result result;
             result.has_horizontal_split=false;

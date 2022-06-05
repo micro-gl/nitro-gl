@@ -27,8 +27,7 @@
 28. linear classifier sampler - DONE
 29. test idea of missing uvs coords for triangle batches - DONE
 30. render node for triangle batches - DONE
-31. 
-32. draw polygons
+32. draw polygons - DONE
 
 33. bezier patches
 34. draw text, bitmap fonts

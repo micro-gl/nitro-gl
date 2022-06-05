@@ -15,7 +15,7 @@ namespace microtess {
 
         enum class hints {
             // non self intersecting polygon, can be convex or concave, 
-            // may have edge pos touch other edges interior,
+            // may have edge points touch other edges interior,
             // this can be done in O(n^2)
             SIMPLE,
             CONCAVE,

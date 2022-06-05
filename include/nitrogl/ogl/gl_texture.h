@@ -46,7 +46,7 @@ namespace nitrogl {
                                               char r_bits, char g_bits, char b_bits, char a_bits,
                                               bool is_premul_alpha=false,
                                               GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
-                                              GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) {
+                                              GLint wrap_s=GL_REPEAT, GLint wrap_t=GL_REPEAT) {
             const auto max_bits = max(max(r_bits, g_bits), max(b_bits, a_bits));
             GLenum type = bits2type(max_bits);
             GLenum format=GL_RGBA;
@@ -101,7 +101,7 @@ namespace nitrogl {
         }
         static gl_texture empty(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA, bool is_premul_alpha=false,
                                 GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
-                                GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) {
+                                GLint wrap_s=GL_REPEAT, GLint wrap_t=GL_REPEAT) {
             auto tex = gl_texture(width, height, internalformat, is_premul_alpha);
             tex.uploadImage(GL_RED, GL_UNSIGNED_BYTE, nullptr, 1, filter_mag, filter_min,
                             wrap_s, wrap_t);
@@ -181,7 +181,7 @@ namespace nitrogl {
          */
         bool uploadImage(GLenum format, GLenum type, const void * data, GLint unpack_row_alignment=1,
                          GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
-                         GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
+                         GLint wrap_s=GL_REPEAT, GLint wrap_t=GL_REPEAT) const {
             if(!wasGenerated()) return false;
             use(0);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);

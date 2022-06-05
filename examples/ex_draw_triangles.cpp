@@ -45,7 +45,7 @@ int main() {
                                 indices, 6,
                                 vertices, 4,
                                 nullptr, 0,
-                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
+                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
             glCheckError();
         };
@@ -63,7 +63,7 @@ int main() {
                                 indices, 4,
                                 vertices, 4,
                                 nullptr, 0,
-                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
+                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
             glCheckError();
         };
@@ -81,7 +81,7 @@ int main() {
                                 indices, 4,
                                 vertices, 4,
                                 nullptr, 0,
-                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).pre_translate(vec2f {200, 200})
+                                mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
             glCheckError();
         };
