@@ -81,11 +81,11 @@ int main() {
             t+=0.00005f;
 
             canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawPolygon<polygons::CONVEX>(tex_sampler_3, polygon.data(), polygon.size());
-//            canva.drawPolygon<polygons::SIMPLE>(tex_sampler_3, polygon.data(), polygon.size());
-//            canva.drawPolygon<polygons::X_MONOTONE>(tex_sampler_3,
-//                                                    polygon_x_monotone.data(),
-//                                                    polygon_x_monotone.size());
+//            canva.drawPolygon<polygons::CONVEX>(tex_sampler_3, polygon_rect.data(), polygon_rect.size());
+//            canva.drawPolygon<polygons::SIMPLE>(tex_sampler_3, polygon_diamond.data(), polygon_diamond.size());
+            canva.drawPolygon<polygons::X_MONOTONE>(tex_sampler_3,
+                                                    polygon_x_monotone.data(),
+                                                    polygon_x_monotone.size());
             glCheckError();
         };
 

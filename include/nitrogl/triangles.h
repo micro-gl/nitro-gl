@@ -12,6 +12,11 @@
 
 #include "math.h"
 #include "functions/minmax.h"
+#ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
+#include "micro-tess/include/micro-tess/triangles.h"
+#else
+#include <micro-tess/triangles.h>
+#endif
 
 namespace nitrogl {
     namespace triangles {
@@ -21,6 +26,27 @@ namespace nitrogl {
             TRIANGLES_FAN=GL_TRIANGLE_FAN,
             TRIANGLES_STRIP=GL_TRIANGLE_STRIP,
         };
+
+        inline indices microtess_indices_type_to_nitrogl(microtess::triangles::indices type) {
+            switch (type) {
+                case microtess::triangles::indices::TRIANGLES_WITH_BOUNDARY:
+                case microtess::triangles::indices::TRIANGLES:
+                {
+                    return nitrogl::triangles::indices::TRIANGLES;
+                }
+                case microtess::triangles::indices::TRIANGLES_FAN:
+                case microtess::triangles::indices::TRIANGLES_FAN_WITH_BOUNDARY:
+                {
+                    return nitrogl::triangles::indices::TRIANGLES_FAN;
+                }
+                case microtess::triangles::indices::TRIANGLES_STRIP:
+                case microtess::triangles::indices::TRIANGLES_STRIP_WITH_BOUNDARY:
+                {
+                    return nitrogl::triangles::indices::TRIANGLES_STRIP;
+                    break;
+                }
+            }
+        }
 
         enum class TriangleEdgeType { Top, Left, Right };
         enum class orientation { cw, ccw };

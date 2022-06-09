@@ -57,7 +57,7 @@ public:
     }
     explicit dynamic_array(size_type count, const Alloc& alloc = Alloc()) :
                         dynamic_array(count, T(), alloc) {}
-    template<class Iterable>
+    template<class Iterable, typename bb = microtess::traits::enable_if_t<!microtess::traits::is_integral<Iterable>::value>>
     dynamic_array(const Iterable &list, const Alloc & alloc= Alloc()) :
             dynamic_array(list.begin(), list.end(), alloc) {}
     template<class InputIt, typename bb = microtess::traits::enable_if_t<!microtess::traits::is_integral<InputIt>::value>>
