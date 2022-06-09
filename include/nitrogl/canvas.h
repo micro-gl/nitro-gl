@@ -56,6 +56,7 @@
 #include "_internal/static_linear_allocator.h"
 #include "_internal/lru_pool.h"
 #include "camera.h"
+#include "path.h"
 
 // samplers
 #include "samplers/sampler.h"
@@ -390,6 +391,116 @@ namespace nitrogl {
         }
 
         /**
+         * Draw a Path Fill
+         * @tparam path_container_template template of container used by path
+         * @tparam tessellation_allocator the path allocator
+         * @param sampler The sampler to sample from
+         * @param path The path object
+         * @param rule Fill rule { non_zero, even_odd }
+         * @param quality Tessellation quality enum
+         * @param transform vertices transform
+         * @param transform_uv UVs transform
+         * @param opacity Opacity
+         * @param u0/v0/u1/v1 UVs window
+         */
+        template <template<typename...> class path_container_template,
+                  class tessellation_allocator>
+        void drawPathFill(sampler_t & sampler,
+                          microtess::path<float, path_container_template, tessellation_allocator> & path,
+                          const microtess::fill_rule &rule,
+                          const microtess::tess_quality &quality,
+                          const mat3f & transform = mat3f::identity(),
+                          const mat3f & transform_uv = mat3f::identity(),
+                          float opacity=1.0f,
+                          float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            const auto & buffers= path.tessellateFill(rule, quality, false, false);
+            if(buffers.output_vertices.size()==0) return;
+            const auto type_out =
+                    nitrogl::triangles::microtess_indices_type_to_nitrogl(
+                            buffers.output_indices_type);
+
+            drawTriangles(
+                    sampler,
+                    type_out,
+                    buffers.output_indices.data(), buffers.output_indices.size(),
+                    buffers.output_vertices.data(), buffers.output_vertices.size(),
+                    nullptr, 0,
+                    transform,
+                    opacity,
+                    transform_uv,
+                    u0, v0, u1, v1);
+//            if(debug) {
+//                drawTrianglesWireframe({0,0,0,255}, transform,
+//                                       buffers.output_vertices.data(),
+//                                       buffers.output_indices.data(),
+//                                       buffers.output_indices.size(),
+//                                       buffers.output_indices_type,
+//                                       40);
+//                for (index ix = 0; ix < buffers.DEBUG_output_trapezes.size(); ix+=4)
+//                    drawWuLinePath<number1>({0,0,0,255}, &buffers.DEBUG_output_trapezes[ix], 4, true);
+//            }
+        }
+
+        /**
+         * Draw a Path Stroke
+         * @tparam Iterable Any numbers iterable container (implements begin()/)end())
+         * @tparam path_container_template template of container used by path
+         * @tparam tessellation_allocator the path allocator
+         * @param sampler The sampler to sample from
+         * @param path The path object
+         * @param stroke_width          stroke width in pixels
+         * @param cap                   stroke cap enum {butt, round, square}
+         * @param line_join             stroke line join {none, miter, miter_clip, round, bevel}
+         * @param miter_limit           the miter limit
+         * @param stroke_dash_array     stroke dash pattern
+         * @param stroke_dash_offset    stroke dash offset
+         * @param transform vertices transform
+         * @param transform_uv UVs transform
+         * @param opacity Opacity
+         * @param u0/v0/u1/v1 UVs window
+         */
+        template <class Iterable, template<typename...> class path_container_template,
+                    class tessellation_allocator>
+        void drawPathStroke(sampler_t & sampler,
+                          microtess::path<float, path_container_template, tessellation_allocator> & path,
+                          float stroke_width=1.0f,
+                          microtess::stroke_cap cap=microtess::stroke_cap::butt,
+                          microtess::stroke_line_join line_join=microtess::stroke_line_join::bevel,
+                          const int miter_limit=4,
+                          const Iterable & stroke_dash_array={},
+                          int stroke_dash_offset=0,
+                          const mat3f & transform = mat3f::identity(),
+                          const mat3f & transform_uv = mat3f::identity(),
+                          float opacity=1.0f,
+                          float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            const auto & buffers= path.template tessellateStroke<Iterable>(
+                    stroke_width, cap, line_join, miter_limit, stroke_dash_array, stroke_dash_offset);
+            if(buffers.output_vertices.size()==0) return;
+            const auto type_out =
+                    nitrogl::triangles::microtess_indices_type_to_nitrogl(
+                            buffers.output_indices_type);
+
+            drawTriangles(
+                    sampler,
+                    type_out,
+                    buffers.output_indices.data(), buffers.output_indices.size(),
+                    buffers.output_vertices.data(), buffers.output_vertices.size(),
+                    nullptr, 0,
+                    transform,
+                    opacity,
+                    transform_uv,
+                    u0, v0, u1, v1);
+//            if(debug)
+//                drawTrianglesWireframe({0, 0, 0, 255}, transform,
+//                                       buffers.output_vertices.data(),
+//                                       buffers.output_indices.data(),
+//                                       buffers.output_indices.size(),
+//                                       buffers.output_indices_type,
+//                                       255);
+
+        }
+
+        /**
          * Draw a polygon of any type via tesselation given a hint.
          * Notes:
          * - Uses different algorithms for different polygon types:
@@ -462,37 +573,21 @@ namespace nitrogl {
                 {
                     microtess::path<float, dynamic_array, tessellation_allocator> path(allocator);
                     path.addPoly(points, size);
-//                    drawPathFill<BlendMode, PorterDuff, antialias, debug, number1, number2, Sampler,
-//                                 dynamic_array, tessellation_allocator> (
-//                            sampler, transform, path, microtess::fill_rule::non_zero,
-//                            microtess::tess_quality::better, opacity, u0, v0, u1, v1);
+                    drawPathFill<dynamic_array, tessellation_allocator> (
+                            sampler,
+                            path,
+                            microtess::fill_rule::non_zero,
+                            microtess::tess_quality::better,
+                            transform,
+                            transform_uv,
+                            opacity, u0, v0, u1, v1);
                     return;
                 }
                 default:
                     return;
             }
             // convert from micro-tess indices type to nitro-gl indices type
-            nitrogl::triangles::indices type_out;
-            switch (type) {
-                case microtess::triangles::indices::TRIANGLES_WITH_BOUNDARY:
-                case microtess::triangles::indices::TRIANGLES:
-                {
-                    type_out = nitrogl::triangles::indices::TRIANGLES;
-                    break;
-                }
-                case microtess::triangles::indices::TRIANGLES_FAN:
-                case microtess::triangles::indices::TRIANGLES_FAN_WITH_BOUNDARY:
-                {
-                    type_out = nitrogl::triangles::indices::TRIANGLES_FAN;
-                    break;
-                }
-                case microtess::triangles::indices::TRIANGLES_STRIP:
-                case microtess::triangles::indices::TRIANGLES_STRIP_WITH_BOUNDARY:
-                {
-                    type_out = nitrogl::triangles::indices::TRIANGLES_STRIP;
-                    break;
-                }
-            }
+            const auto type_out = nitrogl::triangles::microtess_indices_type_to_nitrogl(type);
             drawTriangles(sampler,
                     type_out,
                     indices.data(), indices.size(),
