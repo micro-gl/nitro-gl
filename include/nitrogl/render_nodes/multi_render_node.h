@@ -93,7 +93,6 @@ namespace nitrogl {
             program.updateViewMatrix(d.mat_view);
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
-            program.update_has_missing_uvs(has_missing_uvs);
 
             // fragment uniforms
             program.update_backdrop_texture(d.backdrop_texture);
@@ -111,7 +110,7 @@ namespace nitrogl {
             static constexpr auto VEC2_SIZE = GLsizeiptr (sizeof(vec2f));
 
             // upload pos
-            _vbo_pos.uploadData(d.pos, d.pos_size*VEC2_SIZE*FLOAT_SIZE,
+            _vbo_pos.uploadData(d.pos, d.pos_size*VEC2_SIZE,
                                 GL_DYNAMIC_DRAW);
             // upload uvs
 
@@ -134,7 +133,7 @@ namespace nitrogl {
                     qs_count = 1;
                 }
             }
-            _vbo_uvs.uploadData(uvs, uvs_count*VEC2_SIZE*FLOAT_SIZE,
+            _vbo_uvs.uploadData(uvs, uvs_count*VEC2_SIZE,
                             GL_DYNAMIC_DRAW);
             _vbo_qs.uploadData(qs,qs_count*FLOAT_SIZE,
                                 GL_DYNAMIC_DRAW);

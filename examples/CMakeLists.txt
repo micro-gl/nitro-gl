@@ -34,6 +34,7 @@ if(DEFINED SDL2_FOUND)
             ex_draw_polygon.cpp
             ex_draw_path_fill.cpp
             ex_draw_path_stroke.cpp
+            ex_draw_bezier_patch.cpp
 
             ex_draw_mask.cpp
             ex_draw_rounded_rect.cpp

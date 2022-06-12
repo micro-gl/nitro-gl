@@ -158,5 +158,29 @@ namespace nitrogl {
             return rect;
         }
 
+        /**
+         * Compute triangles bbox
+         * @param vertices pointer to array of vertices
+         * @param indices (Optional) pointer to array of indices to vertices array
+         * @param size size of indices (if not null), or vertices (if indices are null)
+         * @return bounding box rectangle
+         */
+        rectf triangles_bbox_from_attribs(const float *attribs,
+                             const index *indices,
+                             const index size,
+                             index x_idx, index y_idx, index window_size) {
+            const auto & ref_base = indices ? attribs[indices[0]] : attribs[0];
+            rectf rect{ attribs[x_idx], attribs[y_idx], attribs[x_idx], attribs[y_idx] };
+            for (unsigned ix = 0; ix < size; ++ix) { // compute bounding box
+                const float * window = attribs + (indices ? indices[ix] : ix)*window_size;
+                rect.left = functions::min(rect.left, window[x_idx]);
+                rect.top = functions::min(rect.top, window[y_idx]);
+                rect.right = functions::max(rect.right, window[x_idx]);
+                rect.bottom = functions::max(rect.bottom, window[y_idx]);
+            }
+            return rect;
+        }
+
+
     };
 }

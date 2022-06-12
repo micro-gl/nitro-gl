@@ -27,12 +27,14 @@
 28. linear classifier sampler - DONE
 29. test idea of missing uvs coords for triangle batches - DONE
 30. render node for triangle batches - DONE
-32. draw polygons - DONE
-35. draw paths fills - DONE
-36. draw stroke fills - Done
+31. draw polygons - DONE
+32. draw paths fills - DONE
+33. draw stroke fills - Done
+34. bezier patches - done
 
-33. bezier patches
-34. draw text, bitmap fonts
+
+35. draw text, bitmap fonts
+36. draw lines
 37. AA with rbos or filter shader
 38. investigate caching of uniforms per program
 39. draw text, sdf
