@@ -11,22 +11,29 @@
 #pragma once
 
 #include "../ogl/shader_program.h"
+#include "../ogl/vao.h"
+#include "../ogl/vbo.h"
+#include "../ogl/ebo.h"
 #include "../_internal/main_shader_program.h"
 #include "../samplers/sampler.h"
+#include "../math.h"
 
 namespace nitrogl {
 
-    /**
-     * optimized node for 4 point meshes. saves uploads for ebo, and uses interleaving
-     */
-    class p4_render_node {
+    class multi_render_node_interleaved_xyuv {
 
     public:
         using program_type = main_shader_program;
         using size_type = GLsizeiptr;
         struct data_type {
-            float * pos_and_uvs_qs_interleaved; //{(x,y,u,v,q), (x,y,u,v,q), ....}
-            size_type size;
+            const float * xyuv;
+            const GLuint * indices;
+
+            size_type xyuv_size;
+            size_type indices_size;
+
+            GLenum triangles_type;
+
             const mat4f & mat_model;
             const mat4f & mat_view;
             const mat4f & mat_proj;
@@ -39,38 +46,32 @@ namespace nitrogl {
 
         struct GVA {
             GVA()=default;
-            nitrogl::generic_vertex_attrib_t data[3];
-            static constexpr unsigned size() { return 3; }
+            static constexpr unsigned SIZE = 2;
+            static constexpr unsigned size() { return SIZE; }
+            nitrogl::generic_vertex_attrib_t data[SIZE];
         };
 
         GVA gva{};
-        vbo_t _vbo_pos_uvs_qs{};
+        vbo_t _vbo_xyuv{};
         vao_t _vao{};
         ebo_t _ebo{};
 
     public:
-        p4_render_node()=default;
-        ~p4_render_node()=default;
+        multi_render_node_interleaved_xyuv()=default;
+        ~multi_render_node_interleaved_xyuv()=default;
 
         void init() {
-            // configure the vao, vbo, generic vertex attribs [(x,y,u,v,q) ....], interleaved
-            const int STRIDE = 5*sizeof (GLfloat);
-
+            // configure the vao, vbo, generic vertex attribs, non interleaved
+            // configure the vao, vbo, generic vertex attribs [(x,y,u,v) ....], interleaved
+            const int STRIDE = 4*sizeof (GLfloat);
             gva = {{
-                { 0, GL_FLOAT, 2, OFFSET(0),
-                  STRIDE, _vbo_pos_uvs_qs.id()},
-                { 1, GL_FLOAT, 2, OFFSET(2*sizeof (GLfloat)),
-                  STRIDE, _vbo_pos_uvs_qs.id()},
-                { 2, GL_FLOAT, 1, OFFSET(4*sizeof (GLfloat)),
-                  STRIDE, _vbo_pos_uvs_qs.id()}
+                { 0, GL_FLOAT, 2, OFFSET(0),                    STRIDE, _vbo_xyuv.id()},
+                { 1, GL_FLOAT, 2, OFFSET(2*sizeof (GLfloat)),   STRIDE, _vbo_xyuv.id()},
             }};
 
-            // elements buffer
-            GLuint e[6] = { 0, 1, 2, 2, 3, 0 };
-            _vao.bind();
-            _ebo.uploadData(e, sizeof(e), GL_STATIC_DRAW);
-
 #ifdef SUPPORTS_VAO
+            _vao.bind();
+            _ebo.bind();
             program_type::point_generic_vertex_attributes(gva.data,
                      program_type::shader_vertex_attributes().data, GVA::size());
             vao_t::unbind();
@@ -79,45 +80,49 @@ namespace nitrogl {
 
         void render(const program_type & program, sampler_t & sampler, const data_type & data) const {
             const auto & d = data;
+
             program.use();
             // vertex uniforms
             program.updateModelMatrix(d.mat_model);
             program.updateViewMatrix(d.mat_view);
             program.updateProjectionMatrix(d.mat_proj);
             program.updateUVsTransformMatrix(d.mat_uvs_sampler);
-            program.update_has_missing_uvs(false);
-            program.update_has_missing_qs(false);
 
             // fragment uniforms
             program.update_backdrop_texture(d.backdrop_texture);
             program.update_window_size(d.window_width, d.window_height);
             program.updateOpacity(d.opacity);
+            program.update_has_missing_uvs(false);
+            program.update_has_missing_qs(true);
 
             // sampler uniforms
             sampler.upload_uniforms(program.id());
 
-//            glCheckError();
-
             static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
-            // upload data
-            _vbo_pos_uvs_qs.uploadData(d.pos_and_uvs_qs_interleaved,
-                                       d.size*FLOAT_SIZE,
-                                       GL_DYNAMIC_DRAW);
+            static constexpr auto VEC2_SIZE = GLsizeiptr (sizeof(vec2f));
+
+            // upload pos
+            _vbo_xyuv.uploadData(d.xyuv, d.xyuv_size*FLOAT_SIZE,
+                                GL_DYNAMIC_DRAW);
+
+            // upload indices
+            _ebo.uploadData(d.indices, GLsizeiptr(sizeof(GLuint))*d.indices_size,
+                            GL_DYNAMIC_DRAW);
 
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
+            glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
             vao_t::unbind();
 #else
             _ebo.bind();
             // this crates exccess 2 binds for vbos
-            program_type::point_generic_vertex_attributes(gva.data,
-                    program_type::shader_vertex_attributes().data, gva.size());
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
+            main_shader_program::point_generic_vertex_attributes(gva.data,
+                    main_shader_program::vertex_attributes().data, gva.size());
+            glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
             _program.disableLocations(va.data, va.size());
 #endif
-            // unuse shader
+            // un-use shader
             shader_program::unuse();
         }
 

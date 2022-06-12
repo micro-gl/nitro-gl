@@ -49,6 +49,7 @@
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
 #include "render_nodes/multi_render_node.h"
+#include "render_nodes/multi_render_node_interleaved_xyuv.h"
 #include "render_nodes/p4_render_node.h"
 #include "samplers/test_sampler.h"
 #include "_internal/main_shader_program.h"
@@ -93,6 +94,7 @@ namespace nitrogl {
         gl_texture _tex_backdrop;
         fbo_t _fbo;
         multi_render_node _node_multi;
+        multi_render_node_interleaved_xyuv _node_multi_interleaved;
         p4_render_node _node_p4;
         blend_mode_t _blend_mode;
         compositor_t _alpha_compositor;
@@ -123,6 +125,7 @@ namespace nitrogl {
             copy_to_backdrop();
             _node_p4.init();
             _node_multi.init();
+            _node_multi_interleaved.init();
             glCheckError();
         }
 
@@ -146,7 +149,7 @@ namespace nitrogl {
         // 1. create RBO with multisampling and attach it to color in fbo_t, and then blit to texture's fbo_t
         // if you are given texture, then draw into it
         explicit canvas(const gl_texture & tex) : _tex_backdrop(gl_texture::un_generated_dummy()),
-                                                  _fbo(), _node_multi(), _node_p4(), _window(),
+                                                  _fbo(), _node_multi(), _node_multi_interleaved(), _node_p4(), _window(),
                                                   _is_pre_mul_alpha(tex.is_premul_alpha()),
                                                   _blend_mode(blend_modes::Normal()),
                                                   _alpha_compositor(porter_duff::SourceOver()) {
@@ -157,7 +160,7 @@ namespace nitrogl {
         // if you got nothing, draw to bound fbo
         canvas(int width, int height, bool is_pre_mul_alpha=true) :
                 _tex_backdrop(gl_texture::un_generated_dummy()), _fbo(fbo_t::from_current()),
-                _node_multi(), _node_p4(), _window(), _is_pre_mul_alpha(is_pre_mul_alpha),
+                _node_multi(), _node_p4(), _node_multi_interleaved(), _window(), _is_pre_mul_alpha(is_pre_mul_alpha),
                 _blend_mode(blend_modes::Normal()), _alpha_compositor(porter_duff::SourceOver()) {
             internal_init(width, height);
         }
@@ -391,6 +394,71 @@ namespace nitrogl {
         }
 
         /**
+         * Draw a batch of indexed interleaved triangles.
+         * NOTES:
+         * 1. if uvs is null, we will compute them for you
+         * 2. if indices is null, indices will be inferred as well
+         * @param sampler the sampler to sample from
+         * @param type Type of triangles {Triangles, Fan, Strip}
+         * @param indices The indices array pointer
+         * @param indices_size The size of indices array
+         * @param xyuv The xyuv array pointer [(x,y,u,v), (x,y,u,v), ....]
+         * @param xyuv_size The size of xyuv array
+         * @param uvs (Optional) The UVs array pointer
+         * @param uvs_size (Optional) The size of uvs array
+         * @param transform vertices transform
+         * @param opacity Opacity
+         * @param transform_uv UVs transform
+         * @param u0/v0/u1/v1 UVs window
+         */
+        void drawInterleavedTriangles(sampler_t & sampler,
+                                    enum triangles::indices type,
+                                   const index * indices,
+                                   index indices_size,
+                                   const float * xyuv,
+                                   index xyuv_size,
+                                   mat3f transform = mat3f::identity(),
+                                   float opacity=1.0f,
+                                   mat3f transform_uv = mat3f::identity(),
+                                   float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv, indices, indices_size,
+                                                                              0, 1, 4);
+            prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
+                                 sampler.intrinsic_width, sampler.intrinsic_height,
+                                 u0, v0, u1, v1);
+
+            //
+            glViewport(0, 0, GLsizei(width()), GLsizei(height()));
+            _fbo.bind();
+            // inverted y projection, canvas coords to opengl
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0.0f,
+                                                        -1.0f, 1.0f);
+            // make the transform about its origin, a nice feature
+            transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
+            // buffers
+            auto & program = get_main_shader_program_for_sampler(sampler);
+            // data
+            multi_render_node_interleaved_xyuv::data_type data = {
+                    xyuv, indices,
+                    xyuv_size, indices_size,
+                    GLenum(type),
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv, //transform_uv,
+                    _tex_backdrop,
+                    width(), height(),
+                    opacity,
+            };
+            glDisable(GL_BLEND);
+            _node_multi_interleaved.render(program, sampler, data);
+            glEnable(GL_BLEND);
+            fbo_t::unbind();
+            copy_to_backdrop();
+        }
+
+        /**
          * Draw a Path Fill
          * @tparam path_container_template template of container used by path
          * @tparam tessellation_allocator the path allocator
@@ -593,6 +661,67 @@ namespace nitrogl {
                     indices.data(), indices.size(),
                     points, size,
                     nullptr, 0,
+                    transform,
+                    opacity,
+                    transform_uv,
+                    u0, v0, u1, v1);
+        }
+
+        /**
+         * Draw a Quadratic or Cubic bezier patch
+         *
+         * @tparam patch_type  { microtess::patch_type::BI_QUADRATIC, microtess::patch_type::BI_CUBIC } enum
+         * @tparam BlendMode    the blend mode struct
+         * @tparam PorterDuff   the alpha compositing struct
+         * @tparam antialias    enable/disable anti-aliasing, currently NOT supported
+         * @tparam debug        enable debug mode ?
+         * @tparam number1      number type for vertices
+         * @tparam number2      number type for uv coords
+         * @tparam Sampler      type of sampler
+         *
+         * @param sampler       sampler reference
+         * @param transform     3x3 matrix transform
+         * @param mesh          4*4*2=32 or 3*3*2=18 patch, flattened array of row-major (x, y) points
+         * @param uSamples      the number of samples to take along U axis
+         * @param vSamples      the number of samples to take along V axis
+         * @param u0            uv coord
+         * @param v0            uv coord
+         * @param u1            uv coord
+         * @param v1            uv coord
+         * @param opacity       opacity [0..255]
+         */
+        template<microtess::patch_type patch_type, class Allocator=nitrogl::std_rebind_allocator<>>
+        void drawBezierPatch(sampler_t & sampler,
+                             const float *mesh,
+                             unsigned uSamples=20, unsigned vSamples=20,
+                             mat3f transform = mat3f::identity(),
+                             float opacity = 1.0f,
+                             float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
+                             mat3f transform_uv = mat3f::identity(),
+                             const Allocator & allocator=Allocator()) {
+            using rebind_alloc_t1 = typename Allocator::template rebind<float>::other;
+            using rebind_alloc_t2 = typename Allocator::template rebind<index>::other;
+            rebind_alloc_t1 rebind_1{allocator};
+            rebind_alloc_t2 rebind_2{allocator};
+            dynamic_array<float, rebind_alloc_t1> v_a{rebind_1}; // vertices attributes
+            dynamic_array<index, rebind_alloc_t2> indices{rebind_2};
+
+            using tess= microtess::bezier_patch_tesselator<float, float,
+                                        dynamic_array<float, rebind_alloc_t1>,
+                                        dynamic_array<index, rebind_alloc_t2>>;
+            microtess::triangles::indices indices_type;
+            const auto window_size = tess::template compute<patch_type>(
+                    mesh, 2, uSamples, vSamples, true, true,
+                    v_a, indices, indices_type,
+                    u0, v0, u1, v1);
+            const index size = indices.size();
+            const index I_X=0, I_Y=1, I_U=2, I_V=3;
+            if(size==0) return;
+            const auto type_out = nitrogl::triangles::microtess_indices_type_to_nitrogl(indices_type);
+            drawInterleavedTriangles(
+                    sampler,
+                    type_out, indices.data(), indices.size(),
+                    v_a.data(), v_a.size(),
                     transform,
                     opacity,
                     transform_uv,

@@ -161,9 +161,9 @@ void main()
             static VAS vas = {{
                 {"VS_pos", 0,
                  shader_program::shader_attribute_component_type::Float},
-                 {"VS_uvs_sampler", 1,
+                {"VS_uvs_sampler", 1,
                   shader_program::shader_attribute_component_type::Float},
-                  {"VS_q_sampler", 2,
+                {"VS_q_sampler", 2,
                    shader_program::shader_attribute_component_type::Float},
             }};
             return vas;
