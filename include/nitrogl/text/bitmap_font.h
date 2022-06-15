@@ -32,7 +32,7 @@ namespace nitrogl {
          * @tparam bitmap_type the type of bitmap
          * @tparam MAX_CHARS max number of glyphs
          */
-        template<unsigned MAX_CHARS=100>
+        template<unsigned MAX_CHARS=128>
         class bitmap_font {
             static const int CHAR_MISSING = 0;
             static const int CHAR_TAB = 9;

@@ -42,16 +42,21 @@
 #include "functions/distance.h"
 #include "triangles.h"
 #include "polygons.h"
-//#include "text/bitmap_font.h"
+//tect
+#include "text/bitmap_font.h"
+#include "text/bitmap_glyph.h"
+#include "text/text_format.h"
 
+// ogl
 #include "ogl/gl_texture.h"
 #include "ogl/fbo.h"
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
+// render nodes
 #include "render_nodes/multi_render_node.h"
 #include "render_nodes/multi_render_node_interleaved_xyuv.h"
 #include "render_nodes/p4_render_node.h"
-#include "samplers/test_sampler.h"
+// internal
 #include "_internal/main_shader_program.h"
 #include "_internal/shader_compositor.h"
 #include "_internal/static_linear_allocator.h"
@@ -60,14 +65,14 @@
 #include "path.h"
 
 // samplers
-#include "samplers/sampler.h"
+#include "samplers/test_sampler.h"
 #include "samplers/shapes/circle_sampler.h"
 #include "samplers/shapes/rounded_rect_sampler.h"
 #include "samplers/color_sampler.h"
 #include "samplers/channel_sampler.h"
 #include "samplers/shapes/arc_sampler.h"
 #include "samplers/shapes/pie_sampler.h"
-
+// compositing
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
 
@@ -985,6 +990,17 @@ namespace nitrogl {
                      l_c, t_c, l_c + max_d, t_c + max_d,
                      opacity, transform_modified,
                      u0, v0, u1, v1, transform_uv);
+        }
+
+        template<unsigned max_chars, class Allocator=microtess::std_rebind_allocator<>>
+        void drawText(const char * text,
+                      nitrogl::text::bitmap_font<max_chars> & font,
+                      const color_t & color,
+                      nitrogl::text::text_format & format,
+                      int left, int top, int right, int bottom,
+                      float opacity=1.0f,
+                      const Allocator & allocator=Allocator()) {
+
         }
 
     };

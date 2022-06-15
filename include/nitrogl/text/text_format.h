@@ -23,8 +23,6 @@ namespace nitrogl {
         };
 
         struct text_format {
-            text_format()=default;
-
             int leading=0;
             // -1 means use the native size of the font, otherwise
             // it will be scaled.

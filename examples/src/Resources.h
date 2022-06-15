@@ -137,14 +137,14 @@ public:
         doc.parse<0>(loadTextFile(file_name));
     }
 
-    template<int max_chars=100>
-    static nitrogl::text::bitmap_font<max_chars> loadFont(const std::string &name,
+    template<int max_chars=128>
+    static nitrogl::text::bitmap_font<max_chars> loadFont(const std::string & font_folder,
                                                           bool pre_mul_alpha=false,
                                                           bool flip_vertically=true,
                                                           char r=8, char g=8, char b=8, char a=8,
                                                           bool is_unpacked=true) {
-        std::string font_path = "fonts/" + name + "/font.fnt";
-        std::string bitmap_path = "fonts/" + name + "/font.png";
+        std::string font_path = font_folder + "/font.fnt";
+        std::string bitmap_path = font_folder + "/font.png";
         nitrogl::text::bitmap_font<max_chars> font(loadTexture(font_path.data(),
                                                                pre_mul_alpha, flip_vertically,
                                                                r, g, b, a, is_unpacked));
