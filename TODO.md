@@ -32,13 +32,14 @@
 33. draw stroke fills - Done
 34. bezier patches - done
 
-
 35. draw text, bitmap fonts
+
 36. draw lines
-37. AA with rbos or filter shader
-38. investigate caching of uniforms per program
-39. draw text, sdf
-40. pointer/l-val/r-val to pointer function
+37. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
+38. AA with rbos or filter shader
+39. investigate caching of uniforms per program
+40. draw text, sdf
+41. pointer/l-val/r-val to pointer function
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,
