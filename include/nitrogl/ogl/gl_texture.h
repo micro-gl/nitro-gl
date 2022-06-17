@@ -117,6 +117,7 @@ namespace nitrogl {
         GLint _internalformat;
         GLsizei _width, _height;
         bool owner, _is_pre_mul_alpha;
+        GLint _slot;
 
 //        gl_texture(GLuint id, GLint internalformat, GLsizei width, GLsizei height, bool owner) :
 //            _id(id), _internalformat(internalformat), _width(width), _height(height), owner(owner) {};
@@ -127,32 +128,39 @@ namespace nitrogl {
          * @param internalformat Specify The pixel format to store the texture on GPU, usually GL_RGBA
          * @param width The width of the image data
          * @param height The height of the image data
+         * @param internalformat The Internal Format of pixel data in the GPU
+         * @param is_pre_mul_alpha Is this texture pre-multiplied alpha ?
+         * @param slot The slot index of the texture
          */
-        gl_texture(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA, bool is_pre_mul_alpha=false) :
+        gl_texture(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA, bool is_pre_mul_alpha=false,
+                   GLint slot=next_texture_unit_minus_zero()) :
             _id(0), _internalformat(internalformat), _width(width), _height(height), owner(true),
-            _is_pre_mul_alpha(is_pre_mul_alpha) {
+            _is_pre_mul_alpha(is_pre_mul_alpha), _slot(slot) {
             generate();
         }
         gl_texture(gl_texture && o)  noexcept : _id(o._id), _internalformat(o._internalformat),
-            _width(o._width), _height(o._height), owner(o.owner), _is_pre_mul_alpha(o._is_pre_mul_alpha) {
+            _width(o._width), _height(o._height), owner(o.owner), _is_pre_mul_alpha(o._is_pre_mul_alpha),
+            _slot(o._slot) {
             o._id=0; o.owner=false;
         }
         gl_texture & operator=(gl_texture && o) noexcept {
             if(this!=&o) {
                 del();
                 _id=o._id; _internalformat=o._internalformat; _is_pre_mul_alpha=o._is_pre_mul_alpha;
-                _width=o._width, _height=o._height; owner=o.owner;
+                _width=o._width, _height=o._height; owner=o.owner; _slot=o._slot;
                 o._id=0; o.owner=false;
             }
             return *this;
         }
         gl_texture(const gl_texture & o) : _id(o._id), _internalformat(o._internalformat),
-            _width(o._width), _height(o._height), owner(false), _is_pre_mul_alpha(o._is_pre_mul_alpha) {}
+            _width(o._width), _height(o._height), owner(false), _is_pre_mul_alpha(o._is_pre_mul_alpha),
+            _slot(o._slot) {}
         gl_texture & operator=(const gl_texture & o) {
             if(this!=&o) {
                 del();
                 _id = o._id; _internalformat = o._internalformat;
                 _width = o._width, _height = o._height; _is_pre_mul_alpha=o._is_pre_mul_alpha;
+                _slot=o._slot;
                 owner = false;
             }
             return *this;
@@ -183,7 +191,7 @@ namespace nitrogl {
                          GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
                          GLint wrap_s=GL_REPEAT, GLint wrap_t=GL_REPEAT) const {
             if(!wasGenerated()) return false;
-            use(0);
+            use(_slot);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
@@ -208,7 +216,7 @@ namespace nitrogl {
                             GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
                             GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
             if(!wasGenerated()) return false;
-            use(0);
+            use(_slot);
             glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
@@ -220,12 +228,12 @@ namespace nitrogl {
             return true;
         }
         void createMipMaps() const {
-            use(0);
+            use(_slot);
             glGenerateMipmap(GL_TEXTURE_2D);
         }
         void update_parameters(GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
                                GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
-            use(0);
+            use(_slot);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
@@ -236,13 +244,14 @@ namespace nitrogl {
         bool is_premul_alpha() const { return _is_pre_mul_alpha; }
         GLuint id() const { return _id; }
         static void unuse() { glBindTexture(GL_TEXTURE_2D, 0); }
-        void use() const { use(0); }
+        void use() const { use(_slot); }
         void use(int index) const {
             glActiveTexture(GL_TEXTURE0 + (unsigned int)index);
             glBindTexture(GL_TEXTURE_2D, _id);
         }
         GLsizei width() const { return _width; }
         GLsizei height() const { return _height; }
+        GLint slot() const { return _slot; }
         GLint internalFormat() const { return _internalformat; }
 
         void del() {

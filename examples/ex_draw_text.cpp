@@ -14,12 +14,12 @@ int main() {
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
 
-        //        font = Resources::loadFont<Bitmap32_ARRAY>("minecraft-20");
-        //    font = Resources::loadFont<Bitmap32_ARRAY>("digital_7-20");
-        auto font = Resources::loadFont("assets/fonts/roboto-thin-28");
-        //    font = Resources::loadFont<Bitmap32_ARRAY>("roboto-thin-14");
-        //    font = Resources::loadFont<Bitmap32_ARRAY>("mont-med-16");
-        //    font = Resources::loadFont<Bitmap32_ARRAY>("test");
+        //auto font = Resources::loadFont("assets/fonts/minecraft-20");
+        //auto font = Resources::loadFont("assets/fonts/digital_7-20");
+        //auto font = Resources::loadFont("assets/fonts/roboto-thin-28");
+        //auto font = Resources::loadFont("assets/fonts/roboto-thin-14");
+        //auto font = Resources::loadFont("assets/fonts/mont-med-16");
+        auto font = Resources::loadFont("assets/fonts/test");
 
         text::text_format format;
         // configure font
@@ -38,25 +38,21 @@ int main() {
         format.verticalAlign=text::vAlign::top;
         //format.wordWrap=text::wordWrap ::normal;
         format.wordWrap=text::wordWrap::break_word;
-        const char * text = "Welcome to micro{gl} Welcome to micro{gl} Welcome to "
-                            "micro{gl} Welcome to micro{gl} Welcome to micro{gl} ";
+        const char * text = "Welcome to nitro{gl} Welcome to nitro{gl} Welcome to "
+                            "nitro{gl} Welcome to nitro{gl} Welcome to nitro{gl} ";
 
         glCheckError();
         canvas canva(500,500);
-//        auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
-//        auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
-//        auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true), true);
-//        color_sampler sampler_color(1.0,0.0,0.0,1.0/2);
 
         auto render = [&]() {
             static float t = 0.0f;
             t+=0.005;
-            canva.clear(1.0, 1.0, 1.0, 1.0);
+            canva.clear(0.286f, 0.329f, 0.396f, 1.0f);
             canva.drawText(text,
                            font,
                            {1.0f, 1.0f, 1.0f, 1.0f},
                            format,
-                           0, 0, 300, 300);
+                           0, 0, 400, 400);
             glCheckError();
         };
 

@@ -71,11 +71,12 @@ public:
         } else if (channels==4) { // this for test
             using uint_t = unsigned int;
             const auto size = width*height;
-            auto p = data;
-            for (int ix = 0; ix < size; ++ix, p+=4) {
-                const uint_t a = p[3];
-                if(a==0) p[1]=255;
-            }
+//            auto p = data;
+//            for (int ix = 0; ix < size; ++ix, p+=4) {
+//                const uint_t a = p[3];
+//                if(a!=0)
+//                    p[1]=255;
+//            }
 
         }
         return info;
@@ -139,13 +140,13 @@ public:
 
     template<int max_chars=128>
     static nitrogl::text::bitmap_font<max_chars> loadFont(const std::string & font_folder,
-                                                          bool pre_mul_alpha=false,
-                                                          bool flip_vertically=true,
+                                                          bool pre_mul_alpha=true,
+                                                          bool flip_vertically=false,
                                                           char r=8, char g=8, char b=8, char a=8,
                                                           bool is_unpacked=true) {
         std::string font_path = font_folder + "/font.fnt";
         std::string bitmap_path = font_folder + "/font.png";
-        nitrogl::text::bitmap_font<max_chars> font(loadTexture(font_path.data(),
+        nitrogl::text::bitmap_font<max_chars> font(loadTexture(bitmap_path.data(),
                                                                pre_mul_alpha, flip_vertically,
                                                                r, g, b, a, is_unpacked));
         rapidxml::xml_document<> d;

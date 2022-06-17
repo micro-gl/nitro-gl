@@ -19,7 +19,7 @@ namespace nitrogl {
     namespace text {
         struct char_location {
             int x=0, y=0;
-            bitmap_glyph * character= nullptr;
+            const bitmap_glyph * character= nullptr;
         };
         struct text_layout_result {
             int scale=1; int precision=0;
@@ -79,7 +79,7 @@ namespace nitrogl {
                 gylphs[count_internal++] = bitmap_glyph{id, x, y, w, h, xOffset, yOffset, xAdvance};
             }
 
-            bitmap_glyph *charByID(int id) {
+            const bitmap_glyph *charByID(int id) const {
                 for (int ix = 0; ix < count_internal; ++ix)
                     if (gylphs[ix].id == id) return &gylphs[ix];
                 return nullptr;
@@ -89,7 +89,7 @@ namespace nitrogl {
                     const char * text, int numChars,
                     int box_width, int box_height,
                     text_format format,
-                    char_location * locations_buffer) {
+                    char_location * locations_buffer) const {
                 int PP=4;
                 text_layout_result result;
                 result.locations=locations_buffer;
@@ -116,7 +116,7 @@ namespace nitrogl {
                         {
                             bool lineFull = false;
                             int charID = text[ix];
-                            auto *bitmap_char = charByID(charID);
+                            const auto *bitmap_char = charByID(charID);
                             if (charID == CHAR_NEWLINE || charID == CHAR_CARRIAGE_RETURN)
                                 lineFull = true;
                             else {
