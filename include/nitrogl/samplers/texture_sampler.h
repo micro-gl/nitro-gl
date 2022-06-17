@@ -35,7 +35,7 @@ namespace nitrogl {
             // slot uniform, this will cause patching --> very bad performance
             microc::iterative_murmur<nitrogl::uintptr_type> murmur;
             murmur.begin_cast(main());
-            murmur.next(slot);
+            murmur.next(texture.slot());
             return murmur.end();
         }
 
@@ -59,8 +59,8 @@ namespace nitrogl {
         }
 
         void on_upload_uniforms_request(GLuint program) override {
-            texture.use(slot);
-            glUniform1i(get_uniform_location(program, "texture"), slot);
+            texture.use(texture.slot());
+            glUniform1i(get_uniform_location(program, "texture"), texture.slot());
         }
 
         void update_intrinsic(bool on) {
@@ -68,18 +68,16 @@ namespace nitrogl {
             intrinsic_height = on ? float(texture.height()) : -1.0f;
         }
 
-        GLint slot;
+//        GLint slot;
         gl_texture texture;
         explicit texture_sampler(const gl_texture & texture,
-                                 bool intrinsic=false,
-                                 GLint slot=gl_texture::next_texture_unit_minus_zero()) :
-                slot(slot), texture(texture), sampler_t() {
+                                 bool intrinsic=false) :
+                texture(texture), sampler_t() {
             update_intrinsic(intrinsic);
         }
         explicit texture_sampler(gl_texture && texture,
-                                 bool intrinsic=false,
-                                 GLint slot=gl_texture::next_texture_unit_minus_zero()) :
-                slot(slot), texture(nitrogl::traits::move(texture)), sampler_t() {
+                                 bool intrinsic=false) :
+                texture(nitrogl::traits::move(texture)), sampler_t() {
             update_intrinsic(intrinsic);
         }
     };

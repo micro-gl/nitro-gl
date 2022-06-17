@@ -28,7 +28,9 @@ int main() {
             static float t = 0.0f;
             t+=0.005;
             canva.clear(1.0, 1.0, 1.0, 1.0);
-            canva.drawRect(tex_sampler_3,
+            canva.drawRect(
+                           tex_sampler_3,
+//                           color_sampler{1.0f, 0.0f, 0.0f, 1.0f},
                            100, 100, 200,  200,
                            1.0f,
                            mat3f::rotation(nitrogl::math::deg_to_rad(t), 50,50));

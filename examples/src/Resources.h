@@ -9,6 +9,7 @@
 #include "../libs/stb_image/stb_image.h"
 #include "../libs/rapidxml/rapidxml.hpp"
 #include <nitrogl/ogl/gl_texture.h>
+#include <nitrogl/text/bitmap_font.h>
 
 using std::cout;
 using std::endl;
@@ -53,8 +54,7 @@ public:
                                                bool pre_mul_alpha=true,
                                                bool flip_vertically=false) {
         int width, height, channels;
-        if(flip_vertically)
-            stbi_set_flip_vertically_on_load(true);
+        stbi_set_flip_vertically_on_load(flip_vertically);
         unsigned char * data = stbi_load_from_memory(byte_array, length_bytes, &width, &height,
                                                      &channels, 0);
         image_info_t info {data, width, height, channels, pre_mul_alpha };
@@ -71,35 +71,46 @@ public:
         } else if (channels==4) { // this for test
             using uint_t = unsigned int;
             const auto size = width*height;
-            auto p = data;
-            for (int ix = 0; ix < size; ++ix, p+=4) {
-                const uint_t a = p[3];
-                if(a==0) p[1]=255;
-            }
+//            auto p = data;
+//            for (int ix = 0; ix < size; ++ix, p+=4) {
+//                const uint_t a = p[3];
+//                if(a!=0)
+//                    p[1]=255;
+//            }
 
         }
         return info;
     }
 
     static
-    nitrogl::gl_texture loadTexture(const char * path, bool pre_mul_alpha=true, bool flip_vertically = true) {
-        auto img = loadImageFromCompressedPath(path, pre_mul_alpha, flip_vertically);
-        auto tex = nitrogl::gl_texture::from_unpacked_image(img.width, img.height, img.data, 8, 8, 8,
-                                                        img.channels==4?8:0, pre_mul_alpha);
-        delete img.data;
-        return tex;
+    nitrogl::gl_texture loadTexture(const char * path, bool pre_mul_alpha=true, bool flip_vertically=true,
+                                    char r=8, char g=8, char b=8, char a=8, bool is_unpacked=true) {
+        auto buf = loadFileAsByteArray(path);
+        return loadTextureFromCompressedMemory(reinterpret_cast<unsigned char *>(buf.data),
+                                               buf.size, pre_mul_alpha, flip_vertically, r,g,b,a, is_unpacked);
     }
 
     static
     nitrogl::gl_texture loadTextureFromCompressedMemory(unsigned char *byte_array,
                                                unsigned int length_bytes,
                                                bool pre_mul_alpha=true,
-                                               bool flip_vertically=false) {
+                                               bool flip_vertically=false,
+                                               char r=8, char g=8, char b=8, char a=8,
+                                               bool is_unpacked=true) {
         auto img = loadImageFromCompressedMemory(byte_array, length_bytes, pre_mul_alpha, flip_vertically);
-        auto tex = nitrogl::gl_texture::from_unpacked_image(img.width, img.height, img.data, 8, 8, 8,
-                                                            img.channels==4?8:0,pre_mul_alpha);
-        delete img.data;
-        return tex;
+        if(is_unpacked) {
+            auto tex = nitrogl::gl_texture::from_unpacked_image(img.width, img.height, img.data,
+                                                                r,g,b,img.channels==4?a:0,
+                                                                pre_mul_alpha);
+            delete img.data;
+            return tex;
+        } else { // tightly packed
+            auto tex = nitrogl::gl_texture::from_packed_image(img.width, img.height, img.data,
+                                                              r,g,b,img.channels==4?a:0,
+                                                              false, pre_mul_alpha);
+            delete img.data;
+            return tex;
+        }
     }
 
     static buffer_t loadFileAsByteArray(const char * file_name, unsigned int pad=0) {
@@ -127,42 +138,45 @@ public:
         doc.parse<0>(loadTextFile(file_name));
     }
 
-//    template<typename BITMAP>
-//    static microgl::text::bitmap_font<BITMAP> loadFont(const std::string &name) {
-//        microgl::text::bitmap_font<BITMAP> font;
-//        stbi_set_flip_vertically_on_load(false);
-//        rapidxml::xml_document<> d;
-//        loadXML("fonts/"+name+"/font.fnt", d);
-//        auto * f= d.first_node("font");
-//        auto * f_info= f->first_node("info");
-//        auto * f_common= f->first_node("common");
-//        auto * f_chars= f->first_node("chars");
-//        strncpy(font.name, f_info->first_attribute("face")->value(), 10);
-//        font.nativeSize=atoi(f_info->first_attribute("size")->value());
-//        font.lineHeight=atoi(f_common->first_attribute("lineHeight")->value());
-//        font.baseline=atoi(f_common->first_attribute("base")->value());
-//        font.width=atoi(f_common->first_attribute("scaleW")->value());
-//        font.height=atoi(f_common->first_attribute("scaleH")->value());
-//        font.glyphs_count=atoi(f_chars->first_attribute("count")->value());
-//        auto * iter= f_chars->first_node("char");
-//        do {
-//            int id=atoi(iter->first_attribute("id")->value());
-//            int x=atoi(iter->first_attribute("x")->value());
-//            int y=atoi(iter->first_attribute("y")->value());
-//            int w=atoi(iter->first_attribute("width")->value());
-//            int h=atoi(iter->first_attribute("height")->value());
-//            int xoffset=atoi(iter->first_attribute("xoffset")->value());
-//            int yoffset=atoi(iter->first_attribute("yoffset")->value());
-//            int xadvance=atoi(iter->first_attribute("xadvance")->value());
-//            font.addChar(id, x, y, w, h, xoffset, yoffset, xadvance);
-//            iter = iter->next_sibling();
-//        } while (iter);
-//        // load bitmap
-//        auto img_font = loadImageFromCompressedPath("fonts/"+name+"/font.png");
-//        auto *bmp_font = new BITMAP(img_font.data, img_font.width, img_font.height);
-//        font.bitmap=bmp_font;
-//        stbi_set_flip_vertically_on_load(true);
-//        return font;
-//    }
+    template<int max_chars=128>
+    static nitrogl::text::bitmap_font<max_chars> loadFont(const std::string & font_folder,
+                                                          bool pre_mul_alpha=true,
+                                                          bool flip_vertically=false,
+                                                          char r=8, char g=8, char b=8, char a=8,
+                                                          bool is_unpacked=true) {
+        std::string font_path = font_folder + "/font.fnt";
+        std::string bitmap_path = font_folder + "/font.png";
+        nitrogl::text::bitmap_font<max_chars> font(loadTexture(bitmap_path.data(),
+                                                               pre_mul_alpha, flip_vertically,
+                                                               r, g, b, a, is_unpacked));
+        rapidxml::xml_document<> d;
+        loadXML(font_path.data(), d);
+        auto * f= d.first_node("font");
+        auto * f_info= f->first_node("info");
+        auto * f_common= f->first_node("common");
+        auto * f_chars= f->first_node("chars");
+        strncpy(font.name, f_info->first_attribute("face")->value(), 10);
+        font.nativeSize=atoi(f_info->first_attribute("size")->value());
+        font.lineHeight=atoi(f_common->first_attribute("lineHeight")->value());
+        font.baseline=atoi(f_common->first_attribute("base")->value());
+        font.width=atoi(f_common->first_attribute("scaleW")->value());
+        font.height=atoi(f_common->first_attribute("scaleH")->value());
+        font.glyphs_count=atoi(f_chars->first_attribute("count")->value());
+        auto * iter= f_chars->first_node("char");
+        do {
+            int id=atoi(iter->first_attribute("id")->value());
+            int x=atoi(iter->first_attribute("x")->value());
+            int y=atoi(iter->first_attribute("y")->value());
+            int w=atoi(iter->first_attribute("width")->value());
+            int h=atoi(iter->first_attribute("height")->value());
+            int xoffset=atoi(iter->first_attribute("xoffset")->value());
+            int yoffset=atoi(iter->first_attribute("yoffset")->value());
+            int xadvance=atoi(iter->first_attribute("xadvance")->value());
+            font.addChar(id, x, y, w, h, xoffset, yoffset, xadvance);
+            iter = iter->next_sibling();
+        } while (iter);
+
+        return font;
+    }
 
 };

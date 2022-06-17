@@ -31,14 +31,18 @@
 32. draw paths fills - DONE
 33. draw stroke fills - Done
 34. bezier patches - done
+35. draw text, bitmap fonts - done
+36. tint sampler - done
 
-
-35. draw text, bitmap fonts
-36. draw lines
-37. AA with rbos or filter shader
-38. investigate caching of uniforms per program
-39. draw text, sdf
-40. pointer/l-val/r-val to pointer function
+37. draw lines
+38. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
+39. AA with rbos or filter shader
+40. const_cast with fake const samplers to catch rval refs without overloading
+41. convert refs to pointer template so we can forward besides pointer to multi sampler
+42. investigate caching of uniforms per program
+43. text measure compute
+44. draw text, sdf version
+45. pointer/l-val/r-val to pointer function
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

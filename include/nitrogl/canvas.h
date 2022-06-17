@@ -42,16 +42,21 @@
 #include "functions/distance.h"
 #include "triangles.h"
 #include "polygons.h"
-//#include "text/bitmap_font.h"
+//tect
+#include "text/bitmap_font.h"
+#include "text/bitmap_glyph.h"
+#include "text/text_format.h"
 
+// ogl
 #include "ogl/gl_texture.h"
 #include "ogl/fbo.h"
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
+// render nodes
 #include "render_nodes/multi_render_node.h"
 #include "render_nodes/multi_render_node_interleaved_xyuv.h"
 #include "render_nodes/p4_render_node.h"
-#include "samplers/test_sampler.h"
+// internal
 #include "_internal/main_shader_program.h"
 #include "_internal/shader_compositor.h"
 #include "_internal/static_linear_allocator.h"
@@ -60,14 +65,17 @@
 #include "path.h"
 
 // samplers
-#include "samplers/sampler.h"
+#include "samplers/test_sampler.h"
+#include "samplers/texture_sampler.h"
 #include "samplers/shapes/circle_sampler.h"
 #include "samplers/shapes/rounded_rect_sampler.h"
 #include "samplers/color_sampler.h"
+#include "samplers/tint_sampler.h"
 #include "samplers/channel_sampler.h"
 #include "samplers/shapes/arc_sampler.h"
 #include "samplers/shapes/pie_sampler.h"
 
+// compositing
 #include "compositing/porter_duff.h"
 #include "compositing/blend_modes.h"
 
@@ -411,7 +419,7 @@ namespace nitrogl {
          * @param transform_uv UVs transform
          * @param u0/v0/u1/v1 UVs window
          */
-        void drawInterleavedTriangles(sampler_t & sampler,
+        void drawInterleavedTriangles(const sampler_t & sampler,
                                     enum triangles::indices type,
                                    const index * indices,
                                    index indices_size,
@@ -437,7 +445,7 @@ namespace nitrogl {
             // make the transform about its origin, a nice feature
             transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
             // buffers
-            auto & program = get_main_shader_program_for_sampler(sampler);
+            auto & program = get_main_shader_program_for_sampler(const_cast<sampler_t &>(sampler));
             // data
             multi_render_node_interleaved_xyuv::data_type data = {
                     xyuv, indices,
@@ -452,7 +460,7 @@ namespace nitrogl {
                     opacity,
             };
             glDisable(GL_BLEND);
-            _node_multi_interleaved.render(program, sampler, data);
+            _node_multi_interleaved.render(program, const_cast<sampler_t &>(sampler), data);
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
@@ -592,7 +600,7 @@ namespace nitrogl {
          * @param v1            uv coord
          */
         template <nitrogl::polygons hint=nitrogl::polygons::SIMPLE,
-                  class tessellation_allocator=microtess::std_rebind_allocator<>>
+                  class tessellation_allocator=nitrogl::std_rebind_allocator<>>
         void drawPolygon(sampler_t & sampler,
                          const vec2f * points,
                          index size,
@@ -728,7 +736,7 @@ namespace nitrogl {
                     u0, v0, u1, v1);
         }
 
-        void drawRect(sampler_t & sampler,
+        void drawRect(const sampler_t & sampler,
                       float left, float top, float right, float bottom,
                       float opacity = 1.0f,
                       mat3f transform = mat3f::identity(),
@@ -752,7 +760,7 @@ namespace nitrogl {
                     right, top,    1.0f, 1.0f, 1.0f,
                     left,  top,    0.0f, 1.0f, 1.0f,
             };
-            auto & program = get_main_shader_program_for_sampler(sampler);
+            auto & program = get_main_shader_program_for_sampler(const_cast<sampler_t &>(sampler));
             // data
             p4_render_node::data_type data = {
                     puvs, 20,
@@ -765,7 +773,7 @@ namespace nitrogl {
                     opacity
             };
             glDisable(GL_BLEND);
-            _node_p4.render(program, sampler, data);
+            _node_p4.render(program, const_cast<sampler_t &>(sampler), data);
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
@@ -985,6 +993,116 @@ namespace nitrogl {
                      l_c, t_c, l_c + max_d, t_c + max_d,
                      opacity, transform_modified,
                      u0, v0, u1, v1, transform_uv);
+        }
+
+        template<unsigned max_chars, class Allocator=nitrogl::std_rebind_allocator<>>
+        void drawText(const char * text,
+                      const nitrogl::text::bitmap_font<max_chars> & font,
+                      const color_t & color,
+                      nitrogl::text::text_format & format,
+                      int left, int top, int right, int bottom,
+                      mat3f transform = mat3f::identity(),
+                      float opacity=1.0f,
+                      const Allocator & allocator=Allocator()) {
+            auto old=clipRect(); updateClipRect(left, top, right, bottom);
+            unsigned int text_size=0;
+            { const char * iter=text; while(*iter++!= '\0' && ++text_size); }
+
+            // setup allocators
+            using char_location_allocator_t = typename Allocator::template
+                    rebind<nitrogl::text::char_location>::other;
+            using index_allocator_t = typename Allocator::template rebind<index>::other;
+            using float_allocator_t = typename Allocator::template rebind<float>::other;
+
+            char_location_allocator_t char_location_allocator{allocator};
+            index_allocator_t index_allocator{allocator};
+            float_allocator_t float_allocator{allocator};
+
+            // allocate char location buffer
+            nitrogl::text::char_location * char_loc_buffer = char_location_allocator.allocate(text_size);
+
+            // layout text
+            const auto result=font.layout_text(text, text_size, right-left,
+                                               bottom-top, format, char_loc_buffer);
+            unsigned layout_size= result.end_index;
+            const int P=result.precision, S=(result.scale)/(1<<P);
+            const bool has_scaled=S!=1<<P;
+
+            auto blah = sizeof (nitrogl::text::char_location);
+
+            // allocate render buffers
+            const auto indices_size = layout_size * 6;
+            const auto xyuvs_size = layout_size * 4 * 4;
+            index * indices = index_allocator.allocate(indices_size); // 6 indices per quad, we use triangles type
+            float * xyuvs = float_allocator.allocate(xyuvs_size); // interleaved xyuv
+            triangles::indices type = triangles::indices::TRIANGLES;
+
+            // tessellate quads to triangles
+            {
+                const auto tess_quad = [&](const nitrogl::text::char_location & l, int index) {
+                    // p0  p2
+                    // |A /|
+                    // | / |
+                    // |/ B|
+                    // p1  p3
+                    int ix = index * 4 * 4;
+                    //
+                    float ll = float((left<<P) + l.x)/(1<<P), tt = float((top<<P) + l.y)/(1<<P);
+                    float rr = ll + l.character->width*S, bb = tt + l.character->height*S;
+//                    float ll = 100, tt=100, rr=400, bb=400;
+                    float u0 = float(l.character->x)/font.bitmap.width();
+                    float v0 = float(l.character->y)/font.bitmap.height();
+                    float u1 = float(l.character->x+l.character->width)/font.bitmap.width();
+                    float v1 = float(l.character->y+l.character->height)/font.bitmap.height();
+                    // p0
+                    int W = 0;
+                    xyuvs[ix + W + 0] = ll; xyuvs[ix + W + 1] = tt;
+                    xyuvs[ix + W + 2] = u0; xyuvs[ix + W + 3] = v0; W+=4;
+                    // p1
+                    xyuvs[ix + W + 0] = ll; xyuvs[ix + W + 1] = bb;
+                    xyuvs[ix + W + 2] = u0; xyuvs[ix + W + 3] = v1; W+=4;
+                    // p2
+                    xyuvs[ix + W + 0] = rr; xyuvs[ix + W + 1] = tt;
+                    xyuvs[ix + W + 2] = u1; xyuvs[ix + W + 3] = v0; W+=4;
+                    // p3
+                    xyuvs[ix + W + 0] = rr; xyuvs[ix + W + 1] = bb;
+                    xyuvs[ix + W + 2] = u1; xyuvs[ix + W + 3] = v1;
+                    // indices
+                    // triangle A: 0-1-2
+                    indices[index * 6 + 0] = index * 4 + 0;
+                    indices[index * 6 + 1] = index * 4 + 1;
+                    indices[index * 6 + 2] = index * 4 + 2;
+                    // triangle B: 3-2-1
+                    indices[index * 6 + 3] = index * 4 + 3;
+                    indices[index * 6 + 4] = index * 4 + 2;
+                    indices[index * 6 + 5] = index * 4 + 1;
+                };
+
+                for (int ix = 0; ix < layout_size; ++ix) {
+                    const auto & l = char_loc_buffer[ix];
+                    // tessellate a char quad into two triangles
+                    tess_quad(l, ix);
+                }
+            }
+
+            // setup text sampler
+            texture_sampler tex {font.bitmap, false};
+            tint_sampler tint { color, &tex };
+            //drawRect(tex, 100, 100, 400,  400);
+
+            // draw interleaved triangles
+            drawInterleavedTriangles(tint,
+                                     type,
+                                     indices, indices_size,
+                                     xyuvs, xyuvs_size,
+                                     transform, opacity);
+
+            updateClipRect(old.left, old.top, old.right, old.bottom);
+
+            // de-allocate memory
+            char_location_allocator.deallocate(char_loc_buffer);
+            index_allocator.deallocate(indices);
+            float_allocator.deallocate(xyuvs);
         }
 
     };
