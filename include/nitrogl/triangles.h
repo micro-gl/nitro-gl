@@ -25,6 +25,10 @@ namespace nitrogl {
             TRIANGLES=GL_TRIANGLES,
             TRIANGLES_FAN=GL_TRIANGLE_FAN,
             TRIANGLES_STRIP=GL_TRIANGLE_STRIP,
+            LINE_STRIP=GL_LINE_STRIP,
+            LINE_LOOP=GL_LINE_LOOP,
+            LINES=GL_LINES,
+            POINTS=GL_POINTS
         };
 
         inline indices microtess_indices_type_to_nitrogl(microtess::triangles::indices type) {
@@ -132,6 +136,10 @@ namespace nitrogl {
                     }
                     break;
                 }
+                default: {
+                    // todo: throw error
+                    return;
+                }
             }
 #undef IND
         }
@@ -139,15 +147,18 @@ namespace nitrogl {
         /**
          * Compute triangles bbox
          * @param vertices pointer to array of vertices
+         * @param size_vertices size of vertices (if not null), or vertices (if indices are null)
          * @param indices (Optional) pointer to array of indices to vertices array
-         * @param size size of indices (if not null), or vertices (if indices are null)
+         * @param size_indices (Optional) size of indices (if not null), or vertices (if indices are null)
          * @return bounding box rectangle
          */
         rectf triangles_bbox(const vec2f *vertices,
+                             const index size_vertices,
                             const index *indices,
-                            const index size) {
+                            const index size_indices) {
             const auto & ref_base = indices ? vertices[indices[0]] : vertices[0];
             rectf rect{ ref_base.x, ref_base.y, ref_base.x, ref_base.y };
+            const auto size = indices==nullptr ? size_vertices : size_indices;
             for (unsigned ix = 0; ix < size; ++ix) { // compute bounding box
                 const auto & pt = indices ? vertices[indices[ix]] : vertices[ix];
                 rect.left = functions::min(rect.left, pt.x);
@@ -160,18 +171,21 @@ namespace nitrogl {
 
         /**
          * Compute triangles bbox
-         * @param vertices pointer to array of vertices
+         * @param attribs pointer to array of vertices
+         * @param size_attribs (Optional) will be used if indices is null
          * @param indices (Optional) pointer to array of indices to vertices array
-         * @param size size of indices (if not null), or vertices (if indices are null)
+         * @param size_indices size of indices (if not null), or vertices (if indices are null)
          * @return bounding box rectangle
          */
         rectf triangles_bbox_from_attribs(const float *attribs,
-                             const index *indices,
-                             const index size,
-                             index x_idx, index y_idx, index window_size) {
+                                          const index size_attribs,
+                                          const index *indices,
+                                          const index size_indices,
+                                          index x_idx, index y_idx, index window_size) {
             const auto & ref_base = indices ? attribs[indices[0]] : attribs[0];
             rectf rect{ attribs[x_idx], attribs[y_idx], attribs[x_idx], attribs[y_idx] };
-            for (unsigned ix = 0; ix < size; ++ix) { // compute bounding box
+            const auto size = indices==nullptr ? size_attribs : size_indices;
+            for (unsigned ix = 0; ix < size_indices; ++ix) { // compute bounding box
                 const float * window = attribs + (indices ? indices[ix] : ix)*window_size;
                 rect.left = functions::min(rect.left, window[x_idx]);
                 rect.top = functions::min(rect.top, window[y_idx]);
