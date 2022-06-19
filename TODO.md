@@ -33,16 +33,23 @@
 34. bezier patches - done
 35. draw text, bitmap fonts - done
 36. tint sampler - done
+38. draw lines - done
+39. test gldrawArrays for non-indexed - done
+40. convex/fan dont need to allocate indices buffer - done
 
-37. draw lines
-38. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
-39. AA with rbos or filter shader
-40. const_cast with fake const samplers to catch rval refs without overloading
-41. convert refs to pointer template so we can forward besides pointer to multi sampler
-42. investigate caching of uniforms per program
-43. text measure compute
-44. draw text, sdf version
-45. pointer/l-val/r-val to pointer function
+
+39. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
+40. compatibility with older than 3.0 opengl (attributes in/out, texture/2d etc...)
+41. AA with rbos or filter shader
+42. const_cast with fake const samplers to catch rval refs without overloading
+43. convert refs to pointer template so we can forward besides pointer to multi sampler
+44. investigate caching of uniforms per program
+45. text measure compute
+46. draw text, sdf version
+47. pointer/l-val/r-val to pointer function
+48. add docs for canvas functions
+49. clean up other_functions from samplers
+50. explore drawing 3d objects, might need new shader type and pool and render node
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

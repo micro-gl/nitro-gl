@@ -20,11 +20,15 @@
 
 namespace nitrogl {
     namespace triangles {
-
+        using index = GLuint;
         enum indices {
             TRIANGLES=GL_TRIANGLES,
             TRIANGLES_FAN=GL_TRIANGLE_FAN,
             TRIANGLES_STRIP=GL_TRIANGLE_STRIP,
+            LINE_STRIP=GL_LINE_STRIP,
+            LINE_LOOP=GL_LINE_LOOP,
+            LINES=GL_LINES,
+            POINTS=GL_POINTS
         };
 
         inline indices microtess_indices_type_to_nitrogl(microtess::triangles::indices type) {
@@ -46,54 +50,6 @@ namespace nitrogl {
                     break;
                 }
             }
-        }
-
-        enum class TriangleEdgeType { Top, Left, Right };
-        enum class orientation { cw, ccw };
-        enum class face_culling { cw, ccw, none };
-        struct top_left_t { bool first = false, second = false, third = false; };
-
-        template<typename number>
-        bool classifyTopLeftEdge(const bool CCW,
-                                 const number &p0x, const number &p0y,
-                                 const number &p1x, const number &p1y) {
-            bool res;
-            if (CCW) res = (p1y>p0y) || (p1y==p0y && (p1x<=p0x));
-            else res = (p0y>p1y) || (p1y==p0y && (p0x<=p1x));
-            return res;
-        }
-
-        template<typename number>
-        top_left_t classifyTopLeftEdges(const bool CCW,
-                                        const number &p0x, const number &p0y,
-                                        const number &p1x, const number &p1y,
-                                        const number &p2x, const number &p2y) {
-            top_left_t res;
-            res.first = classifyTopLeftEdge<number>(CCW, p0x, p0y, p1x, p1y);
-            res.second = classifyTopLeftEdge<number>(CCW, p1x, p1y, p2x, p2y);
-            res.third = classifyTopLeftEdge<number>(CCW, p2x, p2y, p0x, p0y);
-            return res;
-        }
-
-        using boundary_info = unsigned char;
-        using index = unsigned int;
-
-        static bool classify_boundary_info(const boundary_info &info, unsigned int edge_index) {
-            switch (edge_index) {
-                case 0: return (info & 0b10000000)>>7;
-                case 1: return (info & 0b01000000)>>6;
-                case 2: return (info & 0b00100000)>>5;
-                default: return false;
-            }
-        }
-
-        static inline boundary_info create_boundary_info(bool first, bool second, bool third) {
-            boundary_info zero = 0b00000000;
-            boundary_info result = zero;
-            result |= first     ? 0b10000000 : zero;
-            result |= second    ? 0b01000000 : zero;
-            result |= third     ? 0b00100000 : zero;
-            return result;
         }
 
         /**
@@ -132,6 +88,10 @@ namespace nitrogl {
                     }
                     break;
                 }
+                default: {
+                    // todo: throw error
+                    return;
+                }
             }
 #undef IND
         }
@@ -139,17 +99,21 @@ namespace nitrogl {
         /**
          * Compute triangles bbox
          * @param vertices pointer to array of vertices
+         * @param size_vertices size of vertices (if not null), or vertices (if indices are null)
          * @param indices (Optional) pointer to array of indices to vertices array
-         * @param size size of indices (if not null), or vertices (if indices are null)
+         * @param size_indices (Optional) size of indices (if not null), or vertices (if indices are null)
          * @return bounding box rectangle
          */
         rectf triangles_bbox(const vec2f *vertices,
+                             const index size_vertices,
                             const index *indices,
-                            const index size) {
-            const auto & ref_base = indices ? vertices[indices[0]] : vertices[0];
+                            const index size_indices) {
+            const bool has_indices = indices!=nullptr and size_indices!=0;
+            const auto & ref_base = has_indices ? vertices[indices[0]] : vertices[0];
             rectf rect{ ref_base.x, ref_base.y, ref_base.x, ref_base.y };
+            const auto size = has_indices ? size_indices : size_vertices;
             for (unsigned ix = 0; ix < size; ++ix) { // compute bounding box
-                const auto & pt = indices ? vertices[indices[ix]] : vertices[ix];
+                const auto & pt = has_indices ? vertices[indices[ix]] : vertices[ix];
                 rect.left = functions::min(rect.left, pt.x);
                 rect.top = functions::min(rect.top, pt.y);
                 rect.right = functions::max(rect.right, pt.x);
@@ -160,19 +124,23 @@ namespace nitrogl {
 
         /**
          * Compute triangles bbox
-         * @param vertices pointer to array of vertices
+         * @param attribs pointer to array of vertices
+         * @param size_attribs (Optional) will be used if indices is null
          * @param indices (Optional) pointer to array of indices to vertices array
-         * @param size size of indices (if not null), or vertices (if indices are null)
+         * @param size_indices size of indices (if not null), or vertices (if indices are null)
          * @return bounding box rectangle
          */
         rectf triangles_bbox_from_attribs(const float *attribs,
-                             const index *indices,
-                             const index size,
-                             index x_idx, index y_idx, index window_size) {
-            const auto & ref_base = indices ? attribs[indices[0]] : attribs[0];
+                                          const index size_attribs,
+                                          const index *indices,
+                                          const index size_indices,
+                                          index x_idx, index y_idx, index window_size) {
+            const bool has_indices = indices!=nullptr and size_indices!=0;
+            const auto & ref_base = has_indices ? attribs[indices[0]] : attribs[0];
             rectf rect{ attribs[x_idx], attribs[y_idx], attribs[x_idx], attribs[y_idx] };
+            const auto size = !has_indices ? size_attribs : size_indices;
             for (unsigned ix = 0; ix < size; ++ix) { // compute bounding box
-                const float * window = attribs + (indices ? indices[ix] : ix)*window_size;
+                const float * window = attribs + (has_indices ? indices[ix] : ix)*window_size;
                 rect.left = functions::min(rect.left, window[x_idx]);
                 rect.top = functions::min(rect.top, window[y_idx]);
                 rect.right = functions::max(rect.right, window[x_idx]);
@@ -180,7 +148,5 @@ namespace nitrogl {
             }
             return rect;
         }
-
-
     };
 }

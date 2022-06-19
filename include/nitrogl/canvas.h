@@ -14,26 +14,25 @@
 #include "traits.h"
 #include "channels.h"
 #include "math.h"
-//#include "stdint.h"
-//#include "porter_duff/None.h"
-//#include "compositing/Normal.h"
+
 #ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
-//#include "micro-tess/include/micro-tess/triangles.h"
 #include "micro-tess/include/micro-tess/path.h"
 #include "micro-tess/include/micro-tess/monotone_polygon_triangulation.h"
 #include "micro-tess/include/micro-tess/fan_triangulation.h"
 #include "micro-tess/include/micro-tess/ear_clipping_triangulation.h"
 #include "micro-tess/include/micro-tess/bezier_patch_tesselator.h"
+#include "micro-tess/include/micro-tess/curve_divider.h"
 #include "micro-tess/include/micro-tess/dynamic_array.h"
 #else
-//#include <micro-tess/triangles.h>
 #include <micro-tess/path.h>
 #include <micro-tess/monotone_polygon_triangulation.h>
-#include  <micro-tess/fan_triangulation.h>
+#include <micro-tess/fan_triangulation.h>
 #include <micro-tess/ear_clipping_triangulation.h>
 #include <micro-tess/bezier_patch_tesselator.h>
+#include <micro-tess/curve_divider.h>
 #include <micro-tess/dynamic_array.h>
 #endif
+
 #include "functions/minmax.h"
 #include "functions/clamp.h"
 #include "functions/swap.h"
@@ -42,6 +41,7 @@
 #include "functions/distance.h"
 #include "triangles.h"
 #include "polygons.h"
+
 //tect
 #include "text/bitmap_font.h"
 #include "text/bitmap_glyph.h"
@@ -52,10 +52,12 @@
 #include "ogl/fbo.h"
 #include "ogl/vbo.h"
 #include "ogl/ebo.h"
+
 // render nodes
 #include "render_nodes/multi_render_node.h"
 #include "render_nodes/multi_render_node_interleaved_xyuv.h"
 #include "render_nodes/p4_render_node.h"
+
 // internal
 #include "_internal/main_shader_program.h"
 #include "_internal/shader_compositor.h"
@@ -80,6 +82,9 @@
 #include "compositing/blend_modes.h"
 
 namespace nitrogl {
+
+    // draw mode enables to change the draw mode
+    enum class draw_mode { fill=GL_FILL, line=GL_LINE, point=GL_POINT };
 
     class canvas {
     public:
@@ -106,6 +111,7 @@ namespace nitrogl {
         p4_render_node _node_p4;
         blend_mode_t _blend_mode;
         compositor_t _alpha_compositor;
+        draw_mode _draw_mode;
 
         static static_alloc get_static_allocator() {
             // static allocator, shared by all canvases
@@ -134,6 +140,7 @@ namespace nitrogl {
             _node_p4.init();
             _node_multi.init();
             _node_multi_interleaved.init();
+            updateDrawMode(_draw_mode);
             glCheckError();
         }
 
@@ -160,7 +167,8 @@ namespace nitrogl {
                                                   _fbo(), _node_multi(), _node_multi_interleaved(), _node_p4(), _window(),
                                                   _is_pre_mul_alpha(tex.is_premul_alpha()),
                                                   _blend_mode(blend_modes::Normal()),
-                                                  _alpha_compositor(porter_duff::SourceOver()) {
+                                                  _alpha_compositor(porter_duff::SourceOver()),
+                                                  _draw_mode(draw_mode::fill) {
             _fbo.attachTexture(tex);
             internal_init(tex.width(), tex.height());
         }
@@ -169,8 +177,19 @@ namespace nitrogl {
         canvas(int width, int height, bool is_pre_mul_alpha=true) :
                 _tex_backdrop(gl_texture::un_generated_dummy()), _fbo(fbo_t::from_current()),
                 _node_multi(), _node_p4(), _node_multi_interleaved(), _window(), _is_pre_mul_alpha(is_pre_mul_alpha),
-                _blend_mode(blend_modes::Normal()), _alpha_compositor(porter_duff::SourceOver()) {
+                _blend_mode(blend_modes::Normal()), _alpha_compositor(porter_duff::SourceOver()),
+                _draw_mode(draw_mode::fill) {
             internal_init(width, height);
+        }
+
+        /**
+         * Change the draw mode to triangle fills, lines or points
+         * @param mode enum { draw_mode::fill, draw_mode::line, draw_mode::point }
+         */
+        void updateDrawMode(draw_mode mode) {
+            _draw_mode = mode;
+            GLenum mode_gl = int(_draw_mode);
+            glPolygonMode(GL_FRONT_AND_BACK, mode_gl);
         }
 
         /**
@@ -322,6 +341,7 @@ namespace nitrogl {
             // on a UV window. Remember, pre_transformations are right-most (and are fast)
             // First create affine uv transform to the window
             transform_uv.pre_translate(vec2f(u0, v0)).pre_scale(vec2f{u1-u0, v1-v0});
+//            transform_uv.pre_scale(vec2f{0.5f, 0.5f});
             if(intrinsic_width>0 && intrinsic_height>0) {
                 // If we have intrinsic dimensions, apply uv transform fix to tile the sampler,
                 // otherwise it will be just stretched.
@@ -337,14 +357,14 @@ namespace nitrogl {
         /**
          * Draw a batch of indexed triangles.
          * NOTES:
-         * 1. if uvs is null, we will compute them for you
+         * 1. if uvs is null, we will compute them for you on the gpu
          * 2. if indices is null, indices will be inferred as well
          * @param sampler the sampler to sample from
          * @param type Type of triangles {Triangles, Fan, Strip}
-         * @param indices The indices array pointer
-         * @param indices_size The size of indices array
          * @param vertices The vertices array pointer
          * @param vertices_size The size of vertices array
+         * @param indices (Optional) The indices array pointer
+         * @param indices_size (Optional) The size of indices array
          * @param uvs (Optional) The UVs array pointer
          * @param uvs_size (Optional) The size of uvs array
          * @param transform vertices transform
@@ -354,17 +374,17 @@ namespace nitrogl {
          */
         void drawTriangles(sampler_t & sampler,
                            enum triangles::indices type,
-                           const index * indices,
-                           index indices_size,
                            const vec2f * vertices,
                            index vertices_size,
+                           const index * indices=nullptr,
+                           index indices_size=0,
                            const vec2f * uvs=nullptr,
                            index uvs_size=0,
                            mat3f transform = mat3f::identity(),
                            float opacity=1.0f,
                            mat3f transform_uv = mat3f::identity(),
                            float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
-            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, indices, indices_size);
+            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, vertices_size, indices, indices_size);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
                                  u0, v0, u1, v1);
@@ -408,12 +428,10 @@ namespace nitrogl {
          * 2. if indices is null, indices will be inferred as well
          * @param sampler the sampler to sample from
          * @param type Type of triangles {Triangles, Fan, Strip}
-         * @param indices The indices array pointer
-         * @param indices_size The size of indices array
          * @param xyuv The xyuv array pointer [(x,y,u,v), (x,y,u,v), ....]
          * @param xyuv_size The size of xyuv array
-         * @param uvs (Optional) The UVs array pointer
-         * @param uvs_size (Optional) The size of uvs array
+         * @param indices (Optional) The indices array pointer
+         * @param indices_size (Optional) The size of indices array
          * @param transform vertices transform
          * @param opacity Opacity
          * @param transform_uv UVs transform
@@ -421,15 +439,15 @@ namespace nitrogl {
          */
         void drawInterleavedTriangles(const sampler_t & sampler,
                                     enum triangles::indices type,
-                                   const index * indices,
-                                   index indices_size,
                                    const float * xyuv,
                                    index xyuv_size,
+                                   const index * indices,
+                                   index indices_size,
                                    mat3f transform = mat3f::identity(),
                                    float opacity=1.0f,
                                    mat3f transform_uv = mat3f::identity(),
                                    float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
-            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv, indices, indices_size,
+            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv, xyuv_size/4, indices, indices_size,
                                                                               0, 1, 4);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
@@ -498,8 +516,8 @@ namespace nitrogl {
             drawTriangles(
                     sampler,
                     type_out,
-                    buffers.output_indices.data(), buffers.output_indices.size(),
                     buffers.output_vertices.data(), buffers.output_vertices.size(),
+                    buffers.output_indices.data(), buffers.output_indices.size(),
                     nullptr, 0,
                     transform,
                     opacity,
@@ -559,8 +577,8 @@ namespace nitrogl {
             drawTriangles(
                     sampler,
                     type_out,
-                    buffers.output_indices.data(), buffers.output_indices.size(),
                     buffers.output_vertices.data(), buffers.output_vertices.size(),
+                    buffers.output_indices.data(), buffers.output_indices.size(),
                     nullptr, 0,
                     transform,
                     opacity,
@@ -584,7 +602,9 @@ namespace nitrogl {
          *      - Ear Clipping for SIMPLE, CONCAVE
          *      - Monotone triangulation for X_MONOTONE, Y_MONOTONE
          *      - Fan triangulation for CONVEX
-         * - Use the hints properly to max your performance
+         * - TIPS:
+         *      - CONVEX polygons do not allocate more memory !!!
+         *      - Use the hints properly to max your performance
          *
          * @tparam hint                     the type of polygon {SIMPLE, CONCAVE, X_MONOTONE, Y_MONOTONE, CONVEX, COMPLEX, SELF_INTERSECTING}
          * @tparam tessellation_allocator   type of allocator
@@ -611,8 +631,10 @@ namespace nitrogl {
                          const tessellation_allocator & allocator=tessellation_allocator()) {
 
             microtess::triangles::indices type;
-            using indices_allocator_t = typename tessellation_allocator::template rebind<index>::other;
-            using boundary_allocator_t = typename tessellation_allocator::template rebind<microtess::triangles::boundary_info>::other;
+            using indices_allocator_t = typename tessellation_allocator::
+                    template rebind<index>::other;
+            using boundary_allocator_t = typename tessellation_allocator::
+                    template rebind<microtess::triangles::boundary_info>::other;
             using indices_t = dynamic_array<index, indices_allocator_t>;
             using boundaries_t = dynamic_array<microtess::triangles::boundary_info, boundary_allocator_t>;
 
@@ -638,8 +660,7 @@ namespace nitrogl {
                 }
                 case nitrogl::polygons::CONVEX:
                 {
-                    using ft = microtess::fan_triangulation<float, indices_t, boundaries_t>;
-                    ft::compute(points, size, indices, boundary_buffer_ptr, type);
+                    type = microtess::triangles::indices::TRIANGLES_FAN;
                     break;
                 }
                 case nitrogl::polygons::NON_SIMPLE:
@@ -666,8 +687,8 @@ namespace nitrogl {
             const auto type_out = nitrogl::triangles::microtess_indices_type_to_nitrogl(type);
             drawTriangles(sampler,
                     type_out,
-                    indices.data(), indices.size(),
                     points, size,
+                    indices.data(), indices.size(),
                     nullptr, 0,
                     transform,
                     opacity,
@@ -723,17 +744,17 @@ namespace nitrogl {
                     v_a, indices, indices_type,
                     u0, v0, u1, v1);
             const index size = indices.size();
-            const index I_X=0, I_Y=1, I_U=2, I_V=3;
             if(size==0) return;
             const auto type_out = nitrogl::triangles::microtess_indices_type_to_nitrogl(indices_type);
             drawInterleavedTriangles(
                     sampler,
-                    type_out, indices.data(), indices.size(),
+                    type_out,
                     v_a.data(), v_a.size(),
+                    indices.data(), indices.size(),
                     transform,
                     opacity,
                     transform_uv,
-                    u0, v0, u1, v1);
+                    0.0f, 0.0f, 1.0f, 1.0f);
         }
 
         void drawRect(const sampler_t & sampler,
@@ -806,7 +827,7 @@ namespace nitrogl {
             float radius_n = radius/w;
             float stroke_n = stroke/w;
             float aa_fill = 1.0f/w;
-            float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/w);
+            float aa_stroke = stroke_n==0.0f ? 0.0f : (1.f/w);
 
             circle_sampler cs(&sampler_fill, &sampler_stroke, radius_n, stroke_n, aa_fill, aa_stroke);
 
@@ -995,6 +1016,22 @@ namespace nitrogl {
                      u0, v0, u1, v1, transform_uv);
         }
 
+        /**
+         * Draw text based on a regular bitmap font
+         * @tparam max_chars max amount of chars in the bitmap font
+         * @tparam Allocator memory allocator
+         * @param text null terminated char array
+         * @param font Bitmap font
+         * @param color tint color
+         * @param format text format
+         * @param left pos left
+         * @param top pos top
+         * @param right pos right
+         * @param bottom pos bottom
+         * @param transform transform matrix
+         * @param opacity opacity
+         * @param allocator allocator reference
+         */
         template<unsigned max_chars, class Allocator=nitrogl::std_rebind_allocator<>>
         void drawText(const char * text,
                       const nitrogl::text::bitmap_font<max_chars> & font,
@@ -1093,8 +1130,8 @@ namespace nitrogl {
             // draw interleaved triangles
             drawInterleavedTriangles(tint,
                                      type,
-                                     indices, indices_size,
                                      xyuvs, xyuvs_size,
+                                     indices, indices_size,
                                      transform, opacity);
 
             updateClipRect(old.left, old.top, old.right, old.bottom);
@@ -1103,6 +1140,61 @@ namespace nitrogl {
             char_location_allocator.deallocate(char_loc_buffer);
             index_allocator.deallocate(indices);
             float_allocator.deallocate(xyuvs);
+        }
+
+        /**
+         * Draw lines path
+         *
+         * @param sampler       The sampler
+         * @param points        the points array pointer
+         * @param size          the size of the points array
+         * @param closed_path   is the path closed ?
+         */
+        void drawLines(const sampler_t & sampler,
+                       const vec2f * points,
+                       unsigned int size = 4,
+                       bool closed_path = false,
+                       mat3f transform = mat3f::identity(),
+                       float opacity=1.0f,
+                       mat3f transform_uv = mat3f::identity(),
+                       float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            const auto bbox = nitrogl::triangles::triangles_bbox(points, size, nullptr, 0);
+            prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
+                                 sampler.intrinsic_width, sampler.intrinsic_height,
+                                 u0, v0, u1, v1);
+
+            //
+            glViewport(0, 0, GLsizei(width()), GLsizei(height()));
+            _fbo.bind();
+            // inverted y projection, canvas coords to opengl
+            auto mat_proj = camera::orthographic<float>(0.0f, float(width()),
+                                                        float(height()), 0.0f,
+                                                        -1.0f, 1.0f);
+            // make the transform about its origin, a nice feature
+            transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
+            // buffers
+            auto & program = get_main_shader_program_for_sampler(const_cast<sampler_t &>(sampler));
+            // data
+            const auto type = closed_path ? nitrogl::triangles::LINE_LOOP : nitrogl::triangles::LINE_STRIP;
+            multi_render_node::data_type data = {
+                    points, nullptr, nullptr, nullptr,
+                    size, 0, 0, 0,
+                    GLenum(type),
+                    mat4f(transform), // promote it to mat4x4
+                    mat4f::identity(),
+                    mat_proj,
+                    transform_uv, //transform_uv,
+                    _tex_backdrop,
+                    width(), height(),
+                    opacity,
+                    bbox
+            };
+            glDisable(GL_BLEND);
+            _node_multi.render(program, const_cast<sampler_t &>(sampler), data);
+            glEnable(GL_BLEND);
+            fbo_t::unbind();
+            copy_to_backdrop();
+
         }
 
     };

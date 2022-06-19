@@ -86,6 +86,7 @@ namespace nitrogl {
             const auto & d = data;
             const bool has_missing_uvs = d.uvs == nullptr;
             const bool has_missing_qs = d.qs == nullptr;
+            const bool has_missing_indices = d.indices == nullptr or d.indices_size==0;
 
             program.use();
             // vertex uniforms
@@ -144,14 +145,25 @@ namespace nitrogl {
 #ifdef SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
-            glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
+            if(has_missing_indices) {
+                // non-indexed drawing, the EBO is bound BUT is not used
+                glDrawArrays(d.triangles_type, 0, GLsizei(d.pos_size));
+            } else
+                glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
+
             vao_t::unbind();
 #else
             _ebo.bind();
             // this crates exccess 2 binds for vbos
             main_shader_program::point_generic_vertex_attributes(gva.data,
                     main_shader_program::vertex_attributes().data, gva.size());
-            glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
+
+            if(has_missing_indices) {
+                // non-indexed drawing, the EBO is bound BUT is not used
+                glDrawArrays(d.triangles_type, 0,  GLsizei(d.pos_size));
+            } else
+                glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
+
             _program.disableLocations(va.data, va.size());
 #endif
             // un-use shader

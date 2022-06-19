@@ -42,8 +42,8 @@ int main() {
             canva.clear(1.0, 1.0, 1.0, 1.0);
             canva.drawTriangles(tex_sampler_3,
                                 type,
-                                indices, 6,
                                 vertices, 4,
+                                indices, 6,
                                 nullptr, 0,
                                 mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
@@ -60,8 +60,8 @@ int main() {
             canva.clear(1.0, 1.0, 1.0, 1.0);
             canva.drawTriangles(tex_sampler_3,
                                 type,
-                                indices, 4,
                                 vertices, 4,
+                                indices, 4,
                                 nullptr, 0,
                                 mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
@@ -78,8 +78,8 @@ int main() {
             canva.clear(1.0, 1.0, 1.0, 1.0);
             canva.drawTriangles(tex_sampler_3,
                                 type,
-                                indices, 4,
                                 vertices, 4,
+                                indices, 4,
                                 nullptr, 0,
                                 mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );

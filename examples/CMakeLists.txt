@@ -36,6 +36,7 @@ if(DEFINED SDL2_FOUND)
             ex_draw_path_stroke.cpp
             ex_draw_bezier_patch.cpp
             ex_draw_text.cpp
+            ex_draw_lines.cpp
 
             ex_draw_mask.cpp
             ex_draw_rounded_rect.cpp
@@ -68,7 +69,6 @@ if(DEFINED SDL2_FOUND)
     set(SOURCES_SHARED
 #            libs/glad_3.2_core/src/glad.c
             libs/stb_image/stb_image.cpp
-            src/example.cpp
             )
 
     foreach( testsourcefile ${SOURCES} )
