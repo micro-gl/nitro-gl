@@ -341,6 +341,7 @@ namespace nitrogl {
             // on a UV window. Remember, pre_transformations are right-most (and are fast)
             // First create affine uv transform to the window
             transform_uv.pre_translate(vec2f(u0, v0)).pre_scale(vec2f{u1-u0, v1-v0});
+//            transform_uv.pre_scale(vec2f{0.5f, 0.5f});
             if(intrinsic_width>0 && intrinsic_height>0) {
                 // If we have intrinsic dimensions, apply uv transform fix to tile the sampler,
                 // otherwise it will be just stretched.
@@ -446,7 +447,7 @@ namespace nitrogl {
                                    float opacity=1.0f,
                                    mat3f transform_uv = mat3f::identity(),
                                    float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
-            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv, xyuv_size, indices, indices_size,
+            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv, xyuv_size/4, indices, indices_size,
                                                                               0, 1, 4);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
@@ -601,7 +602,9 @@ namespace nitrogl {
          *      - Ear Clipping for SIMPLE, CONCAVE
          *      - Monotone triangulation for X_MONOTONE, Y_MONOTONE
          *      - Fan triangulation for CONVEX
-         * - Use the hints properly to max your performance
+         * - TIPS:
+         *      - CONVEX polygons do not allocate more memory !!!
+         *      - Use the hints properly to max your performance
          *
          * @tparam hint                     the type of polygon {SIMPLE, CONCAVE, X_MONOTONE, Y_MONOTONE, CONVEX, COMPLEX, SELF_INTERSECTING}
          * @tparam tessellation_allocator   type of allocator
@@ -628,8 +631,10 @@ namespace nitrogl {
                          const tessellation_allocator & allocator=tessellation_allocator()) {
 
             microtess::triangles::indices type;
-            using indices_allocator_t = typename tessellation_allocator::template rebind<index>::other;
-            using boundary_allocator_t = typename tessellation_allocator::template rebind<microtess::triangles::boundary_info>::other;
+            using indices_allocator_t = typename tessellation_allocator::
+                    template rebind<index>::other;
+            using boundary_allocator_t = typename tessellation_allocator::
+                    template rebind<microtess::triangles::boundary_info>::other;
             using indices_t = dynamic_array<index, indices_allocator_t>;
             using boundaries_t = dynamic_array<microtess::triangles::boundary_info, boundary_allocator_t>;
 
@@ -655,8 +660,7 @@ namespace nitrogl {
                 }
                 case nitrogl::polygons::CONVEX:
                 {
-                    using ft = microtess::fan_triangulation<float, indices_t, boundaries_t>;
-                    ft::compute(points, size, indices, boundary_buffer_ptr, type);
+                    type = microtess::triangles::indices::TRIANGLES_FAN;
                     break;
                 }
                 case nitrogl::polygons::NON_SIMPLE:
@@ -740,7 +744,6 @@ namespace nitrogl {
                     v_a, indices, indices_type,
                     u0, v0, u1, v1);
             const index size = indices.size();
-            const index I_X=0, I_Y=1, I_U=2, I_V=3;
             if(size==0) return;
             const auto type_out = nitrogl::triangles::microtess_indices_type_to_nitrogl(indices_type);
             drawInterleavedTriangles(
@@ -751,7 +754,7 @@ namespace nitrogl {
                     transform,
                     opacity,
                     transform_uv,
-                    u0, v0, u1, v1);
+                    0.0f, 0.0f, 1.0f, 1.0f);
         }
 
         void drawRect(const sampler_t & sampler,

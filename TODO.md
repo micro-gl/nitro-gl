@@ -33,11 +33,9 @@
 34. bezier patches - done
 35. draw text, bitmap fonts - done
 36. tint sampler - done
-37. 
-38. draw lines
-39. test gldrawArrays for non-indexed
-40. convex/fan dont need to allocate indices buffer
-41. text does not need to allocate indices as well
+38. draw lines - done
+39. test gldrawArrays for non-indexed - done
+40. convex/fan dont need to allocate indices buffer - done
 
 
 39. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture

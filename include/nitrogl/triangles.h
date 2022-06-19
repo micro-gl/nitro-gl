@@ -156,11 +156,12 @@ namespace nitrogl {
                              const index size_vertices,
                             const index *indices,
                             const index size_indices) {
-            const auto & ref_base = indices ? vertices[indices[0]] : vertices[0];
+            const bool has_indices = indices!=nullptr and size_indices!=0;
+            const auto & ref_base = has_indices ? vertices[indices[0]] : vertices[0];
             rectf rect{ ref_base.x, ref_base.y, ref_base.x, ref_base.y };
-            const auto size = indices==nullptr ? size_vertices : size_indices;
+            const auto size = has_indices ? size_indices : size_vertices;
             for (unsigned ix = 0; ix < size; ++ix) { // compute bounding box
-                const auto & pt = indices ? vertices[indices[ix]] : vertices[ix];
+                const auto & pt = has_indices ? vertices[indices[ix]] : vertices[ix];
                 rect.left = functions::min(rect.left, pt.x);
                 rect.top = functions::min(rect.top, pt.y);
                 rect.right = functions::max(rect.right, pt.x);
@@ -182,11 +183,12 @@ namespace nitrogl {
                                           const index *indices,
                                           const index size_indices,
                                           index x_idx, index y_idx, index window_size) {
-            const auto & ref_base = indices ? attribs[indices[0]] : attribs[0];
+            const bool has_indices = indices!=nullptr and size_indices!=0;
+            const auto & ref_base = has_indices ? attribs[indices[0]] : attribs[0];
             rectf rect{ attribs[x_idx], attribs[y_idx], attribs[x_idx], attribs[y_idx] };
-            const auto size = indices==nullptr ? size_attribs : size_indices;
-            for (unsigned ix = 0; ix < size_indices; ++ix) { // compute bounding box
-                const float * window = attribs + (indices ? indices[ix] : ix)*window_size;
+            const auto size = !has_indices ? size_attribs : size_indices;
+            for (unsigned ix = 0; ix < size; ++ix) { // compute bounding box
+                const float * window = attribs + (has_indices ? indices[ix] : ix)*window_size;
                 rect.left = functions::min(rect.left, window[x_idx]);
                 rect.top = functions::min(rect.top, window[y_idx]);
                 rect.right = functions::max(rect.right, window[x_idx]);
