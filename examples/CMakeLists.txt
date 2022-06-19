@@ -69,7 +69,6 @@ if(DEFINED SDL2_FOUND)
     set(SOURCES_SHARED
 #            libs/glad_3.2_core/src/glad.c
             libs/stb_image/stb_image.cpp
-            src/example.cpp
             )
 
     foreach( testsourcefile ${SOURCES} )

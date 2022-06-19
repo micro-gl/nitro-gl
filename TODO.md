@@ -47,6 +47,9 @@
 45. text measure compute
 46. draw text, sdf version
 47. pointer/l-val/r-val to pointer function
+48. add docs for canvas functions
+49. clean up other_functions from samplers
+50. explore drawing 3d objects, might need new shader type and pool and render node
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

@@ -20,7 +20,7 @@
 
 namespace nitrogl {
     namespace triangles {
-
+        using index = GLuint;
         enum indices {
             TRIANGLES=GL_TRIANGLES,
             TRIANGLES_FAN=GL_TRIANGLE_FAN,
@@ -50,54 +50,6 @@ namespace nitrogl {
                     break;
                 }
             }
-        }
-
-        enum class TriangleEdgeType { Top, Left, Right };
-        enum class orientation { cw, ccw };
-        enum class face_culling { cw, ccw, none };
-        struct top_left_t { bool first = false, second = false, third = false; };
-
-        template<typename number>
-        bool classifyTopLeftEdge(const bool CCW,
-                                 const number &p0x, const number &p0y,
-                                 const number &p1x, const number &p1y) {
-            bool res;
-            if (CCW) res = (p1y>p0y) || (p1y==p0y && (p1x<=p0x));
-            else res = (p0y>p1y) || (p1y==p0y && (p0x<=p1x));
-            return res;
-        }
-
-        template<typename number>
-        top_left_t classifyTopLeftEdges(const bool CCW,
-                                        const number &p0x, const number &p0y,
-                                        const number &p1x, const number &p1y,
-                                        const number &p2x, const number &p2y) {
-            top_left_t res;
-            res.first = classifyTopLeftEdge<number>(CCW, p0x, p0y, p1x, p1y);
-            res.second = classifyTopLeftEdge<number>(CCW, p1x, p1y, p2x, p2y);
-            res.third = classifyTopLeftEdge<number>(CCW, p2x, p2y, p0x, p0y);
-            return res;
-        }
-
-        using boundary_info = unsigned char;
-        using index = unsigned int;
-
-        static bool classify_boundary_info(const boundary_info &info, unsigned int edge_index) {
-            switch (edge_index) {
-                case 0: return (info & 0b10000000)>>7;
-                case 1: return (info & 0b01000000)>>6;
-                case 2: return (info & 0b00100000)>>5;
-                default: return false;
-            }
-        }
-
-        static inline boundary_info create_boundary_info(bool first, bool second, bool third) {
-            boundary_info zero = 0b00000000;
-            boundary_info result = zero;
-            result |= first     ? 0b10000000 : zero;
-            result |= second    ? 0b01000000 : zero;
-            result |= third     ? 0b00100000 : zero;
-            return result;
         }
 
         /**
@@ -196,7 +148,5 @@ namespace nitrogl {
             }
             return rect;
         }
-
-
     };
 }
