@@ -112,6 +112,7 @@ namespace nitrogl {
         blend_mode_t _blend_mode;
         compositor_t _alpha_compositor;
         draw_mode _draw_mode;
+        bool _is_pre_mul_alpha;
 
         static static_alloc get_static_allocator() {
             // static allocator, shared by all canvases
@@ -127,8 +128,6 @@ namespace nitrogl {
                 pool.construct();
             return pool;
         }
-
-        bool _is_pre_mul_alpha;
 
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
@@ -260,8 +259,8 @@ namespace nitrogl {
             nitrogl::fbo_t::unbind();
         }
 
-#define max___(a, b) ((a)<(b) ? (b) : (a))
-#define min___(a, b) ((a)<(b) ? (a) : (b))
+//#define max___(a, b) ((a)<(b) ? (b) : (a))
+//#define min___(a, b) ((a)<(b) ? (a) : (b))
 
     private:
         void copy_region_to_backdrop(int left, int top, int right, int bottom) const {
@@ -393,7 +392,8 @@ namespace nitrogl {
             // I feel it can be accomplished with const ref and const-cast. r-val is important
             // to catch samplers that are created in place
             auto & sampler_casted = const_cast<sampler_t &>(sampler);
-            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, vertices_size, indices, indices_size);
+            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, vertices_size,
+                                                                 indices, indices_size);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
                                  u0, v0, u1, v1);
@@ -406,7 +406,8 @@ namespace nitrogl {
                                                         float(height()), 0.0f,
                                                         -1.0f, 1.0f);
             // make the transform about its origin, a nice feature
-            transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
+            transform.post_translate(vec2f(-bbox.left, -bbox.top))
+                     .pre_translate(vec2f(bbox.left, bbox.top));
             // buffers
             auto & program = get_main_shader_program_for_sampler(sampler_casted);
             // data
@@ -457,7 +458,8 @@ namespace nitrogl {
                                    mat3f transform_uv = mat3f::identity(),
                                    float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
             auto & sampler_casted = const_cast<sampler_t &>(sampler);
-            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv, xyuv_size/4, indices, indices_size,
+            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv,
+                                                                              xyuv_size/4, indices, indices_size,
                                                                               0, 1, 4);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
@@ -618,8 +620,8 @@ namespace nitrogl {
          *      - CONVEX polygons do not allocate more memory !!!
          *      - Use the hints properly to max your performance
          *
-         * @tparam hint                     the type of polygon {SIMPLE, CONCAVE, X_MONOTONE, Y_MONOTONE, CONVEX, COMPLEX, SELF_INTERSECTING}
-         * @tparam tessellation_allocator   type of allocator
+         * @tparam hint the type of polygon {SIMPLE, CONCAVE, X_MONOTONE, Y_MONOTONE, CONVEX, COMPLEX, SELF_INTERSECTING}
+         * @tparam tessellation_allocator type of allocator
          *
          * @param sampler       sampler reference
          * @param transform     3x3 matrix transform
@@ -657,16 +659,18 @@ namespace nitrogl {
                 case nitrogl::polygons::CONCAVE:
                 case nitrogl::polygons::SIMPLE:
                 {
-                    using ect=microtess::ear_clipping_triangulation<float, indices_t, boundaries_t, tessellation_allocator>;
+                    using ect=microtess::ear_clipping_triangulation<float, indices_t,
+                                    boundaries_t, tessellation_allocator>;
                     ect::compute(points, size, indices, boundary_buffer_ptr, type, allocator);
                     break;
                 }
                 case nitrogl::polygons::X_MONOTONE:
                 case nitrogl::polygons::Y_MONOTONE:
                 {
-                    using mpt=microtess::monotone_polygon_triangulation<float, indices_t, boundaries_t, tessellation_allocator>;
-                    typename mpt::monotone_axis axis=hint==polygons::X_MONOTONE ? mpt::monotone_axis::x_monotone :
-                            mpt::monotone_axis::y_monotone;
+                    using mpt=microtess::monotone_polygon_triangulation<float, indices_t, boundaries_t,
+                                    tessellation_allocator>;
+                    typename mpt::monotone_axis axis=hint==polygons::X_MONOTONE ?
+                                    mpt::monotone_axis::x_monotone : mpt::monotone_axis::y_monotone;
                     mpt::compute(points, size, axis, indices, boundary_buffer_ptr, type, allocator);
                     break;
                 }
@@ -833,7 +837,8 @@ namespace nitrogl {
         /**
          * Draw a Mask on Canvas
          * @param sampler Sampler source of mask
-         * @param channel which channel of the sampler output to use as mask {r,g,b,a,r-invert,g-invert,b-invert,a-invert}
+         * @param channel which channel of the sampler output to use as mask
+         *                  {r,g,b,a,r-invert,g-invert,b-invert,a-invert}
          * @param left left of canvas
          * @param top top of canvas
          * @param right right of canvas
