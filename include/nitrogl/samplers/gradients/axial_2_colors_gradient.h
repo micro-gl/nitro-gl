@@ -37,14 +37,6 @@ namespace nitrogl {
 )";
         }
 
-        const char * other_functions() const override {
-            return R"(
-vec4 other_function(float t) {
-    return vec4(t);
-}
-)";
-        }
-
         const char * main() const override {
             if(degree==axial_degree::_0 || degree==axial_degree::_360) {
                 return R"(

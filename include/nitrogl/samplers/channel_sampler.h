@@ -29,14 +29,6 @@ namespace nitrogl {
             return nullptr;
         }
 
-        const char * other_functions() const override {
-            return R"(
-vec4 other_function(float t) {
-    return vec4(t);
-}
-)";
-        }
-
         const char * main() const override {
             switch (channel) {
 

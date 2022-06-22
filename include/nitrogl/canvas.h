@@ -112,6 +112,7 @@ namespace nitrogl {
         blend_mode_t _blend_mode;
         compositor_t _alpha_compositor;
         draw_mode _draw_mode;
+        bool _is_pre_mul_alpha;
 
         static static_alloc get_static_allocator() {
             // static allocator, shared by all canvases
@@ -127,8 +128,6 @@ namespace nitrogl {
                 pool.construct();
             return pool;
         }
-
-        bool _is_pre_mul_alpha;
 
     private:
         //https://stackoverflow.com/questions/47173597/multisampled-fbos-in-opengl-es-3-0
@@ -260,8 +259,8 @@ namespace nitrogl {
             nitrogl::fbo_t::unbind();
         }
 
-#define max___(a, b) ((a)<(b) ? (b) : (a))
-#define min___(a, b) ((a)<(b) ? (a) : (b))
+//#define max___(a, b) ((a)<(b) ? (b) : (a))
+//#define min___(a, b) ((a)<(b) ? (a) : (b))
 
     private:
         void copy_region_to_backdrop(int left, int top, int right, int bottom) const {
@@ -293,22 +292,13 @@ namespace nitrogl {
         }
 
         /**
-         * given a sampler, generate the main shader of it and use the pool
+         * Given a sampler, generate the main shader of it and use the pool
          * to get it or update it
          * @param sampler Sampler object
-         * @return
+         * @return a shader
          */
         main_shader_program & get_main_shader_program_for_sampler(
                 sampler_t & sampler) {
-            /*{ // debug
-                static int LL = 0;
-                if(LL%1000==0) {
-                    _blend_mode = blend_modes::Normal();
-                } else {
-                    _blend_mode = blend_modes::Multiply();
-                }
-                ++LL;
-            }*/
             // we always regenerate a traversal because parts of a sampler
             // tree may have been used in another sampler, which might have
             // written the traversal info
@@ -331,6 +321,21 @@ namespace nitrogl {
             return program;
         }
 
+        /**
+         * Prepare a UV transform:
+         * 1. Focus on a rectangle (u0, v0, u1, v1)
+         * 2. Apply corrective tiling if requested
+         * @param transform_uv UV base transform
+         * @param bbox_width object bounding box width
+         * @param bbox_height object bounding box height
+         * @param intrinsic_width mapped width
+         * @param intrinsic_height mapped height
+         * @param u0 UV left
+         * @param v0 UV bottom
+         * @param u1 UV right
+         * @param v1 UV right
+         * @return
+         */
         static mat3f & prepare_uv_transform(mat3f & transform_uv,
                                      float bbox_width, float bbox_height,
                                      float intrinsic_width=0.0f, float intrinsic_height=0.0f,
@@ -341,7 +346,6 @@ namespace nitrogl {
             // on a UV window. Remember, pre_transformations are right-most (and are fast)
             // First create affine uv transform to the window
             transform_uv.pre_translate(vec2f(u0, v0)).pre_scale(vec2f{u1-u0, v1-v0});
-//            transform_uv.pre_scale(vec2f{0.5f, 0.5f});
             if(intrinsic_width>0 && intrinsic_height>0) {
                 // If we have intrinsic dimensions, apply uv transform fix to tile the sampler,
                 // otherwise it will be just stretched.
@@ -372,7 +376,7 @@ namespace nitrogl {
          * @param transform_uv UVs transform
          * @param u0/v0/u1/v1 UVs window
          */
-        void drawTriangles(sampler_t & sampler,
+        void drawTriangles(const sampler_t & sampler,
                            enum triangles::indices type,
                            const vec2f * vertices,
                            index vertices_size,
@@ -384,7 +388,12 @@ namespace nitrogl {
                            float opacity=1.0f,
                            mat3f transform_uv = mat3f::identity(),
                            float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
-            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, vertices_size, indices, indices_size);
+            // I const-cast to avoid overloading l-val/r-val with perfect forwarding because
+            // I feel it can be accomplished with const ref and const-cast. r-val is important
+            // to catch samplers that are created in place
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
+            const auto bbox = nitrogl::triangles::triangles_bbox(vertices, vertices_size,
+                                                                 indices, indices_size);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
                                  u0, v0, u1, v1);
@@ -397,9 +406,10 @@ namespace nitrogl {
                                                         float(height()), 0.0f,
                                                         -1.0f, 1.0f);
             // make the transform about its origin, a nice feature
-            transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
+            transform.post_translate(vec2f(-bbox.left, -bbox.top))
+                     .pre_translate(vec2f(bbox.left, bbox.top));
             // buffers
-            auto & program = get_main_shader_program_for_sampler(sampler);
+            auto & program = get_main_shader_program_for_sampler(sampler_casted);
             // data
             multi_render_node::data_type data = {
                     vertices, uvs, nullptr, indices,
@@ -415,7 +425,7 @@ namespace nitrogl {
                     bbox
             };
             glDisable(GL_BLEND);
-            _node_multi.render(program, sampler, data);
+            _node_multi.render(program, sampler_casted, data);
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
@@ -447,7 +457,9 @@ namespace nitrogl {
                                    float opacity=1.0f,
                                    mat3f transform_uv = mat3f::identity(),
                                    float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
-            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv, xyuv_size/4, indices, indices_size,
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
+            const auto bbox = nitrogl::triangles::triangles_bbox_from_attribs(xyuv,
+                                                                              xyuv_size/4, indices, indices_size,
                                                                               0, 1, 4);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
@@ -463,7 +475,7 @@ namespace nitrogl {
             // make the transform about its origin, a nice feature
             transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
             // buffers
-            auto & program = get_main_shader_program_for_sampler(const_cast<sampler_t &>(sampler));
+            auto & program = get_main_shader_program_for_sampler(sampler_casted);
             // data
             multi_render_node_interleaved_xyuv::data_type data = {
                     xyuv, indices,
@@ -478,7 +490,7 @@ namespace nitrogl {
                     opacity,
             };
             glDisable(GL_BLEND);
-            _node_multi_interleaved.render(program, const_cast<sampler_t &>(sampler), data);
+            _node_multi_interleaved.render(program, sampler_casted, data);
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
@@ -499,7 +511,7 @@ namespace nitrogl {
          */
         template <template<typename...> class path_container_template,
                   class tessellation_allocator>
-        void drawPathFill(sampler_t & sampler,
+        void drawPathFill(const sampler_t & sampler,
                           microtess::path<float, path_container_template, tessellation_allocator> & path,
                           const microtess::fill_rule &rule,
                           const microtess::tess_quality &quality,
@@ -507,6 +519,7 @@ namespace nitrogl {
                           const mat3f & transform_uv = mat3f::identity(),
                           float opacity=1.0f,
                           float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             const auto & buffers= path.tessellateFill(rule, quality, false, false);
             if(buffers.output_vertices.size()==0) return;
             const auto type_out =
@@ -514,7 +527,7 @@ namespace nitrogl {
                             buffers.output_indices_type);
 
             drawTriangles(
-                    sampler,
+                    sampler_casted,
                     type_out,
                     buffers.output_vertices.data(), buffers.output_vertices.size(),
                     buffers.output_indices.data(), buffers.output_indices.size(),
@@ -555,7 +568,7 @@ namespace nitrogl {
          */
         template <class Iterable, template<typename...> class path_container_template,
                     class tessellation_allocator>
-        void drawPathStroke(sampler_t & sampler,
+        void drawPathStroke(const sampler_t & sampler,
                           microtess::path<float, path_container_template, tessellation_allocator> & path,
                           float stroke_width=1.0f,
                           microtess::stroke_cap cap=microtess::stroke_cap::butt,
@@ -567,6 +580,7 @@ namespace nitrogl {
                           const mat3f & transform_uv = mat3f::identity(),
                           float opacity=1.0f,
                           float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             const auto & buffers= path.template tessellateStroke<Iterable>(
                     stroke_width, cap, line_join, miter_limit, stroke_dash_array, stroke_dash_offset);
             if(buffers.output_vertices.size()==0) return;
@@ -575,7 +589,7 @@ namespace nitrogl {
                             buffers.output_indices_type);
 
             drawTriangles(
-                    sampler,
+                    sampler_casted,
                     type_out,
                     buffers.output_vertices.data(), buffers.output_vertices.size(),
                     buffers.output_indices.data(), buffers.output_indices.size(),
@@ -606,8 +620,8 @@ namespace nitrogl {
          *      - CONVEX polygons do not allocate more memory !!!
          *      - Use the hints properly to max your performance
          *
-         * @tparam hint                     the type of polygon {SIMPLE, CONCAVE, X_MONOTONE, Y_MONOTONE, CONVEX, COMPLEX, SELF_INTERSECTING}
-         * @tparam tessellation_allocator   type of allocator
+         * @tparam hint the type of polygon {SIMPLE, CONCAVE, X_MONOTONE, Y_MONOTONE, CONVEX, COMPLEX, SELF_INTERSECTING}
+         * @tparam tessellation_allocator type of allocator
          *
          * @param sampler       sampler reference
          * @param transform     3x3 matrix transform
@@ -621,7 +635,7 @@ namespace nitrogl {
          */
         template <nitrogl::polygons hint=nitrogl::polygons::SIMPLE,
                   class tessellation_allocator=nitrogl::std_rebind_allocator<>>
-        void drawPolygon(sampler_t & sampler,
+        void drawPolygon(const sampler_t & sampler,
                          const vec2f * points,
                          index size,
                          const mat3f & transform = mat3f::identity(),
@@ -629,7 +643,7 @@ namespace nitrogl {
                          float opacity=1.0f,
                          float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
                          const tessellation_allocator & allocator=tessellation_allocator()) {
-
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             microtess::triangles::indices type;
             using indices_allocator_t = typename tessellation_allocator::
                     template rebind<index>::other;
@@ -645,16 +659,18 @@ namespace nitrogl {
                 case nitrogl::polygons::CONCAVE:
                 case nitrogl::polygons::SIMPLE:
                 {
-                    using ect=microtess::ear_clipping_triangulation<float, indices_t, boundaries_t, tessellation_allocator>;
+                    using ect=microtess::ear_clipping_triangulation<float, indices_t,
+                                    boundaries_t, tessellation_allocator>;
                     ect::compute(points, size, indices, boundary_buffer_ptr, type, allocator);
                     break;
                 }
                 case nitrogl::polygons::X_MONOTONE:
                 case nitrogl::polygons::Y_MONOTONE:
                 {
-                    using mpt=microtess::monotone_polygon_triangulation<float, indices_t, boundaries_t, tessellation_allocator>;
-                    typename mpt::monotone_axis axis=hint==polygons::X_MONOTONE ? mpt::monotone_axis::x_monotone :
-                            mpt::monotone_axis::y_monotone;
+                    using mpt=microtess::monotone_polygon_triangulation<float, indices_t, boundaries_t,
+                                    tessellation_allocator>;
+                    typename mpt::monotone_axis axis=hint==polygons::X_MONOTONE ?
+                                    mpt::monotone_axis::x_monotone : mpt::monotone_axis::y_monotone;
                     mpt::compute(points, size, axis, indices, boundary_buffer_ptr, type, allocator);
                     break;
                 }
@@ -685,7 +701,7 @@ namespace nitrogl {
             }
             // convert from micro-tess indices type to nitro-gl indices type
             const auto type_out = nitrogl::triangles::microtess_indices_type_to_nitrogl(type);
-            drawTriangles(sampler,
+            drawTriangles(sampler_casted,
                     type_out,
                     points, size,
                     indices.data(), indices.size(),
@@ -720,7 +736,7 @@ namespace nitrogl {
          * @param opacity       opacity [0..255]
          */
         template<microtess::patch_type patch_type, class Allocator=nitrogl::std_rebind_allocator<>>
-        void drawBezierPatch(sampler_t & sampler,
+        void drawBezierPatch(const sampler_t & sampler,
                              const float *mesh,
                              unsigned uSamples=20, unsigned vSamples=20,
                              mat3f transform = mat3f::identity(),
@@ -728,6 +744,7 @@ namespace nitrogl {
                              float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
                              mat3f transform_uv = mat3f::identity(),
                              const Allocator & allocator=Allocator()) {
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             using rebind_alloc_t1 = typename Allocator::template rebind<float>::other;
             using rebind_alloc_t2 = typename Allocator::template rebind<index>::other;
             rebind_alloc_t1 rebind_1{allocator};
@@ -747,7 +764,7 @@ namespace nitrogl {
             if(size==0) return;
             const auto type_out = nitrogl::triangles::microtess_indices_type_to_nitrogl(indices_type);
             drawInterleavedTriangles(
-                    sampler,
+                    sampler_casted,
                     type_out,
                     v_a.data(), v_a.size(),
                     indices.data(), indices.size(),
@@ -757,12 +774,29 @@ namespace nitrogl {
                     0.0f, 0.0f, 1.0f, 1.0f);
         }
 
+        /**
+         * Draw a simple Rectangle.
+         * This drawing is highly optimized buffers wise
+         * @param sampler sampler reference
+         * @param left left of canvas
+         * @param top top of canvas
+         * @param right right of canvas
+         * @param bottom bottom of canvas
+         * @param opacity opacity [0..1]
+         * @param transform coordinates transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
+         * @param transform_uv uv coords transform
+         */
         void drawRect(const sampler_t & sampler,
                       float left, float top, float right, float bottom,
                       float opacity = 1.0f,
                       mat3f transform = mat3f::identity(),
                       float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
                       mat3f transform_uv = mat3f::identity()) {
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             prepare_uv_transform(transform_uv, right-left, bottom-top,
                                  sampler.intrinsic_width, sampler.intrinsic_height,
                                  u0, v0, u1, v1);
@@ -781,7 +815,7 @@ namespace nitrogl {
                     right, top,    1.0f, 1.0f, 1.0f,
                     left,  top,    0.0f, 1.0f, 1.0f,
             };
-            auto & program = get_main_shader_program_for_sampler(const_cast<sampler_t &>(sampler));
+            auto & program = get_main_shader_program_for_sampler(sampler_casted);
             // data
             p4_render_node::data_type data = {
                     puvs, 20,
@@ -794,31 +828,67 @@ namespace nitrogl {
                     opacity
             };
             glDisable(GL_BLEND);
-            _node_p4.render(program, const_cast<sampler_t &>(sampler), data);
+            _node_p4.render(program, sampler_casted, data);
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
         }
 
-        void drawMask(sampler_t & sampler, nitrogl::channels::channel channel,
+        /**
+         * Draw a Mask on Canvas
+         * @param sampler Sampler source of mask
+         * @param channel which channel of the sampler output to use as mask
+         *                  {r,g,b,a,r-invert,g-invert,b-invert,a-invert}
+         * @param left left of canvas
+         * @param top top of canvas
+         * @param right right of canvas
+         * @param bottom bottom of canvas
+         * @param transform coordinates transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
+         * @param transform_uv uv coords transform
+         */
+        void drawMask(const sampler_t & sampler, nitrogl::channels::channel channel,
                       float left, float top, float right, float bottom,
+                      mat3f transform = mat3f::identity(),
                       float u0=0., float v0=0., float u1=1., float v1=1.,
                       const mat3f & transform_uv = mat3f::identity()) {
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             const auto * current_blend_mode = _blend_mode;
             const auto * current_alpha_compositor = _alpha_compositor;
             update_composition(blend_modes::Normal(), porter_duff::DestinationIn());
-            channel_sampler cs {&sampler, channel};
-            drawRect(cs, left, top, right, bottom, 1.0f, mat3f::identity(),
+            channel_sampler cs {&sampler_casted, channel};
+            drawRect(cs, left, top, right, bottom, 1.0f, transform,
                      u0, v0, u1, v1, transform_uv);
             update_composition(current_blend_mode, current_alpha_compositor);
         }
 
-        void drawCircle(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+        /**
+         * Draw a Circle
+         * @param sampler_fill Sampler used for interior
+         * @param sampler_stroke Sampler used for boundary
+         * @param x x
+         * @param y y
+         * @param radius radius
+         * @param stroke stroke width (pixels)
+         * @param opacity opacity [0..1]
+         * @param transform coordinates transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
+         * @param transform_uv uv coords transform
+         */
+        void drawCircle(const sampler_t & sampler_fill, sampler_t & sampler_stroke,
                         float x, float y, float radius, float stroke,
                         float opacity = 1.0,
                         const mat3f & transform = mat3f::identity(),
                         float u0=0., float v0=0., float u1=1., float v1=1.,
                         const mat3f & transform_uv = mat3f::identity()) {
+            auto & sampler_fill_casted = const_cast<sampler_t &>(sampler_fill);
+            auto & sampler_stroke_casted = const_cast<sampler_t &>(sampler_stroke);
             float pad = stroke/2.0f + 5.0f;
             float ex_radi = radius + pad; // extended radius
             float l = x - ex_radi, t = y - ex_radi;
@@ -829,7 +899,8 @@ namespace nitrogl {
             float aa_fill = 1.0f/w;
             float aa_stroke = stroke_n==0.0f ? 0.0f : (1.f/w);
 
-            circle_sampler cs(&sampler_fill, &sampler_stroke, radius_n, stroke_n, aa_fill, aa_stroke);
+            circle_sampler cs(&sampler_fill_casted, &sampler_stroke_casted, radius_n,
+                              stroke_n, aa_fill, aa_stroke);
 
             // make the transform about left-top of shape
             auto transform_modified = transform;
@@ -842,7 +913,26 @@ namespace nitrogl {
                      u0, v0, u1, v1, transform_uv);
         }
 
-        void drawArc(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+        /**
+         * Draw Arc
+         * @param sampler_fill Sampler used for interior
+         * @param sampler_stroke Sampler used for boundary
+         * @param x x
+         * @param y y
+         * @param radius radius
+         * @param from_angle start angle
+         * @param to_angle end angle
+         * @param inner_radius inner radius
+         * @param stroke stroke width (in pixels)
+         * @param opacity opacity [0..1]
+         * @param transform coordinates transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
+         * @param transform_uv uv coords transform
+         */
+        void drawArc(const sampler_t & sampler_fill, const sampler_t & sampler_stroke,
                         float x, float y, float radius,
                         float from_angle, float to_angle,
                         float inner_radius=5,
@@ -851,6 +941,8 @@ namespace nitrogl {
                         const mat3f & transform = mat3f::identity(),
                         float u0=0., float v0=0., float u1=1., float v1=1.,
                         const mat3f & transform_uv = mat3f::identity()) {
+            auto & sampler_fill_casted = const_cast<sampler_t &>(sampler_fill);
+            auto & sampler_stroke_casted = const_cast<sampler_t &>(sampler_stroke);
             float pad = inner_radius + (stroke)/2.0f + 5.0f;
             float ex_radi = radius + pad; // extended radius
             float l = x - ex_radi, t = y - ex_radi;
@@ -863,7 +955,7 @@ namespace nitrogl {
             float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/w);
             from_angle = nitrogl::math::clamp(from_angle, 0.0f, math::pi<float>()*2.0f);
             to_angle = nitrogl::math::clamp(to_angle, 0.0f, math::pi<float>()*2.0f);
-            arc_sampler cs {&sampler_fill, &sampler_stroke, from_angle, to_angle, radius_n,
+            arc_sampler cs {&sampler_fill_casted, &sampler_stroke_casted, from_angle, to_angle, radius_n,
                             radius_inner_n, stroke_n, aa_fill, aa_stroke };
             // make the transform about left-top of shape
             auto transform_modified = transform;
@@ -876,7 +968,25 @@ namespace nitrogl {
                      u0, v0, u1, v1, transform_uv);
         }
 
-        void drawPie(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+        /**
+         * Draw a Pie shape
+         * @param sampler_fill Sampler used for interior
+         * @param sampler_stroke Sampler used for boundary
+         * @param x x
+         * @param y y
+         * @param radius radius
+         * @param from_angle start angle
+         * @param to_angle end angle
+         * @param stroke stroke width (in pixels)
+         * @param opacity opacity [0..1]
+         * @param transform coordinates transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
+         * @param transform_uv uv coords transform
+         */
+        void drawPie(const sampler_t & sampler_fill, const sampler_t & sampler_stroke,
                      float x, float y, float radius,
                      float from_angle, float to_angle,
                      float stroke=1,
@@ -884,6 +994,8 @@ namespace nitrogl {
                      const mat3f & transform = mat3f::identity(),
                      float u0=0., float v0=0., float u1=1., float v1=1.,
                      const mat3f & transform_uv = mat3f::identity()) {
+            auto & sampler_fill_casted = const_cast<sampler_t &>(sampler_fill);
+            auto & sampler_stroke_casted = const_cast<sampler_t &>(sampler_stroke);
             float pad = (stroke)/2.0f + 5.0f;
             float ex_radi = radius + pad; // extended radius
             float l = x - ex_radi, t = y - ex_radi;
@@ -895,7 +1007,7 @@ namespace nitrogl {
             float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/w);
 //            from_angle = nitrogl::math::clamp(from_angle, 0.0f, math::pi<float>()*2.0f);
 //            to_angle = nitrogl::math::clamp(to_angle, 0.0f, math::pi<float>()*2.0f);
-            pie_sampler cs {&sampler_fill, &sampler_stroke, from_angle, to_angle, radius_n,
+            pie_sampler cs {&sampler_fill_casted, &sampler_stroke_casted, from_angle, to_angle, radius_n,
                             stroke_n, aa_fill, aa_stroke };
             // make the transform about left-top of shape
             auto transform_modified = transform;
@@ -908,7 +1020,26 @@ namespace nitrogl {
                      u0, v0, u1, v1, transform_uv);
         }
 
-        void drawQuadrilateral(sampler_t & sampler,
+        /**
+         * Draw a Quadrilateral, 4 point polygon with perspective
+         * @param sampler Sampler reference
+         * @param v0_x 1st point x
+         * @param v0_y 1st point y
+         * @param v1_x 2nd point x
+         * @param v1_y 2nd point y
+         * @param v2_x 3rd point x
+         * @param v2_y 3rd point y
+         * @param v3_x 4th point x
+         * @param v3_y 4th point y
+         * @param opacity Opacity [0..1]
+         * @param transform coordinates transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
+         * @param transform_uv uv coords transform
+         */
+        void drawQuadrilateral(const sampler_t & sampler,
                                float v0_x, float v0_y,
                                float v1_x, float v1_y,
                                float v2_x, float v2_y,
@@ -917,6 +1048,7 @@ namespace nitrogl {
                                mat3f transform = mat3f::identity(),
                                float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f,
                                const mat3f & transform_uv = mat3f::identity()) {
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             float q0 = 1.0f, q1 = 1.0f, q2 = 1.0f, q3 = 1.0f;
             float p0x = v0_x, p0y = v0_y;
             float p1x = v1_x, p1y = v1_y;
@@ -961,7 +1093,7 @@ namespace nitrogl {
                     v2_x,  v2_y, u2_q2, v2_q2, q2,
                     v3_x,  v3_y, u3_q3, v3_q3, q3,
             };
-            auto & program = get_main_shader_program_for_sampler(sampler);
+            auto & program = get_main_shader_program_for_sampler(sampler_casted);
             // data
             p4_render_node::data_type data = {
                     puvs, 20,
@@ -974,19 +1106,39 @@ namespace nitrogl {
                     opacity
             };
             glDisable(GL_BLEND);
-            _node_p4.render(program, sampler, data);
+            _node_p4.render(program, sampler_casted, data);
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
         }
-        
-        void drawRoundedRect(sampler_t & sampler_fill, sampler_t & sampler_stroke,
+
+        /**
+         * Draw a Rounded Rectangle
+         * @param sampler_fill Sampler used for interior
+         * @param sampler_stroke Sampler used for boundary
+         * @param left Left position
+         * @param top Top position
+         * @param right Right position
+         * @param bottom Bottom position
+         * @param radius Radius of corners
+         * @param stroke Stroke width (pixels)
+         * @param opacity Opacity [0..1]
+         * @param transform coordinates transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
+         * @param transform_uv uv coords transform
+         */
+        void drawRoundedRect(const sampler_t & sampler_fill, const sampler_t & sampler_stroke,
                              float left, float top, float right, float bottom,
                              float radius, float stroke,
                              float opacity = 1.0,
                              const mat3f & transform = mat3f::identity(),
                              float u0=0., float v0=0., float u1=1., float v1=1.,
                              const mat3f & transform_uv = mat3f::identity()) {
+            auto & sampler_fill_casted = const_cast<sampler_t &>(sampler_fill);
+            auto & sampler_stroke_casted = const_cast<sampler_t &>(sampler_stroke);
             float pad_and_stroke = 5.0f + stroke/2.0f;
             float l = left + radius, t = top + radius;
             float r = right - radius, b = bottom - radius;
@@ -1003,12 +1155,13 @@ namespace nitrogl {
             float stroke_n = stroke/max_d;
             float aa_fill = 1.0f/max_d;
             float aa_stroke = stroke_n==0.0f ? 0.0f : (1.0f/max_d);
-            rounded_rect_sampler cs(&sampler_fill, &sampler_stroke, w, h, radius_n, stroke_n,
-                                    aa_fill, aa_stroke);
+            rounded_rect_sampler cs(&sampler_fill_casted, &sampler_stroke_casted, w, h,
+                                    radius_n, stroke_n, aa_fill, aa_stroke);
 
             // make the transform about left-top of shape
             auto transform_modified = transform;
-            transform_modified.post_translate(vec2f(off_l, off_t)).pre_translate(vec2f(-off_l, -off_t));
+            transform_modified.post_translate(vec2f(off_l, off_t))
+                              .pre_translate(vec2f(-off_l, -off_t));
 
             drawRect(cs,
                      l_c, t_c, l_c + max_d, t_c + max_d,
@@ -1143,12 +1296,18 @@ namespace nitrogl {
         }
 
         /**
-         * Draw lines path
-         *
-         * @param sampler       The sampler
-         * @param points        the points array pointer
-         * @param size          the size of the points array
-         * @param closed_path   is the path closed ?
+         * Draw a simple 1 pixel width lines path
+         * @param sampler Sampler reference
+         * @param points Points array
+         * @param size Size of points array
+         * @param closed_path if True, will draw a line from 1st and last point
+         * @param transform Coordinates transform
+         * @param opacity Opacity [0..1]
+         * @param transform_uv UV Transform
+         * @param u0 uv left
+         * @param v0 uv bottom
+         * @param u1 uv right
+         * @param v1 uv top
          */
         void drawLines(const sampler_t & sampler,
                        const vec2f * points,
@@ -1158,6 +1317,7 @@ namespace nitrogl {
                        float opacity=1.0f,
                        mat3f transform_uv = mat3f::identity(),
                        float u0=0.f, float v0=0.f, float u1=1.f, float v1=1.f) {
+            auto & sampler_casted = const_cast<sampler_t &>(sampler);
             const auto bbox = nitrogl::triangles::triangles_bbox(points, size, nullptr, 0);
             prepare_uv_transform(transform_uv, bbox.width(), bbox.height(),
                                  sampler.intrinsic_width, sampler.intrinsic_height,
@@ -1173,7 +1333,7 @@ namespace nitrogl {
             // make the transform about its origin, a nice feature
             transform.post_translate(vec2f(-bbox.left, -bbox.top)).pre_translate(vec2f(bbox.left, bbox.top));
             // buffers
-            auto & program = get_main_shader_program_for_sampler(const_cast<sampler_t &>(sampler));
+            auto & program = get_main_shader_program_for_sampler(sampler_casted);
             // data
             const auto type = closed_path ? nitrogl::triangles::LINE_LOOP : nitrogl::triangles::LINE_STRIP;
             multi_render_node::data_type data = {
@@ -1190,11 +1350,10 @@ namespace nitrogl {
                     bbox
             };
             glDisable(GL_BLEND);
-            _node_multi.render(program, const_cast<sampler_t &>(sampler), data);
+            _node_multi.render(program, sampler_casted, data);
             glEnable(GL_BLEND);
             fbo_t::unbind();
             copy_to_backdrop();
-
         }
 
     };
