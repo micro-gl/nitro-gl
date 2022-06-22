@@ -39,7 +39,7 @@ int main() {
             glCheckError();
         };
 
-        example_run(canva, render);
+        example_run<true>(canva, render);
     };
 
     example_init(on_init);
