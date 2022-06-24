@@ -1,12 +1,5 @@
-#define GL_SILENCE_DEPRECATION
-#define SUPPORTS_VAO
-#define MICROGL_USE_STD_MATH
-#define NITROGL_ENABLE_THROW
-
 #include "src/example.h"
 #include "src/Resources.h"
-#include <nitrogl/samplers/test_sampler.h>
-#include <nitrogl/samplers/mix_sampler.h>
 #include <nitrogl/samplers/texture_sampler.h>
 #include <nitrogl/samplers/shapes/circle_sampler.h>
 #include <nitrogl/canvas.h>
@@ -39,7 +32,7 @@ int main() {
             glCheckError();
         };
 
-        example_run<true>(canva, render);
+        example_run<false>(canva, render);
     };
 
     example_init(on_init);

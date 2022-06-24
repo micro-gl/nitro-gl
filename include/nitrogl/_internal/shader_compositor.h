@@ -249,8 +249,9 @@ namespace nitrogl {
         };
 
     public:
-        static void composite_main_program_from_sampler(main_shader_program & program,
+        static bool composite_main_program_from_sampler(main_shader_program & program,
                                                         sampler_t & sampler,
+                                                        const GLchar * glsl_version=nullptr,
                                                         bool is_premul_alpha_result=true,
                                                         const nitrogl::blend_mode_t blend_mode=nullptr,
                                                         const nitrogl::compositor_t compositor=nullptr) {
@@ -259,7 +260,11 @@ namespace nitrogl {
             static buffers_type buffers{};
             buffers.reset();
             // write version
-            buffers.write_char_array_pointer(main_shader_program::frag_version);
+            const GLchar * glsl_v = glsl_version ? glsl_version : main_shader_program::glsl_version;
+            buffers.write_char_array_pointer(glsl_v);
+            buffers.write_new_line();
+            // write compatability
+            buffers.write_char_array_pointer(main_shader_program::shader_compat);
             // write frag variables
             buffers.write_char_array_pointer(main_shader_program::frag_other);
             buffers.write_char_array_pointer(nitrogl::porter_duff::base());
@@ -284,22 +289,36 @@ namespace nitrogl {
 
             // vertex shader is always the same/constant here, so we can save a compilation once it is hot
             // or was used compiled once in the past.
-            if(!vertex.isCompiled())
-                vertex.updateShaderSource(main_shader_program::vert, true);
+            if(!vertex.isCompiled()) {
+                const GLchar * vertex_shader_sources[3] =
+                        { main_shader_program::glsl_version, main_shader_program::shader_compat,
+                          main_shader_program::vert };
+                vertex.updateShaderSource(vertex_shader_sources, 3, nullptr, true);
+            }
             bool stat_compile = fragment.updateShaderSource(buffers.sources, buffers.size(),
                                                             buffers.lengths, true);
-            GLchar source[10000];
             if(!stat_compile) {
+#ifdef NITROGL_DEBUG_MODE
+                GLchar source[10000];
                 fragment.info_log(source, sizeof(source));
                 std::cout << source << std::endl;
+#endif
+#ifndef NITROGL_DISABLE_THROW
                 struct compile_error{};
                 throw compile_error{};
+#endif
+                return false;
             }
             program.resolve_vertex_attributes_and_uniforms_and_link();
-            // sampler_t can now cache uniforms variables
+            // sampler can now cache uniforms variables
             sampler.cache_uniforms_locations(program.id());
+
+#ifdef NITROGL_DEBUG_MODE
+            GLchar source[10000];
             program.fragment().get_source(source, sizeof (source));
             std::cout<< source <<std::endl;
+#endif
+            return true;
         }
 
     };

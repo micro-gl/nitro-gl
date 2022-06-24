@@ -1,8 +1,3 @@
-#define GL_SILENCE_DEPRECATION
-#define SUPPORTS_VAO
-#define MICROGL_USE_STD_MATH
-#define NITROGL_ENABLE_THROW
-
 #include "src/example.h"
 #include "src/Resources.h"
 #include <nitrogl/ogl/ebo.h>

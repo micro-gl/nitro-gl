@@ -12,8 +12,8 @@
 
 #include "math/base_math.h"
 
-#ifdef MICROGL_AVOID_BUILTIN_MATH
-#elif defined(MICROGL_USE_STD_MATH)
+#ifdef NITROGL_AVOID_BUILTIN_MATH
+#elif defined(NITROGL_USE_STD_MATH)
 #include "math/std_float_math.h"
 #else
 #include "math/non_std_float_math.h"

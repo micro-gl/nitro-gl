@@ -79,7 +79,7 @@ namespace nitrogl {
             del();
         }
 
-        void create() { if(!_id and _type!=type::unknown) { _id = glCreateShader(type2enum(_type)); } }
+        void create() { if(!_id and _type!=type::unknown) { _id = glCreateShader(type2enum(_type)); glCheckError(); } }
         bool wasCreated() const { return _id; }
         /**
          * @param sources array of char arrays, each is a source code for shader
@@ -93,13 +93,14 @@ namespace nitrogl {
         bool updateShaderSource(const GLchar ** sources, GLsizei count=1, const GLint *length=nullptr,
                                 bool compile_right_away=false) {
             if(!wasCreated()) return false;
-            glShaderSource(_id, count, sources, length);
+            glShaderSource(_id, count, sources, length); glCheckError();
             _is_compiled=false;
             if(compile_right_away) compile();
             // info log for compilation
-            // todo: remove in debug
+#ifdef NITROGL_DEBUG_MODE
             char buff[1000];
             info_log(buff, 1000);
+#endif
             //
             return _is_compiled;
         }
@@ -114,7 +115,7 @@ namespace nitrogl {
          */
         GLsizei get_source(char * buff, GLsizei buff_size) const {
             GLsizei length;
-            glGetShaderSource(_id, buff_size, &length, buff);
+            glGetShaderSource(_id, buff_size, &length, buff); glCheckError();
             return length;
         }
         type shader_type() const { return _type; }
@@ -123,10 +124,10 @@ namespace nitrogl {
         bool isCompiled() const { return _is_compiled; }
         bool compile() {
             if(_is_compiled) return false;
-            glCompileShader(_id);
+            glCompileShader(_id); glCheckError();
             //Check shader for errors
             GLint compile_status = GL_FALSE;
-            glGetShaderiv(_id, GL_COMPILE_STATUS, &compile_status);
+            glGetShaderiv(_id, GL_COMPILE_STATUS, &compile_status); glCheckError();
             _is_compiled = compile_status;
             return compile_status;
         }
@@ -135,12 +136,12 @@ namespace nitrogl {
             // Shader copied log length
             GLint copied_length = 0;
             // copy info log
-            glGetShaderInfoLog(_id, log_buffer_size, &copied_length, log_buffer);
+            glGetShaderInfoLog(_id, log_buffer_size, &copied_length, log_buffer); glCheckError();
             return copied_length;
         }
         void del() {
             if(_id && owner) {
-                glDeleteShader(_id); _is_compiled=false; _id=0; _type=type::unknown;
+                glDeleteShader(_id); glCheckError(); _is_compiled=false; _id=0; _type=type::unknown;
             }
         }
     };

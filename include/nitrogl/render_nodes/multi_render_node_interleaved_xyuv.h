@@ -69,7 +69,7 @@ namespace nitrogl {
                 { 1, GL_FLOAT, 2, OFFSET(2*sizeof (GLfloat)),   STRIDE, _vbo_xyuv.id()},
             }};
 
-#ifdef SUPPORTS_VAO
+#ifdef NITROGL_SUPPORTS_VAO
             _vao.bind();
             _ebo.bind();
             program_type::point_generic_vertex_attributes(gva.data,
@@ -110,7 +110,7 @@ namespace nitrogl {
             _ebo.uploadData(d.indices, GLsizeiptr(sizeof(GLuint))*d.indices_size,
                             GL_DYNAMIC_DRAW);
 
-#ifdef SUPPORTS_VAO
+#ifdef NITROGL_SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
             if(has_missing_indices) {
@@ -124,15 +124,17 @@ namespace nitrogl {
             _ebo.bind();
             // this crates exccess 2 binds for vbos
             main_shader_program::point_generic_vertex_attributes(gva.data,
-                                                                 main_shader_program::vertex_attributes().data, gva.size());
+                                                                 main_shader_program::shader_vertex_attributes().data,
+                                                                 gva.size());
 
             if(has_missing_indices) {
                 // non-indexed drawing, the EBO is bound BUT is not used
-                glDrawArrays(d.triangles_type, 0,  GLsizei(d.pos_size));
+                glDrawArrays(d.triangles_type, 0, GLsizei(d.xyuv_size/4));
             } else
                 glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
 
-            _program.disableLocations(va.data, va.size());
+            program.disableLocations(program_type::shader_vertex_attributes().data,
+                                     program_type::shader_vertex_attributes().size());
 #endif
             // un-use shader
             shader_program::unuse();

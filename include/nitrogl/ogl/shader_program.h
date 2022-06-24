@@ -13,6 +13,7 @@
 #include "shader.h"
 #include "gva.h"
 #include "../traits.h"
+#include "debug.h"
 
 namespace nitrogl {
 //#define BUFFER_OFFSET(i) ((char *)NULL + (i))
@@ -115,20 +116,20 @@ namespace nitrogl {
         ~shader_program() { del(); unuse(); }
 
         bool wasCreated() const { return _id; }
-        void create() { if(!_id) _id = glCreateProgram(); }
+        void create() { if(!_id) _id = glCreateProgram(); glCheckError(); }
 
     private:
         template<class VV>
         void internal_update_shaders(VV && vertex, VV && fragment) {
             if(vertex.id() != _vertex.id()) {
-                if(_vertex.id()) glDetachShader(_id, _vertex.id());
+                if(_vertex.id()) { glDetachShader(_id, _vertex.id()); glCheckError(); }
                 _vertex = nitrogl::traits::forward<VV>(vertex);
-                glAttachShader(_id, _vertex.id());
+                glAttachShader(_id, _vertex.id()); glCheckError();
             }
             if(fragment.id() != _fragment.id()) {
-                if(_fragment.id()) glDetachShader(_id, _fragment.id());
+                if(_fragment.id()) { glDetachShader(_id, _fragment.id()); glCheckError(); }
                 _fragment = nitrogl::traits::forward<VV>(fragment);
-                glAttachShader(_id, _fragment.id());
+                glAttachShader(_id, _fragment.id()); glCheckError();
             }
         }
 
@@ -145,22 +146,22 @@ namespace nitrogl {
             internal_update_shaders(nitrogl::traits::move(vertex), nitrogl::traits::move(fragment));
         }
         void attach_shaders() {
-            glAttachShader(_id, _vertex.id());
-            glAttachShader(_id, _fragment.id());
+            glAttachShader(_id, _vertex.id()); glCheckError();
+            glAttachShader(_id, _fragment.id()); glCheckError();
         }
         void detachShaders() const {
-            if(_vertex.id()) glDetachShader(_id, _vertex.id());
-            if(_fragment.id()) glDetachShader(_id, _fragment.id());
+            if(_vertex.id()) { glDetachShader(_id, _vertex.id()); glCheckError(); }
+            if(_fragment.id()) { glDetachShader(_id, _fragment.id()); glCheckError(); }
         }
         GLuint id() const { return _id; }
         shader & vertex() { return _vertex; }
         shader & fragment() { return _fragment; }
-        void use() const { glUseProgram(_id); }
-        static void unuse() { glUseProgram(0); }
+        void use() const { glUseProgram(_id); glCheckError(); }
+        static void unuse() { glUseProgram(0); glCheckError(); }
         bool link() {
-            glLinkProgram(_id);
+            glLinkProgram(_id); glCheckError();
             // it is okay to have a get after a gl command
-            glGetProgramiv(_id, GL_LINK_STATUS, &_last_link_status);
+            glGetProgramiv(_id, GL_LINK_STATUS, &_last_link_status); glCheckError();
             return _last_link_status;
         }
 
@@ -169,13 +170,13 @@ namespace nitrogl {
             // Shader copied log length
             GLint copied_length = 0;
             // copy info log
-            glGetProgramInfoLog(_id, log_buffer_size, &copied_length, log_buffer);
+            glGetProgramInfoLog(_id, log_buffer_size, &copied_length, log_buffer); glCheckError();
             return copied_length;
         }
         void del() {
             if(!(_id && owner)) return;
-            detachShaders();
-            glDeleteProgram(_id);
+            detachShaders(); glCheckError();
+            glDeleteProgram(_id); glCheckError();
             _id=0;
         }
 
@@ -186,20 +187,20 @@ namespace nitrogl {
 //            GLint stat; glGetProgramiv(_id, GL_LINK_STATUS, &stat); return stat;
         }
         void bindAttribLocation(GLuint index, const GLchar *name) const {
-            glBindAttribLocation(_id, index, name);
+            glBindAttribLocation(_id, index, name); glCheckError();
             // you have to link again
         }
         GLint attributeLocationByName(const GLchar * name) const {
-            return glGetAttribLocation(_id, name);
+            return glGetAttribLocation(_id, name); glCheckError();
         }
 
         void enableLocations(const shader_vertex_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then this is part of VAO state
-            for (; length!=0 ; --length, ++attrs) glEnableVertexAttribArray(attrs->location);
+            for (; length!=0 ; --length, ++attrs) { glEnableVertexAttribArray(attrs->location); glCheckError(); }
         };
         void disableLocations(const shader_vertex_attr_t * attrs, unsigned length) const {
             // if you have VAO support, then don't run this method. Otherwise, do.
-            for (; length!=0 ; --length, ++attrs) glDisableVertexAttribArray(attrs->location);
+            for (; length!=0 ; --length, ++attrs) { glDisableVertexAttribArray(attrs->location); glCheckError(); }
         };
 
         /**
@@ -227,7 +228,7 @@ namespace nitrogl {
             bool binding_occured=false;
             for (auto * it = attrs; it < attrs + length; ++it) {
                 if(it->location<0) continue;
-                glBindAttribLocation(_id, it->location, it->name);
+                glBindAttribLocation(_id, it->location, it->name); glCheckError();
                 binding_occured = true;
             }
             // we must relink to make bind take effect, bind can happen only before linking does.
@@ -242,7 +243,7 @@ namespace nitrogl {
             for (auto * it = attrs; it < attrs + length; ++it) {
                 if(it->location>=0) continue;
                 if(it->name==nullptr) return false; // must have name
-                it->location = glGetAttribLocation(_id, it->name);
+                it->location = glGetAttribLocation(_id, it->name); glCheckError();
             }
             return true;
         };
@@ -255,7 +256,7 @@ namespace nitrogl {
             bool binding_occured=false;
             for (auto * it = attrs; it < attrs + length; ++it) {
                 if(it->location<0) continue;
-                glBindAttribLocation(_id, it->location, it->name);
+                glBindAttribLocation(_id, it->location, it->name); glCheckError();
                 binding_occured = true;
             }
             // we must relink to make bind take effect, bind can happen only before linking does.
@@ -284,7 +285,7 @@ namespace nitrogl {
             for (auto * it = attrs; it < attrs + length; ++it) {
                 if(it->location>=0) continue;
                 if(it->name==nullptr) return false; // must have name
-                it->location = glGetAttribLocation(_id, it->name);
+                it->location = glGetAttribLocation(_id, it->name); glCheckError();
             }
             return true;
         };
@@ -299,7 +300,7 @@ namespace nitrogl {
         bool getUniformsLocations(uniform_t * attrs, unsigned length) {
             if(!wasLastLinkSuccessful()) link(); // in case no binding was requested
             for (auto * it = attrs; it < attrs + length; ++it) {
-                attrs->location= uniformLocationByName(attrs->name);
+                attrs->location= uniformLocationByName(attrs->name); glCheckError();
             }
             return true;
         };
@@ -329,7 +330,9 @@ namespace nitrogl {
             }
             // this avoids extra bindings if all the vertex attributes are mapped
             // from the same vbo
-            if(uniform_vbo && gva->vbo >= 0) glBindBuffer(GL_ARRAY_BUFFER, gva->vbo);
+            if(uniform_vbo && gva->vbo >= 0) {
+                glBindBuffer(GL_ARRAY_BUFFER, gva->vbo); glCheckError();
+            }
 
             auto * it2 = sva;
             for (auto * it = gva; it < gva + length; ++it, ++it2) {
@@ -339,25 +342,26 @@ namespace nitrogl {
                 // then enable the location and then point the shader program via generic vertex attributes. If using VAO,
                 // then those are part of its state (VBO binding is not, only the mapping from VBO
                 // to the vertex shader)
-                if(!uniform_vbo && it->vbo>=0) glBindBuffer(GL_ARRAY_BUFFER, it->vbo);
+                if(!uniform_vbo && it->vbo>=0) { glBindBuffer(GL_ARRAY_BUFFER, it->vbo); glCheckError(); }
                 // enable generic vertex attrib for bound VAO or global state if you dont support VAO
-                glEnableVertexAttribArray((GLuint)it->index);
+                glEnableVertexAttribArray((GLuint)it->index); glCheckError();
+
                 switch (it2->shader_component_type) {
                     case shader_attribute_component_type::Float:
 
                         glVertexAttribPointer((GLuint)it->index, GLint(it->size), it->type,
-                                               GL_FALSE, it->stride, it->offset);
+                                              GL_FALSE, it->stride, it->offset); glCheckError();
                         break;
 #ifdef SUPPORTS_INT_ATTRIBUTES
                     case shader_attribute_component_type::Integer:
                         glVertexAttribIPointer((GLuint)it->location, GLint(it->size), it->type,
-                                               it->stride, it->offset);
+                                               it->stride, it->offset); glCheckError();
                         break;
 #endif
 #ifdef SUPPORTS_LONG_ATTRIBUTES
                     case shader_attribute_component_type::Double:
                         glVertexAttribLPointer((GLuint)it->location, GLint(it->size), it->type,
-                                               it->stride, it->offset);
+                                               it->stride, it->offset); glCheckError();
                         break;
 #endif
                     default: return false;
@@ -370,7 +374,7 @@ namespace nitrogl {
 
         // uniforms
         GLint uniformLocationByName(const GLchar * name) const {
-            return glGetUniformLocation(_id, name);
+            return glGetUniformLocation(_id, name); glCheckError();
         }
 
     };

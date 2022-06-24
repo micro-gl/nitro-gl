@@ -1,5 +1,9 @@
 #pragma once
 
+#define GL_SILENCE_DEPRECATION
+#define NITROGL_USE_STD_MATH
+#define NITROGL_DEBUG_MODE
+
 #include <iostream>
 #include <chrono>
 //#include <glad/glad.h>
@@ -7,34 +11,42 @@
 #include <OpenGL/gl3ext.h>
 #include <SDL.h>
 
-GLenum glCheckError_(const char *file, int line)
-{
-    GLenum errorCode;
-    while ((errorCode = glGetError()) != GL_NO_ERROR)
-    {
-        std::string error;
-        switch (errorCode)
-        {
-            case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
-            case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
-            case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
-            //            case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
-            //            case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
-            case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
-            case GL_INVALID_FRAMEBUFFER_OPERATION: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
-        }
-        std::cout << error << " | " << file << " (" << line << ")" << std::endl;
-    }
-    return errorCode;
-}
-#define glCheckError() glCheckError_(__FILE__, __LINE__)
+//GLenum glCheckError_(const char *file, int line)
+//{
+//    GLenum errorCode;
+//    while ((errorCode = glGetError()) != GL_NO_ERROR)
+//    {
+//        std::string error;
+//        switch (errorCode)
+//        {
+//            // I am using the real integer codes instead of enums because
+//            // some enums might be deprecated in some opengl versions,
+//            // which will cause compilation errors
+//            case 0x0500: error = "INVALID_ENUM"; break;
+//            case 0x0501: error = "INVALID_VALUE"; break;
+//            case 0x0502: error = "INVALID_OPERATION"; break;
+//            case 0x0503: error = "GL_STACK_OVERFLOW"; break;
+//            case 0x0504: error = "GL_STACK_UNDERFLOW"; break;
+//            case 0x0505: error = "OUT_OF_MEMORY"; break;
+//            case 0x0506: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
+//            case 0x0507: error = "GL_CONTEXT_LOST"; break;
+//            case 0x8031: error = "GL_TABLE_TOO_LARGE1"; break;
+//            default: error = "UNKNOWN"; break;
+//        }
+//        std::cout << error << " | code " << errorCode << " | file " << file << " ( line "
+//                            << line << ")" << std::endl;
+//    }
+//    return errorCode;
+//}
+//#define glCheckError() glCheckError_(__FILE__, __LINE__)
 
 template<class on_init_callback>
 void example_init(const on_init_callback &on_init) {
+    std::cout << "nitro{gl} Exampler init\n";
     SDL_Window * window;
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cout << "SDL could not be initialized: " << SDL_GetError();
+        std::cout << " - ERROR: SDL could not be initialized: " << SDL_GetError();
         exit(1);
     }
 
@@ -62,7 +74,7 @@ void example_init(const on_init_callback &on_init) {
     SDL_GL_SetSwapInterval(0);
 
     if(!window) {
-        std::cout << "Window could not be created! SDL_Error: " + std::string(SDL_GetError()) << std::endl;
+        std::cout << " - ERROR: Window could not be created! SDL_Error: " + std::string(SDL_GetError()) << std::endl;
         exit(1);
     }
 
@@ -72,11 +84,14 @@ void example_init(const on_init_callback &on_init) {
 //    gladLoadGLLoader(SDL_GL_GetProcAddress);
 
     int maj=0, min=0;
-//    glGetIntegerv(GL_MAJOR_VERSION, &maj);
-//    glGetIntegerv(GL_MINOR_VERSION, &min);
+    glGetIntegerv(GL_MAJOR_VERSION, &maj);
+    glGetIntegerv(GL_MINOR_VERSION, &min);
     const unsigned char * version = glGetString(GL_VERSION);
+    const unsigned char * glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
 
-    std::cout << version <<" hello\n";
+    std::cout << " - OpenGL {GL_VERSION} String:: "<< version << std::endl;
+    std::cout << " - OpenGL {GL_MAJOR_VERSION}.{GL_MINOR_VERSION}:: "<< maj << '.' << min << std::endl;
+    std::cout << " - OpenGL {GL_SHADING_LANGUAGE_VERSION}:: "<< glsl_version << std::endl;
 
     on_init(window, context);
 }

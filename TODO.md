@@ -42,15 +42,16 @@
 
 
 40. compatibility with older than 3.0 opengl (attributes in/out, texture/2d etc...)
-39. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
-41. AA with rbos
-42. filter sampler
-43. convert refs to pointer template so we can forward besides pointer to multi sampler
-44. investigate caching of uniforms per program
-45. text measure compute
-46. draw text, sdf version
-47. pointer/l-val/r-val to pointer function
-48. explore drawing 3d objects, might need new shader type and pool and render node
+41. create mix sampler
+42. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
+43. AA with rbos
+44. filter sampler
+45. convert refs to pointer template so we can forward besides pointer to multi sampler
+46. investigate caching of uniforms per program
+47. text measure compute
+48. draw text, sdf version
+49. pointer/l-val/r-val to pointer function
+50. explore drawing 3d objects, might need new shader type and pool and render node
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

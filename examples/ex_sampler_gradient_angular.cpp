@@ -1,7 +1,7 @@
 #define GL_SILENCE_DEPRECATION
-#define SUPPORTS_VAO
-#define MICROGL_USE_STD_MATH
-#define NITROGL_ENABLE_THROW
+#define NITROGL_SUPPORTS_VAO
+#define NITROGL_USE_STD_MATH
+#define NITROGL_DISABLE_THROW
 
 #include "src/example.h"
 #include "src/Resources.h"
