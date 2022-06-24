@@ -17,7 +17,7 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
-        glCheckError();
+
         canvas canva(500,500);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -36,7 +36,6 @@ int main() {
             canva.drawRect(pie, 0, 0, 250, 250, 1.0);
 //            canva.drawRect(circle, 0, 0, 250, 250, 1.0/2, mat3f::rotation(t, 125, 125));
 //            canva.drawRect(tex_sampler_3, 125, 125, 125+250, 125+250);//, mat3f::rotation(t));
-            glCheckError();
         };
 
         example_run(canva, render);

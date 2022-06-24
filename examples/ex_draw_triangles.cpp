@@ -10,7 +10,7 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
-        glCheckError();
+
         canvas canva(500,500);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -40,7 +40,6 @@ int main() {
                                 nullptr, 0,
                                 mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
-            glCheckError();
         };
 
         auto render_triangles_fan = [&]() {
@@ -58,7 +57,6 @@ int main() {
                                 nullptr, 0,
                                 mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
-            glCheckError();
         };
 
         auto render_triangles_strip = [&]() {
@@ -76,7 +74,6 @@ int main() {
                                 nullptr, 0,
                                 mat3f::rotation(t, SIZE/2.0f, SIZE/2.0f).post_translate(vec2f {200, 200})
                                 );
-            glCheckError();
         };
 
         example_run<true>(canva, render_triangles_strip);

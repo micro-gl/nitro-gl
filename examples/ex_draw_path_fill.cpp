@@ -90,7 +90,7 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(100,200);
-        glCheckError();
+
         canvas canva(600,600);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -118,7 +118,6 @@ int main() {
                     mat3f::identity(),
                     mat3f::rotation(math::deg_to_rad(t), 0.5f, 0.5f)
                     );
-            glCheckError();
         };
 
         example_run<true>(canva, render);

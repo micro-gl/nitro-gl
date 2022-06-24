@@ -58,7 +58,7 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(100,200);
-        glCheckError();
+
         canvas canva(600,600);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -84,7 +84,6 @@ int main() {
             canva.drawPolygon<polygons::X_MONOTONE>(sampler_color,
                                                     polygon_x_monotone.data(),
                                                     polygon_x_monotone.size());
-            glCheckError();
         };
 
         example_run<false>(canva, render);

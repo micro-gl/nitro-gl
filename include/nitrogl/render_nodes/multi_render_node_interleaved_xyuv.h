@@ -113,11 +113,12 @@ namespace nitrogl {
 #ifdef NITROGL_SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
-            if(has_missing_indices) {
-                // non-indexed drawing, the EBO is bound BUT is not used
+            if(has_missing_indices) // non-indexed drawing, the EBO is bound BUT is not used
                 glDrawArrays(d.triangles_type, 0, GLsizei(d.xyuv_size/4));
-            } else
+            else
                 glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
+
+            glCheckError();
 
             vao_t::unbind();
 #else
@@ -127,11 +128,12 @@ namespace nitrogl {
                                                                  main_shader_program::shader_vertex_attributes().data,
                                                                  gva.size());
 
-            if(has_missing_indices) {
-                // non-indexed drawing, the EBO is bound BUT is not used
+            if(has_missing_indices) // non-indexed drawing, the EBO is bound BUT is not used
                 glDrawArrays(d.triangles_type, 0, GLsizei(d.xyuv_size/4));
-            } else
+            else
                 glDrawElements(d.triangles_type, GLsizei (d.indices_size), GL_UNSIGNED_INT, OFFSET(0));
+
+            glCheckError();
 
             program.disableLocations(program_type::shader_vertex_attributes().data,
                                      program_type::shader_vertex_attributes().size());

@@ -11,35 +11,6 @@
 #include <OpenGL/gl3ext.h>
 #include <SDL.h>
 
-//GLenum glCheckError_(const char *file, int line)
-//{
-//    GLenum errorCode;
-//    while ((errorCode = glGetError()) != GL_NO_ERROR)
-//    {
-//        std::string error;
-//        switch (errorCode)
-//        {
-//            // I am using the real integer codes instead of enums because
-//            // some enums might be deprecated in some opengl versions,
-//            // which will cause compilation errors
-//            case 0x0500: error = "INVALID_ENUM"; break;
-//            case 0x0501: error = "INVALID_VALUE"; break;
-//            case 0x0502: error = "INVALID_OPERATION"; break;
-//            case 0x0503: error = "GL_STACK_OVERFLOW"; break;
-//            case 0x0504: error = "GL_STACK_UNDERFLOW"; break;
-//            case 0x0505: error = "OUT_OF_MEMORY"; break;
-//            case 0x0506: error = "INVALID_FRAMEBUFFER_OPERATION"; break;
-//            case 0x0507: error = "GL_CONTEXT_LOST"; break;
-//            case 0x8031: error = "GL_TABLE_TOO_LARGE1"; break;
-//            default: error = "UNKNOWN"; break;
-//        }
-//        std::cout << error << " | code " << errorCode << " | file " << file << " ( line "
-//                            << line << ")" << std::endl;
-//    }
-//    return errorCode;
-//}
-//#define glCheckError() glCheckError_(__FILE__, __LINE__)
-
 template<class on_init_callback>
 void example_init(const on_init_callback &on_init) {
     std::cout << "nitro{gl} Exampler init\n";

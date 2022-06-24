@@ -96,8 +96,6 @@ namespace nitrogl {
             // sampler uniforms
             sampler.upload_uniforms(program.id());
 
-//            glCheckError();
-
             static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
             // upload data
             _vbo_pos_uvs_qs.uploadData(d.pos_and_uvs_qs_interleaved,
@@ -108,19 +106,17 @@ namespace nitrogl {
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
+            glCheckError();
             vao_t::unbind();
 #else
             _ebo.bind();
-            glCheckError();
             // this crates exccess 2 binds for vbos
             program_type::point_generic_vertex_attributes(gva.data,
                     program_type::shader_vertex_attributes().data, gva.size());
-            glCheckError();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
             glCheckError();
             program.disableLocations(program_type::shader_vertex_attributes().data,
                                      program_type::shader_vertex_attributes().size());
-            glCheckError();
 #endif
             // unuse shader
             shader_program::unuse();

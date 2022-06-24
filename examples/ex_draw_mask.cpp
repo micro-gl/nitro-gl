@@ -10,7 +10,6 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
-        glCheckError();
         canvas canva(500,500);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -18,7 +17,7 @@ int main() {
         auto tex_sampler_4 = texture_sampler(Resources::loadTexture("assets/images/dog_32bit_premul.png", true));
         auto tex_sampler_5 = texture_sampler(Resources::loadTexture("assets/images/bw_8bits.png", false));
         color_sampler sampler_color(1.0,0.0,0.0,1.0);
-        const auto * bbb = glGetString(GL_RENDERER);
+
         auto render = [&]() {
             static float t= 0;
             t+=0.05;
@@ -33,7 +32,6 @@ int main() {
                            0, 250, 250, 500);
             canva.drawMask(tex_sampler_5, channels::channel::red_channel,
                            250, 250, 500, 500);
-//            glCheckError();
         };
 
         example_run(canva, render);

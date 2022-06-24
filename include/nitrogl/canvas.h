@@ -143,7 +143,6 @@ namespace nitrogl {
             _node_multi.init();
             _node_multi_interleaved.init();
             updateDrawMode(_draw_mode);
-            glCheckError();
         }
 
     public:

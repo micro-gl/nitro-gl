@@ -9,7 +9,7 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
-        glCheckError();
+
         canvas canva(500,500);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -26,7 +26,6 @@ int main() {
                            100, 100, 200,  200,
                            1.0f,
                            mat3f::rotation(nitrogl::math::deg_to_rad(t), 50,50));
-            glCheckError();
         };
 
         example_run<false>(canva, render);

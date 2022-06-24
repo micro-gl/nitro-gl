@@ -39,7 +39,6 @@ int main() {
         const char * text = "Welcome to nitro{gl} Welcome to nitro{gl} Welcome to "
                             "nitro{gl} Welcome to nitro{gl} Welcome to nitro{gl} ";
 
-        glCheckError();
         canvas canva(500,500);
 
         auto render = [&]() {
@@ -51,7 +50,6 @@ int main() {
                            {1.0f, 1.0f, 1.0f, 1.0f},
                            format,
                            0, 0, 400, 400);
-            glCheckError();
         };
 
         example_run<true>(canva, render);
