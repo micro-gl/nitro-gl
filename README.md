@@ -1,11 +1,11 @@
-# micro{gl}
-**Fast**, Super **Slim**, **Embeddable**, **Headers files** only **`C++11`** graphics library, that  
-can run on any 32/64 bits computer without **FPU** or **GPU**. **No standard library required**.
+# nitro{gl}
+**Fast**, Super **Slim**, **Embeddable**, **Headers files** only **`C++11`** **OpenGL** graphics library, that  
+can run on all **OpenGL/ES** version
 
-check out our website at [micro-gl.github.io/docs/microgl](https://micro-gl.github.io/docs/microgl)
+check out our website at [micro-gl.github.io/docs/nitrogl](https://micro-gl.github.io/docs/nitrogl)
 
-## Installing `micro{gl}`
-`microgl` is a headers only library, which gives the following install possibilities:
+## Installing `nitro{gl}`
+`nitrogl` is a headers only library, which gives the following install possibilities:
 1. Using `cmake` to invoke the `install` target, that will copy everything in your system via
 ```bash
 $ mkdir cmake-build-release
@@ -13,32 +13,32 @@ $ cd cmake-build-release
 $ cmake -DCMAKE_BUILD_TYPE=Release ..
 $ cmake --install .
 ```
-2. Copying the `include/microgl` to anywhere you want.
+2. Copying the `include/nitrogl` to anywhere you want.
 
-## Consuming `micro{gl}`
+## Consuming `nitro{gl}`
 Following options are available:
 1. copy the project to a sub folder of your project. inside your **`CMakeLists.txt`** add
 ```cmake
-add_subdirectory(/path/to/microgl)
-target_link_libraries(your_app microgl)
+add_subdirectory(/path/to/nitrogl)
+target_link_libraries(your_app nitrogl)
 ```
-2. If you installed **`micro{gl}`** with option 1 (see above) at your system, you can instead
+2. If you installed **`nitro{gl}`** with option 1 (see above) at your system, you can instead
 ```cmake
-find_package(microgl CONFIG REQUIRED)
-target_link_libraries(your_app microgl::microgl)
+find_package(nitrogl CONFIG REQUIRED)
+target_link_libraries(your_app nitrogl::nitrogl)
 ```
 3. If you have not installed, you can add in your app's `CMakeLists.txt`
 ```cmake
-target_include_directories(app path/to/microgl/folder/include/)
+target_include_directories(app path/to/nitrogl/folder/include/)
 ```
-4. If you manually copied the `include/microgl` to the default system include path,  
-you can use `cmake/Findmicrogl.cmake` to automatically create the cmake targets
+4. If you manually copied the `include/nitrogl` to the default system include path,  
+you can use `cmake/Findnitrogl.cmake` to automatically create the cmake targets
 ```cmake
-list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/path/to/Findmicrogl/folder)
-find_package(microgl REQUIRED)
-target_link_libraries(your_app microgl::microgl)
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/path/to/Findnitrogl/folder)
+find_package(nitrogl REQUIRED)
+target_link_libraries(your_app nitrogl::nitrogl)
 ```
-5. Just copy the `include/microgl` into a sub folder of your project and include the header  
+5. Just copy the `include/nitrogl` into a sub folder of your project and include the header  
 files you need with relative path in your source files.
 
 ## Running Examples
@@ -59,5 +59,5 @@ $ ../examples/bin/example_name
 ```
 
 ```text
-Author: Tomer Shalev, tomer.shalev@gmail.com, all rights reserved (2021)
+Author: Tomer Shalev, tomer.shalev@gmail.com, all rights reserved (2022)
 ```

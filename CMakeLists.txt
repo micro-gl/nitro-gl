@@ -3,9 +3,9 @@ project(nitrogl
         VERSION
         1.0.0
         DESCRIPTION
-        "open-gl graphics"
+        "OpenGL/ES graphics with samplers"
         HOMEPAGE_URL
-        "https://micro-gl.github.io/docs")
+        "https://micro-gl.github.io/docs/nitrogl")
 
 enable_language(CXX)
 set (CMAKE_CXX_STANDARD 11)

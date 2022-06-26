@@ -44,15 +44,16 @@
 45. glsl versioning - wip
 
 46. create mix sampler
-47. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
-48. AA with rbos
-49. filter sampler
-50. convert refs to pointer template so we can forward besides pointer to multi sampler
-51. investigate caching of uniforms per program
-52. text measure compute
-53. draw text, sdf version
-54. pointer/l-val/r-val to pointer function
-55. explore drawing 3d objects, might need new shader type and pool and render node
+47. filter sampler
+48. checkerboard sampler
+49. https://stackoverflow.com/questions/327642/opengl-and-monochrome-texture
+50. AA with rbos
+51. convert refs to pointer template so we can forward besides pointer to multi sampler
+52. investigate caching of uniforms per program
+53. text measure compute
+54. draw text, sdf version
+55. pointer/l-val/r-val to pointer function
+56. explore drawing 3d objects, might need new shader type and pool and render node
 
 optimizations:
 1. lazy back buffers_type. also, if taregt is requested as premul alpha,

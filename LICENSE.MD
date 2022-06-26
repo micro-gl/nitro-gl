@@ -9,7 +9,7 @@ License is a custom open source semi-permissive license with the following guide
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 
 specific files which override the default license agreement have a different text in them
-notifying the updated license agreement. The following files are:
+notifying the updated license agreement. The following files are in the micro-tess package:
 - planarize_division.h
 - half_edge.h
 - path.h
