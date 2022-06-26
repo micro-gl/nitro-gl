@@ -12,12 +12,12 @@
 
 namespace nitrogl {
 
-#ifdef SUPPORTS_VAO
+#ifdef NITROGL_SUPPORTS_VAO
     class vao_t {
         GLuint _id;
         bool owner;
 
-        void generate() { if(!_id) glGenVertexArrays(1, &_id); }
+        void generate() { if(!_id) glGenVertexArrays(1, &_id); glCheckError(); }
         vao_t(GLuint id, bool owner) : _id(id), owner(owner) {};
 
     public:
@@ -37,9 +37,9 @@ namespace nitrogl {
 
         bool wasGenerated() const { return _id; }
         GLuint id() const { return _id; }
-        void del() { if(_id && owner) { glDeleteVertexArrays(1, &_id); _id=0; } }
-        void bind() const { glBindVertexArray(_id); }
-        static void unbind() { glBindVertexArray(0); }
+        void del() { if(_id && owner) { glDeleteVertexArrays(1, &_id); glCheckError(); _id=0; } }
+        void bind() const { glBindVertexArray(_id); glCheckError(); }
+        static void unbind() { glBindVertexArray(0); glCheckError(); }
     };
 #else
     class vao_t {

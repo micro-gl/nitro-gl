@@ -10,13 +10,15 @@
 ========================================================================================*/
 #pragma once
 
+#include "debug.h"
+
 namespace nitrogl {
 
     class ebo_t {
         GLuint _id;
         bool owner;
 
-        void generate() { if(!_id) glGenBuffers(1, &_id); }
+        void generate() { if(!_id) glGenBuffers(1, &_id); glCheckError(); }
         ebo_t(GLuint id, bool owner) : _id(id), owner(owner) {};
 
     public:
@@ -42,12 +44,12 @@ namespace nitrogl {
         void uploadData(const GLuint * array, GLsizeiptr array_size_bytes, GLenum usage=GL_STATIC_DRAW) const {
             if(_id==0) return;
             bind();
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, array_size_bytes, array, usage);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, array_size_bytes, array, usage); glCheckError();
         }
         GLuint id() const { return _id; }
-        void del() { if(_id && owner) { glDeleteBuffers(1, &_id); _id=0; } }
-        void bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id); }
-        static void unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
+        void del() { if(_id && owner) { glDeleteBuffers(1, &_id); glCheckError(); _id=0; } }
+        void bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _id); glCheckError(); }
+        static void unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); glCheckError(); }
     };
 
 }

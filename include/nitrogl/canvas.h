@@ -10,12 +10,17 @@
 ========================================================================================*/
 #pragma once
 
+// base
+#include "_internal/ogl_info.h"
+#include "math.h"
 #include "color.h"
 #include "traits.h"
 #include "channels.h"
-#include "math.h"
+#include "triangles.h"
+#include "polygons.h"
 
-#ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
+// micro-tess
+#ifndef NITROGL_USE_EXTERNAL_MICRO_TESS
 #include "micro-tess/include/micro-tess/path.h"
 #include "micro-tess/include/micro-tess/monotone_polygon_triangulation.h"
 #include "micro-tess/include/micro-tess/fan_triangulation.h"
@@ -33,16 +38,15 @@
 #include <micro-tess/dynamic_array.h>
 #endif
 
+// functions
 #include "functions/minmax.h"
 #include "functions/clamp.h"
 #include "functions/swap.h"
 #include "functions/orient2d.h"
 #include "functions/bits.h"
 #include "functions/distance.h"
-#include "triangles.h"
-#include "polygons.h"
 
-//tect
+// text
 #include "text/bitmap_font.h"
 #include "text/bitmap_glyph.h"
 #include "text/text_format.h"
@@ -90,7 +94,6 @@ namespace nitrogl {
     public:
         using index = GLuint;//unsigned int;
         using precision = unsigned char;
-        using opacity_t = unsigned char;
 
         // rasterizer integers
         using rint_big = int64_t;
@@ -140,7 +143,6 @@ namespace nitrogl {
             _node_multi.init();
             _node_multi_interleaved.init();
             updateDrawMode(_draw_mode);
-            glCheckError();
         }
 
     public:
@@ -259,9 +261,6 @@ namespace nitrogl {
             nitrogl::fbo_t::unbind();
         }
 
-//#define max___(a, b) ((a)<(b) ? (b) : (a))
-//#define min___(a, b) ((a)<(b) ? (a) : (b))
-
     private:
         void copy_region_to_backdrop(int left, int top, int right, int bottom) const {
             copy_region_to_texture(_tex_backdrop, left, top, left, top, right, bottom);
@@ -295,7 +294,7 @@ namespace nitrogl {
          * Given a sampler, generate the main shader of it and use the pool
          * to get it or update it
          * @param sampler Sampler object
-         * @return a shader
+         * @return a program
          */
         main_shader_program & get_main_shader_program_for_sampler(
                 sampler_t & sampler) {
@@ -315,7 +314,9 @@ namespace nitrogl {
             if(!res.is_active) {
                 // if it is not active, reconfigure it with new shader source code
                 shader_compositor::composite_main_program_from_sampler(
-                        program,sampler, _is_pre_mul_alpha,
+                        program,sampler,
+                        ogl_info::glsl_version_string,
+                        _is_pre_mul_alpha,
                         _blend_mode, _alpha_compositor);
             }
             return program;

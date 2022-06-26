@@ -13,6 +13,7 @@
 #include "../traits.h"
 #include "../_internal/string_utils.h"
 #include "../_internal/murmur.h"
+#include "../ogl/debug.h"
 
 namespace nitrogl {
 
@@ -58,8 +59,8 @@ namespace nitrogl {
                 *next=c;
             }
             *next='\0'; // add null termination
-            const auto loc = glGetUniformLocation(program, s);
-#ifdef NITROGL_ENABLE_THROW
+            const auto loc = glGetUniformLocation(program, s); glCheckError();
+#ifndef NITROGL_DISABLE_THROW
             if(loc==-1) throw location_of_uniform_not_found();
 #endif
             return loc;
@@ -108,7 +109,7 @@ namespace nitrogl {
             _traversal_info.id=id;
             _traversal_info.visited=false;
             if(id > 99) {
-#ifdef NITROGL_ENABLE_THROW
+#ifndef NITROGL_DISABLE_THROW
                 throw no_more_than_99_samplers_allowed();
 #endif
             }

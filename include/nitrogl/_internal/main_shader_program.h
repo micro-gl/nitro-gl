@@ -17,9 +17,30 @@ namespace nitrogl {
 
     class main_shader_program : public shader_program {
     public:
-        static constexpr const char * const vert = R"foo(
-#version 330 core
 
+        constexpr static const char * const glsl_version = "#version 410 core\n";
+        constexpr static const char * const shader_compat = R"foo(
+// this catches glsl>=130 (gl3.0) and glsl-es>=300 (gl-es 3.0)
+#if __VERSION__>=130
+
+#define TEXTURE_2D texture
+#define ATTRIBUTE in
+#define SHADER_IN in
+#define SHADER_OUT out
+#define OUT out
+
+#else
+
+#define TEXTURE_2D texture2D
+#define ATTRIBUTE attribute
+#define SHADER_IN varying
+#define SHADER_OUT varying
+#define OUT
+
+#endif
+        )foo";
+
+        static constexpr const char * const vert = R"foo(
 // uniforms
 uniform mat4 mat_model;
 uniform mat4 mat_view;
@@ -29,13 +50,13 @@ uniform vec4 bbox;
 uniform bool has_missing_uvs;
 uniform bool has_missing_q;
 
-// in = vertex attributes
-in vec2 VS_pos; // position of vertex
-in vec2 VS_uvs_sampler; // uv of vertex, extras will be taken from (0, 0, 0, 1) if vbo input is smaller
-in float VS_q_sampler; // q of vertex, good for projections
+// ATTRIBUTE = in vertex attributes
+ATTRIBUTE vec2 VS_pos; // position of vertex
+ATTRIBUTE vec2 VS_uvs_sampler; // uv of vertex, extras will be taken from (0, 0, 0, 1) if vbo input is smaller
+ATTRIBUTE float VS_q_sampler; // q of vertex, good for projections
 
-// out = varying
-out vec3 PS_uvs_sampler;
+// SHADER_OUT = out/varying
+SHADER_OUT vec3 PS_uvs_sampler;
 
 void main()
 {
@@ -43,7 +64,6 @@ void main()
     float q = has_missing_q ? 1.0 : VS_q_sampler;
     // missing uv
     vec2 uv_missing = (VS_pos - bbox.xy)/bbox.zw;
-//    vec2 uv_missing = (VS_pos - bbox.xy)/vec2(256,256);
     uv_missing.y = 1.0 - uv_missing.y;
     // final uv
     vec2 uv = has_missing_uvs ? uv_missing : VS_uvs_sampler;
@@ -53,14 +73,12 @@ void main()
 
 )foo";
 
-        constexpr static const char * const frag_version = "#version 330 core\n";
 
         constexpr static const char * const define_sampler = "#define __SAMPLER_MAIN sampler_";
         constexpr static const char * const define_premul_alpha = "\n#define __PRE_MUL_ALPHA\n";
 
         constexpr static const char * const frag_other = R"foo(
 // uniforms
-
 uniform struct DATA_MAIN {
     uint time;
     float opacity;
@@ -69,15 +87,15 @@ uniform struct DATA_MAIN {
 } data_main;
 
 // in
-in vec3 PS_uvs_sampler;
-//layout(origin_upper_left) in vec4 gl_FragCoord;
+SHADER_IN vec3 PS_uvs_sampler;
 
 // out
-out vec4 FragColor;
+#if __VERSION__>=130
+out vec4 glFragColor;
+#else
+#define glFragColor gl_FragColor
+#endif
 
-//vec4 sample1(vec3 uv) {
-//    return vec4(uv.x, uv.x, uv.x, 1.0);
-//}
 )foo";
 
         constexpr static const char * const frag_blend = "vec3 __blend_color";
@@ -106,7 +124,7 @@ void main()
 //    vec2 coords = (gl_FragCoord.xy)/data_main.window_size;
 
     // sample from backdrop
-    vec4 bd_texel = texture(data_main.texture_backdrop, bd_uvs);
+    vec4 bd_texel = TEXTURE_2D(data_main.texture_backdrop, bd_uvs);
     // un mul alpha if backdrop is alpha-mul
 #ifdef __PRE_MUL_ALPHA
     bd_texel.rgb /= bd_texel.a;
@@ -121,17 +139,13 @@ void main()
     vec4 blended_colors_final = __blend_in_place(sampler_out, bd_texel, blended_colors_only);
     // alpha composite with backdrop --> result is ALPHA-MULTIPLIED
     vec4 composited = __COMPOSITE(blended_colors_final, bd_texel);
-    FragColor = composited;
+    glFragColor = composited;
 
 #ifndef __PRE_MUL_ALPHA
-    FragColor.rgb /= FragColor.a;
+    glFragColor.rgb /= glFragColor.a;
 #endif
-
-//    FragColor =vec4(coords, 0, 1.0);
-//    FragColor = vec4(bd_uvs.x, bd_uvs.x, bd_uvs.x, 1.0);
-//    FragColor = vec4(bd_uvs.y, bd_uvs.y, bd_uvs.y, 1.0);
 }
-        )foo";
+)foo";
 
     public:
 
@@ -179,7 +193,7 @@ void main()
         }
         main_shader_program() : uniforms(), shader_program() {} // with empty shaders
         main_shader_program(bool test) : uniforms(), shader_program() {
-            const GLchar * frag_shards[3] = { frag_version, frag_other, frag_main };
+            const GLchar * frag_shards[3] = { glsl_version, frag_other, frag_main };
             auto v = shader::from_vertex(vert);
             auto f = shader::from_fragment(frag_shards, 3, nullptr);
             update_shaders(nitrogl::traits::move(v), nitrogl::traits::move(f));
@@ -217,30 +231,30 @@ void main()
 
     public:
         void updateModelMatrix(const nitrogl::mat4f & matrix) const
-        {  glUniformMatrix4fv(uniforms.mat_model, 1, GL_FALSE, matrix.data()); }
+        {  glUniformMatrix4fv(uniforms.mat_model, 1, GL_FALSE, matrix.data()); glCheckError(); }
         void updateViewMatrix(const nitrogl::mat4f & matrix) const
-        {  glUniformMatrix4fv(uniforms.mat_view, 1, GL_FALSE, matrix.data()); }
+        {  glUniformMatrix4fv(uniforms.mat_view, 1, GL_FALSE, matrix.data()); glCheckError(); }
         void updateProjectionMatrix(const nitrogl::mat4f & matrix) const
-        {  glUniformMatrix4fv(uniforms.mat_proj, 1, GL_FALSE, matrix.data()); }
+        {  glUniformMatrix4fv(uniforms.mat_proj, 1, GL_FALSE, matrix.data()); glCheckError(); }
         void updateUVsTransformMatrix(const nitrogl::mat3f & matrix) const
-        {  glUniformMatrix3fv(uniforms.mat_transform_uvs, 1, GL_FALSE, matrix.data()); }
+        {  glUniformMatrix3fv(uniforms.mat_transform_uvs, 1, GL_FALSE, matrix.data()); glCheckError(); }
         void updateBBox(float left, float top, float right, float bottom) const
-        {  glUniform4f(uniforms.bbox, left, top, right-left, bottom-top); }
+        {  glUniform4f(uniforms.bbox, left, top, right-left, bottom-top); glCheckError(); }
         void update_has_missing_uvs(bool value) const
-        {  glUniform1i(uniforms.has_missing_uvs, value); }
+        {  glUniform1i(uniforms.has_missing_uvs, value); glCheckError(); }
         void update_has_missing_qs(bool value) const
-        {  glUniform1i(uniforms.has_missing_q, value); }
+        {  glUniform1i(uniforms.has_missing_q, value); glCheckError(); }
         void updateOpacity(GLfloat opacity) const
-        { glUniform1f(uniforms.opacity, opacity); }
+        { glUniform1f(uniforms.opacity, opacity); glCheckError(); }
         void update_time(GLuint value) const
-        { glUniform1ui(uniforms.time, value); }
+        { glUniform1ui(uniforms.time, value); glCheckError(); }
         void update_backdrop_texture(const gl_texture & texture) const {
             const auto unit = 0;//gl_texture::next_texture_unit();
             texture.use(unit);
-            glUniform1i(uniforms.tex_backdrop, unit);
+            glUniform1i(uniforms.tex_backdrop, unit); glCheckError();
         }
         void update_window_size(GLuint w, GLuint h) const {
-            glUniform2ui(uniforms.window_size, w, h);
+            glUniform2ui(uniforms.window_size, w, h); glCheckError();
         }
 
     };

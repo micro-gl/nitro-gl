@@ -1,7 +1,5 @@
 #define GL_SILENCE_DEPRECATION
-#define SUPPORTS_VAO
-#define MICROGL_USE_STD_MATH
-#define NITROGL_ENABLE_THROW
+#define NITROGL_USE_STD_MATH
 
 #include "src/example.h"
 #include "src/Resources.h"
@@ -41,7 +39,6 @@ int main() {
         const char * text = "Welcome to nitro{gl} Welcome to nitro{gl} Welcome to "
                             "nitro{gl} Welcome to nitro{gl} Welcome to nitro{gl} ";
 
-        glCheckError();
         canvas canva(500,500);
 
         auto render = [&]() {
@@ -53,7 +50,6 @@ int main() {
                            {1.0f, 1.0f, 1.0f, 1.0f},
                            format,
                            0, 0, 400, 400);
-            glCheckError();
         };
 
         example_run<true>(canva, render);

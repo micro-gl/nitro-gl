@@ -10,7 +10,7 @@
 ========================================================================================*/
 #pragma once
 
-#ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
+#ifndef NITROGL_USE_EXTERNAL_MICRO_TESS
 #include "../micro-tess/include/micro-tess/vec3.h"
 #else
 #include <micro-tess/vec3.h>

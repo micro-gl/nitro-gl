@@ -24,7 +24,7 @@ namespace nitrogl {
         static fbo_t un_generated() { return fbo_t(0); }
         static fbo_t from_current(bool owner=false) {
             GLint id=0;
-            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &id);
+            glGetIntegerv(GL_FRAMEBUFFER_BINDING, &id); glCheckError();
             return fbo_t(id, owner);
         }
         fbo_t() : _id(0), owner(true) { generate(); };
@@ -42,22 +42,23 @@ namespace nitrogl {
 
     public:
 
-        void generate() { if(!_id) glGenFramebuffers(1, &_id); }
+        void generate() { if(!_id) glGenFramebuffers(1, &_id); glCheckError(); }
         void attachTexture(const gl_texture & texture) const {
             bind();
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                                    GL_TEXTURE_2D, texture.id(), 0);
+            glCheckError();
             // check for completeness
 //            if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
 //                log("ERROR::FRAMEBUFFER:: Framebuffer is not complete!");
         }
         bool wasGenerated() const { return _id; }
         GLuint id() const { return _id; }
-        void del() { if(_id && owner) { glDeleteFramebuffers(1, &_id); _id=0; owner=false; } }
-        void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, _id); }
-        void bind_read() const { glBindFramebuffer(GL_READ_FRAMEBUFFER, _id); }
-        void bind_draw() const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _id); }
-        static void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+        void del() { if(_id && owner) { glDeleteFramebuffers(1, &_id); glCheckError(); _id=0; owner=false; } }
+        void bind() const { glBindFramebuffer(GL_FRAMEBUFFER, _id); glCheckError(); }
+        void bind_read() const { glBindFramebuffer(GL_READ_FRAMEBUFFER, _id); glCheckError(); }
+        void bind_draw() const { glBindFramebuffer(GL_DRAW_FRAMEBUFFER, _id); glCheckError(); }
+        static void unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); glCheckError(); }
     };
 
 }

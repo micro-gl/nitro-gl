@@ -43,14 +43,14 @@ namespace nitrogl {
             if(texture.is_premul_alpha())
                 return R"(
 (in vec3 uv) {
-    vec4 tex = texture(data.texture, uv.xy);
+    vec4 tex = TEXTURE_2D(data.texture, uv.xy);
     return vec4(tex.rgb/tex.a, tex.a);
 }
 )";
             else
                 return R"(
 (in vec3 uv) {
-    return texture(data.texture, uv.xy);
+    return TEXTURE_2D(data.texture, uv.xy);
 }
 )";
         }
@@ -68,7 +68,6 @@ namespace nitrogl {
             intrinsic_height = on ? float(texture.height()) : -1.0f;
         }
 
-//        GLint slot;
         gl_texture texture;
         explicit texture_sampler(const gl_texture & texture,
                                  bool intrinsic=false) :

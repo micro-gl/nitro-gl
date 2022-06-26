@@ -1,8 +1,3 @@
-#define GL_SILENCE_DEPRECATION
-#define SUPPORTS_VAO
-#define MICROGL_USE_STD_MATH
-#define NITROGL_ENABLE_THROW
-
 #include "src/example.h"
 #include "src/Resources.h"
 #include <nitrogl/samplers/texture_sampler.h>
@@ -44,7 +39,7 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
-        glCheckError();
+
         canvas canva(600,600);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -60,8 +55,6 @@ int main() {
                     tex_sampler_3,
                     bi_cubic_1(),
                     20, 20);
-
-            glCheckError();
         };
 
         example_run<true>(canva, render);

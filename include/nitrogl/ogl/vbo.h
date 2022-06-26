@@ -10,13 +10,15 @@
 ========================================================================================*/
 #pragma once
 
+#include "debug.h"
+
 namespace nitrogl {
 
     class vbo_t {
         GLuint _id;
         bool owner;
 
-        void generate() { if(!_id) glGenBuffers(1, &_id); }
+        void generate() { if(!_id) glGenBuffers(1, &_id); glCheckError();}
         vbo_t(GLuint id, bool owner) : _id(id), owner(owner) {};
 
     public:
@@ -38,17 +40,17 @@ namespace nitrogl {
         void uploadData(const void * array, GLsizeiptr array_size_bytes, GLenum usage=GL_STATIC_DRAW) const {
             if(_id==0) return;
             bind();
-            glBufferData(GL_ARRAY_BUFFER, array_size_bytes, array, usage);
+            glBufferData(GL_ARRAY_BUFFER, array_size_bytes, array, usage); glCheckError();
         }
         void uploadSubData(GLintptr offset, const void *array, GLuint size_bytes) const {
             if(_id==0) return;
             bind();
-            glBufferSubData(GL_ARRAY_BUFFER, offset, size_bytes, array);
+            glBufferSubData(GL_ARRAY_BUFFER, offset, size_bytes, array); glCheckError();
         }
         GLuint id() const { return _id; }
-        void del() { if(_id && owner) { glDeleteBuffers(1, &_id); _id=0; } }
-        void bind() const { glBindBuffer(GL_ARRAY_BUFFER, _id); }
-        static void unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+        void del() { if(_id && owner) { glDeleteBuffers(1, &_id); glCheckError(); _id=0; } }
+        void bind() const { glBindBuffer(GL_ARRAY_BUFFER, _id); glCheckError(); }
+        static void unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); glCheckError(); }
     };
 
 }

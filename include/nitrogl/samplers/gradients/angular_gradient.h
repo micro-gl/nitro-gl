@@ -159,7 +159,7 @@ namespace nitrogl {
 
         void updateStop(int index, float where, color_t color) {
             if(index>_index) {
-#ifdef NITROGL_ENABLE_THROW
+#ifndef NITROGL_DISABLE_THROW
                 struct out_of_range{};
                 throw out_of_range{};
 #endif

@@ -1,8 +1,3 @@
-#define GL_SILENCE_DEPRECATION
-#define SUPPORTS_VAO
-#define MICROGL_USE_STD_MATH
-#define NITROGL_ENABLE_THROW
-
 #include "src/example.h"
 #include "src/Resources.h"
 #include <nitrogl/samplers/test_sampler.h>
@@ -16,8 +11,8 @@ int main() {
 
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
-        glCheckError();
-//        canvas canva(tex);
+
+        //        canvas canva(tex);
         canvas canva(500,500);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
@@ -37,7 +32,6 @@ int main() {
 //            canva.drawRect(0, 125, 500, 260);
 //canva.drawRect(0, 250, 250, 270,
 //                           mat3f::rotation(math::deg_to_rad(t), 125, 10));
-            glCheckError();
 //            canva.drawRect(50, 100, 200, 200);
         };
 

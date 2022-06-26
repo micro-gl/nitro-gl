@@ -70,7 +70,7 @@ namespace nitrogl {
             _vao.bind();
             _ebo.uploadData(e, sizeof(e), GL_STATIC_DRAW);
 
-#ifdef SUPPORTS_VAO
+#ifdef NITROGL_SUPPORTS_VAO
             program_type::point_generic_vertex_attributes(gva.data,
                      program_type::shader_vertex_attributes().data, GVA::size());
             vao_t::unbind();
@@ -96,18 +96,17 @@ namespace nitrogl {
             // sampler uniforms
             sampler.upload_uniforms(program.id());
 
-//            glCheckError();
-
             static constexpr auto FLOAT_SIZE = GLsizeiptr (sizeof(float));
             // upload data
             _vbo_pos_uvs_qs.uploadData(d.pos_and_uvs_qs_interleaved,
                                        d.size*FLOAT_SIZE,
                                        GL_DYNAMIC_DRAW);
 
-#ifdef SUPPORTS_VAO
+#ifdef NITROGL_SUPPORTS_VAO
             // VAO binds the: glEnableVertex attribs and pointing vertex attribs to VBO and binds the EBO
             _vao.bind();
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
+            glCheckError();
             vao_t::unbind();
 #else
             _ebo.bind();
@@ -115,7 +114,9 @@ namespace nitrogl {
             program_type::point_generic_vertex_attributes(gva.data,
                     program_type::shader_vertex_attributes().data, gva.size());
             glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, OFFSET(0));
-            _program.disableLocations(va.data, va.size());
+            glCheckError();
+            program.disableLocations(program_type::shader_vertex_attributes().data,
+                                     program_type::shader_vertex_attributes().size());
 #endif
             // unuse shader
             shader_program::unuse();

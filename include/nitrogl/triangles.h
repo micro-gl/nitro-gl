@@ -12,7 +12,7 @@
 
 #include "math.h"
 #include "functions/minmax.h"
-#ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
+#ifndef NITROGL_USE_EXTERNAL_MICRO_TESS
 #include "micro-tess/include/micro-tess/triangles.h"
 #else
 #include <micro-tess/triangles.h>

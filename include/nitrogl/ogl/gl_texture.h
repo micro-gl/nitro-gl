@@ -10,6 +10,8 @@
 ========================================================================================*/
 #pragma once
 
+#include "debug.h"
+
 namespace nitrogl {
 
     class gl_texture {
@@ -23,7 +25,7 @@ namespace nitrogl {
         static GLint next_texture_unit() {
             static GLint next=-1;
             static GLint max=-1;
-            if(max<0) glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max);
+            if(max<0) { glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max); glCheckError(); }
             next = (++next)%(max-1);
             return next;
         }
@@ -31,7 +33,7 @@ namespace nitrogl {
         static GLint next_texture_unit_minus_zero() {
             static GLint next=0;
             static GLint max=-1;
-            if(max<0) glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max);
+            if(max<0) { glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max); glCheckError(); }
             next = (++next)%(max-2);
             return next+1;
         }
@@ -169,7 +171,7 @@ namespace nitrogl {
 
         void generate() {
             if(!_id) {
-                glGenTextures(1, &_id);
+                glGenTextures(1, &_id); glCheckError();
             }
         }
         bool wasGenerated() const { return _id; }
@@ -192,15 +194,15 @@ namespace nitrogl {
                          GLint wrap_s=GL_REPEAT, GLint wrap_t=GL_REPEAT) const {
             if(!wasGenerated()) return false;
             use(_slot);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t); glCheckError();
             glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
-                         format, type, data);
+                         format, type, data); glCheckError();
             const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
-            if(requires_mip_maps) glGenerateMipmap(GL_TEXTURE_2D);
+            if(requires_mip_maps) { glGenerateMipmap(GL_TEXTURE_2D); glCheckError(); }
             return true;
         }
 
@@ -217,37 +219,37 @@ namespace nitrogl {
                             GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
             if(!wasGenerated()) return false;
             use(_slot);
-            glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, format, type, pixels);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, unpack_row_alignment); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t); glCheckError();
+            glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, format, type, pixels); glCheckError();
             const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
-            if(requires_mip_maps) glGenerateMipmap(GL_TEXTURE_2D);
+            if(requires_mip_maps) { glGenerateMipmap(GL_TEXTURE_2D); glCheckError(); }
             return true;
         }
         void createMipMaps() const {
             use(_slot);
-            glGenerateMipmap(GL_TEXTURE_2D);
+            glGenerateMipmap(GL_TEXTURE_2D); glCheckError();
         }
         void update_parameters(GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
                                GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) const {
             use(_slot);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter_min); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s); glCheckError();
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t); glCheckError();
             const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
-            if(requires_mip_maps) glGenerateMipmap(GL_TEXTURE_2D);
+            if(requires_mip_maps) { glGenerateMipmap(GL_TEXTURE_2D); glCheckError(); }
         }
         bool is_premul_alpha() const { return _is_pre_mul_alpha; }
         GLuint id() const { return _id; }
-        static void unuse() { glBindTexture(GL_TEXTURE_2D, 0); }
+        static void unuse() { glBindTexture(GL_TEXTURE_2D, 0); glCheckError(); }
         void use() const { use(_slot); }
         void use(int index) const {
-            glActiveTexture(GL_TEXTURE0 + (unsigned int)index);
-            glBindTexture(GL_TEXTURE_2D, _id);
+            glActiveTexture(GL_TEXTURE0 + (unsigned int)index); glCheckError();
+            glBindTexture(GL_TEXTURE_2D, _id); glCheckError();
         }
         GLsizei width() const { return _width; }
         GLsizei height() const { return _height; }
@@ -255,7 +257,7 @@ namespace nitrogl {
         GLint internalFormat() const { return _internalformat; }
 
         void del() {
-            if(_id && owner) glDeleteTextures(1, &_id);
+            if(_id && owner) { glDeleteTextures(1, &_id); glCheckError(); }
             _id=_internalformat=_width=_height=0;
         }
     };
