@@ -28,7 +28,7 @@ namespace nitrogl {
 
         const char * main() const override {
             return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return data.color;
 }
 )";
@@ -42,9 +42,6 @@ namespace nitrogl {
             glUniform4f(loc, color.r, color.g, color.b, color.a);
         }
 
-    private:
-
-    public:
         color_t color;
         color_sampler() : color{1.0, 1.0, 1.0, 1.0}, sampler_t() {}
         explicit color_sampler(color_t $color) : color($color), sampler_t() {}

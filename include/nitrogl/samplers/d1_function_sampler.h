@@ -36,7 +36,7 @@ namespace nitrogl {
 
         const char * main() const override {
             return R"(
-(vec3 uv) {
+(in vec3 uv) {
 
     /////////////
     // inputs
@@ -127,8 +127,6 @@ namespace nitrogl {
             glUniform1fv(loc_inputs, overall_size(), inputs);
         }
 
-
-    public:
         vec2f * points;
         int size;
         float stroke_width;

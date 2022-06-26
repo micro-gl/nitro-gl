@@ -29,7 +29,7 @@ namespace nitrogl {
 
         const char * main() const override {
             return R"(
-(vec3 uv) {
+(in vec3 uv) {
 //    // move to origin data.
 //    float r = 0.5;
 //    //    float pix = 1.0/250.0;

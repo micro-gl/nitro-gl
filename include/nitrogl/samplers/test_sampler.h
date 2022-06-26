@@ -28,13 +28,13 @@ namespace nitrogl {
         const char * main() const override {
             if(horizontal) {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(uv.x, uv.x, uv.x, 1.0);
 }
 )";
             } else {
                 return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(uv.y, uv.y, uv.y, 1.0);
 }
 )";

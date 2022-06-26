@@ -34,43 +34,43 @@ namespace nitrogl {
 
                 case channel_t::red_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(sampler_00(uv).r);
 })";
 
                 case channel_t::green_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(sampler_00(uv).g);
 })";
                 case channel_t::blue_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(sampler_00(uv).b);
 })";
                 case channel_t::alpha_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(sampler_00(uv).a);
 })";
                 case channel_t::red_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(1.0 - sampler_00(uv).r);
 })";
                 case channel_t::green_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(1.0 - sampler_00(uv).g);
 })";
                 case channel_t::blue_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(1.0 - sampler_00(uv).b);
 })";
                 case channel_t::alpha_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return vec4(1.0 - sampler_00(uv).a);
 })";
             }
@@ -83,7 +83,6 @@ namespace nitrogl {
         void on_upload_uniforms_request(GLuint program) override {
         }
 
-    public:
         channel_t channel;
 
         /**

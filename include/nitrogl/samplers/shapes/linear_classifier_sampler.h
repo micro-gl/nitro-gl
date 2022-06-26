@@ -37,7 +37,7 @@ namespace nitrogl {
 
         const char * main() const override {
             return R"(
-(vec3 uv) {
+(in vec3 uv) {
 
     /////////////
     // inputs

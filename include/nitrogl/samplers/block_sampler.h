@@ -33,7 +33,7 @@ namespace nitrogl {
 
         const char * main() const override {
             return R"(
-(vec3 uv) {
+(in vec3 uv) {
     uv.x = float(int(uv.x*data.blocks))/data.blocks;
     uv.y = float(int(uv.y*data.blocks))/data.blocks;
     return sampler_00(uv);
@@ -51,7 +51,6 @@ namespace nitrogl {
 
         unsigned int blocks;
 
-    public:
         explicit block_sampler(sampler_t * sampler, unsigned int blocks=5) :
             blocks(blocks), base(sampler) {}
     };

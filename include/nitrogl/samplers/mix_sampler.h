@@ -23,7 +23,7 @@ namespace nitrogl {
 
         const char * main() const override {
             return R"(
-(vec3 uv) {
+(in vec3 uv) {
     return (sampler_0(uv) + sampler_1(uv))/2.0;
 }
             )";
@@ -32,7 +32,6 @@ namespace nitrogl {
 //        color_sampler sampler_1{1., 0.0, 0.0, 1.0};
 //        color_sampler sampler_2{0.0, 1.0, 0.0, 1.0};
 
-    public:
         mix_sampler() : multi_sampler<2>() {
 //            add_sub_sampler(&sampler_1);
 //            add_sub_sampler(&sampler_1);

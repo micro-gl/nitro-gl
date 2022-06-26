@@ -35,7 +35,7 @@ namespace nitrogl {
 
                 case channel_t::red_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= (mask.r);
@@ -43,7 +43,7 @@ namespace nitrogl {
 })";
                 case channel_t::green_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= (mask.g);
@@ -51,7 +51,7 @@ namespace nitrogl {
 })";
                 case channel_t::blue_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= (mask.b);
@@ -59,7 +59,7 @@ namespace nitrogl {
 })";
                 case channel_t::alpha_channel:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= mask.a;
@@ -67,7 +67,7 @@ namespace nitrogl {
 })";
                 case channel_t::red_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= (1.0 - mask.r);
@@ -75,7 +75,7 @@ namespace nitrogl {
 })";
                 case channel_t::green_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= (1.0 - mask.g);
@@ -83,7 +83,7 @@ namespace nitrogl {
 })";
                 case channel_t::blue_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= (mask.b);
@@ -91,7 +91,7 @@ namespace nitrogl {
 })";
                 case channel_t::alpha_channel_inverted:
                     return R"(
-(vec3 uv) {
+(in vec3 uv) {
     vec4 base = sampler_00(uv);
     vec4 mask = sampler_01(uv);
     base.a *= (1.0 - mask.a);
