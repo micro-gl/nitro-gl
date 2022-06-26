@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project("micro-opengl"
+project(nitrogl
         VERSION
         1.0.0
         DESCRIPTION
@@ -25,7 +25,7 @@ target_include_directories(
         $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
-#target_link_libraries(${PROJECT_NAME} INTERFACE micro-alloc micro-opengl)
+#target_link_libraries(${PROJECT_NAME} INTERFACE nitrogl nitrogl)
 
 # Don't make the install target depend on the all target.
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
@@ -50,7 +50,7 @@ configure_package_config_file(
         INSTALL_DESTINATION
         ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 # install cmake config files for targets of this lib, so they can be found more easily
-# without a custom find script, but with find_package(micro-opengl CONFIG) command
+# without a custom find script, but with find_package(nitrogl CONFIG) command
 install(EXPORT ${PROJECT_NAME}_Targets
         FILE ${PROJECT_NAME}Targets.cmake
         NAMESPACE ${PROJECT_NAME}::
@@ -61,4 +61,4 @@ install(FILES
         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake)
 # install include files
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/micro-opengl DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/nitrogl DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
