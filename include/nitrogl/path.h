@@ -9,7 +9,7 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ========================================================================================*/
 #pragma once
-#ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
+#ifndef NITROGL_USE_EXTERNAL_MICRO_TESS
 #include "micro-tess/include/micro-tess/path.h"
 #include "micro-tess/include/micro-tess/dynamic_array.h"
 #else

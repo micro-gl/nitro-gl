@@ -20,7 +20,7 @@
 #include "polygons.h"
 
 // micro-tess
-#ifndef MICROGL_USE_EXTERNAL_MICRO_TESS
+#ifndef NITROGL_USE_EXTERNAL_MICRO_TESS
 #include "micro-tess/include/micro-tess/path.h"
 #include "micro-tess/include/micro-tess/monotone_polygon_triangulation.h"
 #include "micro-tess/include/micro-tess/fan_triangulation.h"

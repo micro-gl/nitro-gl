@@ -1,8 +1,3 @@
-#define GL_SILENCE_DEPRECATION
-#define NITROGL_SUPPORTS_VAO
-#define NITROGL_USE_STD_MATH
-#define NITROGL_DISABLE_THROW
-
 #include "src/example.h"
 #include "src/Resources.h"
 #include <nitrogl/samplers/color_sampler.h>

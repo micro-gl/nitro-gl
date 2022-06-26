@@ -1,12 +1,5 @@
-#define GL_SILENCE_DEPRECATION
-#define NITROGL_SUPPORTS_VAO
-#define NITROGL_USE_STD_MATH
-#define NITROGL_DISABLE_THROW
-
 #include "src/example.h"
 #include "src/Resources.h"
-#include <nitrogl/samplers/test_sampler.h>
-#include <nitrogl/samplers/mix_sampler.h>
 #include <nitrogl/samplers/texture_sampler.h>
 #include <nitrogl/samplers/shapes/circle_sampler.h>
 #include <nitrogl/samplers/gradients/circular_gradient.h>
