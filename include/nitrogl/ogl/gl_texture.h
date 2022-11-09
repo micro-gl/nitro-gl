@@ -47,6 +47,7 @@ namespace nitrogl {
         static gl_texture from_unpacked_image(GLsizei width, GLsizei height, const void * data,
                                               char r_bits, char g_bits, char b_bits, char a_bits,
                                               bool is_premul_alpha=false,
+                                              GLint row_alignment=1,
                                               GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
                                               GLint wrap_s=GL_REPEAT, GLint wrap_t=GL_REPEAT) {
             const auto max_bits = max(max(r_bits, g_bits), max(b_bits, a_bits));
@@ -60,7 +61,7 @@ namespace nitrogl {
             else if(r_bits) { format=GL_RED; }
 
             auto tex = gl_texture(width, height, internalformat, is_premul_alpha);
-            tex.uploadImage(format, type, data, 1, filter_mag, filter_min,
+            tex.uploadImage(format, type, data, row_alignment, filter_mag, filter_min,
                             wrap_s, wrap_t);
             return tex;
         }
@@ -72,6 +73,7 @@ namespace nitrogl {
         static gl_texture from_packed_image(GLsizei width, GLsizei height, const void * data,
                                             char r_bits, char g_bits, char b_bits, char a_bits,
                                             bool reversed=false, bool is_premul_alpha=false,
+                                            GLint row_alignment=1,
                                             GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
                                             GLint wrap_s=GL_CLAMP_TO_EDGE, GLint wrap_t=GL_CLAMP_TO_EDGE) {
             GLenum format=GL_RGBA, type=GL_UNSIGNED_INT_8_8_8_8;
@@ -97,15 +99,16 @@ namespace nitrogl {
             else { /* custom converter with memory allocation ? */ }
 
             auto tex = gl_texture(width, height, internalformat, is_premul_alpha);
-            tex.uploadImage(format, type, data, 1, filter_mag, filter_min,
+            tex.uploadImage(format, type, data, row_alignment, filter_mag, filter_min,
                             wrap_s, wrap_t);
             return tex;
         }
         static gl_texture empty(GLsizei width, GLsizei height, GLint internalformat=GL_RGBA, bool is_premul_alpha=false,
+                                GLint row_alignment=1,
                                 GLint filter_mag=GL_LINEAR, GLint filter_min=GL_LINEAR_MIPMAP_LINEAR,
                                 GLint wrap_s=GL_REPEAT, GLint wrap_t=GL_REPEAT) {
             auto tex = gl_texture(width, height, internalformat, is_premul_alpha);
-            tex.uploadImage(GL_RED, GL_UNSIGNED_BYTE, nullptr, 1, filter_mag, filter_min,
+            tex.uploadImage(GL_RED, GL_UNSIGNED_BYTE, nullptr, row_alignment, filter_mag, filter_min,
                             wrap_s, wrap_t);
             return tex;
         }
