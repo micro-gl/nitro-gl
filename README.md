@@ -1,3 +1,7 @@
+<div align='center'>
+<img src='nitro-gl-logo-rounded.png' style='height: 200px;'/>
+</div>
+
 # nitro{gl}
 **Fast**, Super **Slim**, **Embeddable**, **Headers files** only **`C++11`** **OpenGL** graphics library, that  
 can run on all **OpenGL/ES** version
