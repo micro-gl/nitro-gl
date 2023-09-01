@@ -1,0 +1,74 @@
+name: compile
+on:
+  pull_request:
+  push:
+    branches:
+      [ $default-branch ]
+
+jobs:
+  ubuntu_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse" -y
+          sudo apt-get install libsdl2-dev -y
+
+      - name: Build & Install
+        run: |
+          sudo mkdir cmake-build-release
+          cd cmake-build-release
+          sudo cmake -DCMAKE_BUILD_TYPE=Release ..
+          sudo cmake --install .
+      - name: Build all examples
+        run: |
+          cd cmake-build-release
+          sudo cmake -DCMAKE_BUILD_TYPE=Release ..
+          sudo cmake --build .
+
+  windows_build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          vcpkg install sdl2:x64-windows
+          vcpkg integrate install
+
+      - name: Build & Install
+        run: |
+          mkdir cmake-build-release
+          cd cmake-build-release
+          cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+          cmake --install .
+      - name: Build all examples
+        run: |
+          cd cmake-build-release
+          cmake -DCMAKE_BUILD_TYPE=Release .. -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+          cmake --build .
+
+  macos_build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+            
+      - name: Install dependencies
+        run: |
+          brew install sdl2
+      - name: Build & Install
+        run: |
+          sudo mkdir cmake-build-release
+          cd cmake-build-release
+          sudo cmake -DCMAKE_BUILD_TYPE=Release ..
+          sudo cmake --install .
+      - name: Build all examples
+        run: |
+          cd cmake-build-release
+          sudo cmake -DCMAKE_BUILD_TYPE=Release ..
+          sudo cmake --build .
