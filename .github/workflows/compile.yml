@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-      [ $default-branch ]
+      - main
 
 jobs:
   ubuntu_build:
@@ -16,6 +16,7 @@ jobs:
         run: |
           sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu `lsb_release -sc` main universe restricted multiverse" -y
           sudo apt-get install libsdl2-dev -y
+          sudo apt-get install freeglut3-dev -y
 
       - name: Build & Install
         run: |
@@ -38,6 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           vcpkg install sdl2:x64-windows
+          vcpkg install opengl:x64-windows
           vcpkg integrate install
 
       - name: Build & Install
@@ -60,7 +62,7 @@ jobs:
             
       - name: Install dependencies
         run: |
-          brew install sdl2
+          brew install sdl2 glfw3 glew
       - name: Build & Install
         run: |
           sudo mkdir cmake-build-release
