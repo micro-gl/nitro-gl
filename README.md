@@ -3,10 +3,11 @@
 </div>
 
 # nitro{gl}
-**Fast**, Super **Slim**, **Embeddable**, **Headers files** only **`C++11`** **OpenGL** graphics library, that  
-can run on all **OpenGL/ES** version
+**Headers** only **`C++11`** **OpenGL** Vector Graphics library, that can run on all **OpenGL/ES** version.
 
-check out our website at [micro-gl.github.io/docs/nitrogl](https://micro-gl.github.io/docs/nitrogl)
+Efficiently transforms a tree of shaders and samplers into a single shader at runtime.
+
+Coming soon, Check out our website at [micro-gl.github.io/docs/nitrogl](https://micro-gl.github.io/docs/nitrogl)
 
 ## Installing `nitro{gl}`
 `nitrogl` is a headers only library, which gives the following install possibilities:
