@@ -30,8 +30,8 @@ namespace nitrogl {
         inline double clamp(double v, double lo, double hi) { return min(max(v, lo), hi); }
         inline double abs(double v) { return std::abs(v); }
         inline float abs(float v) { return std::abs(v); }
-        inline float mod(float numer, float denom) { return std::fmodf(numer, denom); }
-        inline double mod(double numer, double denom) { return std::fmod(numer, denom); }
+        inline float mod(float numer, float denom) { return fmodf(numer, denom); }
+        inline double mod(double numer, double denom) { return fmod(numer, denom); }
         inline float sqrt(const float val) { return std::sqrt(val); }
         inline double sqrt(const double val) { return std::sqrt(val); }
         inline float sin(const float radians) { return std::sin(radians); }

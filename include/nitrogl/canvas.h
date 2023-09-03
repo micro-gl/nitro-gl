@@ -153,7 +153,7 @@ namespace nitrogl {
         }
 
         /**
-         * Update the blend mode and alpha compositor(usually Porter-Duff opertor)
+         * Update the blend mode and alpha compositor(usually Porter-Duff operator)
          */
         void update_composition(blend_mode_t blend_mode,
                                 compositor_t alpha_compositor=porter_duff::SourceOver()) {

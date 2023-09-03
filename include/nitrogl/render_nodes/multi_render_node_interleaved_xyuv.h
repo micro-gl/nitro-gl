@@ -80,7 +80,7 @@ namespace nitrogl {
 
         void render(const program_type & program, sampler_t & sampler, const data_type & data) const {
             const auto & d = data;
-            const bool has_missing_indices = d.indices == nullptr or d.indices_size==0;
+            const bool has_missing_indices = d.indices == nullptr || d.indices_size==0;
 
             program.use();
             // vertex uniforms

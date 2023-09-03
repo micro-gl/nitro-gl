@@ -44,7 +44,8 @@ namespace nitrogl {
                 return R"(
 (in vec3 uv) {
     vec4 tex = TEXTURE_2D(data.texture, uv.xy);
-    return vec4(tex.rgb/tex.a, tex.a);
+    tex.rgb/=tex.a;
+    return clamp(tex, 0.0, 1.0);
 }
 )";
             else

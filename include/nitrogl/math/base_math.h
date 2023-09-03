@@ -50,7 +50,7 @@ namespace nitrogl {
         number sqrt_cpu(const number val, const number epsilon) {
             int ix = 0;
             number x = val, y = number(1);
-            while ((abs_cpu<number>(x - y) > epsilon) and (ix++<10)) {
+            while ((abs_cpu<number>(x - y) > epsilon) && (ix++<10)) {
                 x = (x + y) / number(2);
                 y = val / x;
             }

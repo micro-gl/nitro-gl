@@ -1,3 +1,7 @@
+#define NITROGL_OPENGL_MAJOR_VERSION 4
+#define NITROGL_OPENGL_MINOR_VERSION 1
+//#define NITROGL_OPEN_GL_ES
+
 #include "src/example.h"
 #include "src/Resources.h"
 #include <nitrogl/samplers/texture_sampler.h>
@@ -79,7 +83,7 @@ path_t path_test() {
     path.linesTo2(100,100, 300,100, 300,100, 300, 300, 100,300);
     v start{22.0f, 150.0f - 0.002323204};
     path.moveTo(start);
-    path.linesTo3(start, v{300,120.002323204-t}, v{300, 300}, v{100,300});
+    path.linesTo3(start, v(300,120.002323204-t), v{300, 300}, v{100,300});
     path.moveTo({200, 200});
     path.lineTo({300,10});
 

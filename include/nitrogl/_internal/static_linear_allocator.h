@@ -111,8 +111,8 @@ namespace micro_alloc {
         forward(typename remove_reference<_Tp>::type&& __t) noexcept
         { return static_cast<_Tp&&>(__t); }
 
-        template<bool B, class TRUE, class FALSE> struct cond { typedef TRUE type; };
-        template<class TRUE, class FALSE> struct cond<false, TRUE, FALSE> { typedef FALSE type; };
+        template<bool B, class True, class False> struct cond { typedef True type; };
+        template<class True, class False> struct cond<false, True, False> { typedef False type; };
         static constexpr unsigned int PS = sizeof (void *);
         /**
          * An integral type, that is suitable to hold a pointer address

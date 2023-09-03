@@ -25,14 +25,14 @@ namespace nitrogl {
         for (; max_length; ++a, --max_length) {
             const auto c = *a;
             if(c=='\0') break;
-            if(c>=' ' and c<='~') return false;
+            if(c>=' ' && c<='~') return false;
         }
         return true;
     }
 
     inline bool is_equal(const char * a, const char * b, int max_length=-1) {
-        for (; max_length and *a and *b and *a==*b; ++a, ++b, --max_length) {}
-        if(*a=='\0' or max_length==0) return true;
+        for (; max_length && *a && *b && *a==*b; ++a, ++b, --max_length) {}
+        if(*a=='\0' || max_length==0) return true;
         return false;
     }
 
@@ -45,7 +45,7 @@ namespace nitrogl {
     }
 
     inline const char * find_first_not_of_in(const char * in, char v, int max_length_of_a=-1) {
-        for (; max_length_of_a and *in and *in==v ; ++in, --max_length_of_a) {}
+        for (; max_length_of_a && *in && *in==v ; ++in, --max_length_of_a) {}
         return *in!=v ? in : nullptr;
     }
 
@@ -57,7 +57,7 @@ namespace nitrogl {
     inline int s2i(const char *c, int max_len) {
         int s = 1, res = 0;
         if (c[0] == '-') { s = -1; ++c; }
-        for (; max_len and (*c >= '0') and (*c <= '9') ; --max_len, ++c) {
+        for (; max_len && (*c >= '0') && (*c <= '9') ; --max_len, ++c) {
             res = res*10 + (*c - '0');
         }
         return res*s;

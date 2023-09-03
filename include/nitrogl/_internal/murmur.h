@@ -11,6 +11,10 @@
 #pragma once
 
 namespace microc {
+    namespace detail {
+        template<int T>
+        struct identity { constexpr static int N = T; };
+    }
 
     /**
      * Iterative murmur2A Hash function, both for 32 and 64 bit machines.
@@ -37,9 +41,9 @@ namespace microc {
 
     public:
         explicit iterative_murmur() : _state(0), _len(0) {
-            constexpr bool _32_or_64 = sizeof(mw)==4 or sizeof(mw)==8;
-            constexpr bool _is_unsigned = is_same<mw, unsigned long long>::value or
-                            is_same<mw, unsigned long>::value or
+            constexpr bool _32_or_64 = sizeof(mw)==4 || sizeof(mw)==8;
+            constexpr bool _is_unsigned = is_same<mw, unsigned long long>::value ||
+                            is_same<mw, unsigned long>::value ||
                             is_same<mw, unsigned int>::value;
             static_assert(_32_or_64, "machine-word must be 32 or 64 bit");
             static_assert(_is_unsigned, "machine-word must be unsigned");
@@ -58,29 +62,30 @@ namespace microc {
         }
         iterative_murmur next(machine_word payload) {
             ++_len;
-            _next<_bits_>(payload);
+            _next(payload, detail::identity<_bits_>());
             return *this;
         }
 
         machine_word end() {
-            return _end<_bits_>();
+            return _end(detail::identity<_bits_>());
         }
 
     private:
-        template<char bits>
-        inline void _next(machine_word payload) {}
-        template<char bits>
-        inline machine_word _end() {}
+//        template<char bits>
+//        inline void _next(machine_word payload) {}
 
-        template<> inline void _next<32>(machine_word payload) {
+//        template<char bits>
+//        inline machine_word _end() {}
+
+        inline void _next(machine_word payload, detail::identity<32>) {
             mmix(_state, payload)
         }
 
-        template<> inline void _next<64>(machine_word payload) {
+        inline void _next(machine_word payload, detail::identity<64>) {
             mmix(_state, payload)
         }
 
-        template<> inline machine_word _end<32>() {
+        inline machine_word _end(detail::identity<32>) {
             mw len = _len;
             mmix(_state, len)
             _state ^= _state >> 13;
@@ -89,7 +94,7 @@ namespace microc {
             return _state;
         }
 
-        template<> inline machine_word _end<64>() {
+        inline machine_word _end(detail::identity<64>) {
             mw len = _len;
             mmix(_state, len)
             _state ^= _state >> r;

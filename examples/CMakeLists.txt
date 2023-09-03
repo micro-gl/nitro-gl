@@ -18,16 +18,19 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 find_package(OpenGL)
 #find_package(GLFW3)
 find_package(SDL2)
+find_package(GLEW)
+#target_link_libraries(sdl_app ${GLEW_LIBRARIES})
+#target_include_directories(sdl_app PUBLIC ${GLEW_INCLUDE_DIRS})
 message(tomer ${OPENGL_INCLUDE_DIR})
+message(GLEW_LIBRARIES ${GLEW_LIBRARIES})
 #if(DEFINED SDL2_FOUND AND OPENGL_FOUND)
 if(DEFINED SDL2_FOUND)
-    set(LIBS  ${OPENGL_LIBRARY} ${SDL2_LIBRARY} nitrogl)
+    set(LIBS  ${OPENGL_LIBRARY} ${SDL2_LIBRARY} GLEW::GLEW nitrogl)
 #    set(LIBS  ${SDL2_LIBRARY} nitrogl -ldl)
 #    set(INCLUDES  ${SDL2_INCLUDE_DIR})
-    set(INCLUDES  ${SDL2_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
+    set(INCLUDES  ${SDL2_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
     set(SOURCES
             ex_create_numbers_db.cpp
-            ex_1.cpp
             ex_cache.cpp
 
             ex_draw_triangles.cpp

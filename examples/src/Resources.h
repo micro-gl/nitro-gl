@@ -58,7 +58,7 @@ public:
         unsigned char * data = stbi_load_from_memory(byte_array, length_bytes, &width, &height,
                                                      &channels, 0);
         image_info_t info {data, width, height, channels, pre_mul_alpha };
-        if(pre_mul_alpha and channels==4) {
+        if(pre_mul_alpha && channels==4) {
             using uint_t = unsigned int;
             const auto size = width*height;
             auto p = data;
@@ -123,7 +123,7 @@ public:
         ifs.seekg(0, std::ios::beg);
         ifs.read(ret, length);
         ifs.close();
-        return { ret, length };
+        return { ret, (unsigned long) length };
     }
 
     static char * loadTextFile(const char * file_name) {

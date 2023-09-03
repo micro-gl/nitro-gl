@@ -28,7 +28,7 @@ namespace nitrogl {
             // it will be scaled.
             int fontSize=-1;
             int letterSpacing=0;
-            wordWrap wordWrap=wordWrap::normal;
+            enum wordWrap wordWrap=wordWrap::normal;
             hAlign horizontalAlign=hAlign::left;
             vAlign verticalAlign=vAlign::top;
             bool kerning=true;

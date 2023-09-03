@@ -1,14 +1,16 @@
 #pragma once
 
-namespace nitrogl {
-#define LRU_PRINT_SEQ 0
-#define LRU_PRINT_ORDER_MRU 1
-#define LRU_PRINT_ORDER_FREE_LIST 2
 #define LRU_CACHE_ALLOW_PRINT
 
 #ifdef LRU_CACHE_ALLOW_PRINT
 #include <iostream>
+#include <string>
 #endif
+
+namespace nitrogl {
+#define LRU_PRINT_SEQ 0
+#define LRU_PRINT_ORDER_MRU 1
+#define LRU_PRINT_ORDER_FREE_LIST 2
     /**
      * LRU Cache and pool for integer values with constrained bits:
      * 1. upto 10 bits per value for 32 bits keys
@@ -90,8 +92,8 @@ namespace nitrogl {
         bits_robin_lru_cache(float load_factor=0.5f, const allocator_type & allocator = allocator_type()) :
                             _items(nullptr), _mru_list(-1), _free_list(-1), _mru_size(0),
                             _max_size(compute_max_items(load_factor)), _allocator(allocator) {
-            constexpr bool correcto = (size_of_mw_bytes==4 and (size_bits>=1 and size_bits<=10)) or
-                    (size_of_mw_bytes==8 and (size_bits>=1 and size_bits<=21));
+            constexpr bool correcto = (size_of_mw_bytes==4 && (size_bits>=1 && size_bits<=10)) ||
+                    (size_of_mw_bytes==8 && (size_bits>=1 && size_bits<=21));
             static_assert(correcto, "fail");
             _items = _allocator.allocate(items_count);
             // set linked list
@@ -193,7 +195,7 @@ namespace nitrogl {
             int delta = _mru_size - _max_size;
             if(delta<=0) return;
             // now, let's move nodes from active lru to free list
-            for(; delta and _mru_list != -1; --delta) {
+            for(; delta && _mru_list != -1; --delta) {
                 const auto pos = _items[_mru_list].prev(); // tail is LRU
                 auto & node = _items[pos];
                 internal_remove_key_node(node, pos);

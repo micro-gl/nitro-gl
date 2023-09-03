@@ -22,6 +22,7 @@ namespace nitrogl {
      * 2. up to 100 points or 99 segments
      *
      */
+    template<int MAX_POINTS=(6 + 2*100)>
     struct d1_function_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
         const char * name() const override { return "rounded_rect_sampler"; }
@@ -89,7 +90,8 @@ namespace nitrogl {
     // source-over compositing stroke over fill
     /////////////
     vec4 col = __internal_porter_duff(1.0, 1.0-col_src.a, col_src, col_base);
-    return vec4(col.rgb/col.a, col.a); // un-multiply alpha
+    col.rgb /= col.a;
+    return clamp(col, 0.0, 1.0);
 }
 )";
         }
@@ -111,7 +113,7 @@ namespace nitrogl {
 
         void on_upload_uniforms_request(GLuint program) override {
             // minus the where float
-            float inputs[overall_size()];
+            static float inputs[MAX_POINTS];
             inputs[0] = float(size);
             inputs[1] = float(window_size()); // window size
             inputs[2] = float(offset()); // window size
