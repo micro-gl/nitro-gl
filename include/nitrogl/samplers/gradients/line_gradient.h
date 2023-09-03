@@ -101,7 +101,7 @@ namespace nitrogl {
 
         void on_upload_uniforms_request(GLuint program) override {
             // minus the where float
-            float inputs[overall_size()];
+            float inputs[3 + 8*10];
             inputs[0] = _index;
             inputs[1] = window_size(); // window size
             inputs[2] = offset(); // window size

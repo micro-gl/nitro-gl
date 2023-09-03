@@ -22,7 +22,7 @@ int main() {
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         color_sampler black {0.0f, 0.0f, 0.0f, 1.0f};
-        d1_function_sampler sampler(&tex_sampler_1, &black);
+        d1_function_sampler<> sampler(&tex_sampler_1, &black);
         block_sampler block_sampler(&sampler, 16);
 
         const unsigned size = 100;
