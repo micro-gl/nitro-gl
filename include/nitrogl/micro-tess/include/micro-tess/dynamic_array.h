@@ -227,7 +227,7 @@ public:
     void pop_back() {
         if(size()==0) return;
         _data[_current--].~T();
-        if(size()==0 or (size()<(capacity()>>1))) alloc_(false);
+        if(size()==0 || (size()<(capacity()>>1))) alloc_(false);
     }
 
     template<class... Args>
@@ -256,7 +256,7 @@ public:
     // insert(const_iterator pos, size_type count, const T& value) overload for integral types
     template<class InputIt, typename bb = microtess::traits::enable_if_t<!microtess::traits::is_integral<InputIt>::value>>
     iterator insert(const_iterator pos, InputIt first, InputIt last, bool move=false) {
-        if(pos>end() or pos<begin()) {
+        if(pos>end() || pos<begin()) {
             throw_out_of_bounds_exception_if_can();
             return end();
         }
@@ -302,7 +302,7 @@ public:
         return const_cast<iterator>(pos);
     }
     iterator insert(const_iterator pos, const T& value) {
-        if(pos>end() or pos<begin()) {
+        if(pos>end() || pos<begin()) {
             throw_out_of_bounds_exception_if_can();
             return end();
         }
@@ -310,7 +310,7 @@ public:
         return insert<const_iterator>(pos, &value, (&value)+1);
     }
     iterator insert(const_iterator pos, T && value) {
-        if(pos>end() or pos<begin()) {
+        if(pos>end() || pos<begin()) {
             throw_out_of_bounds_exception_if_can();
             return end();
         }
@@ -318,7 +318,7 @@ public:
         return insert<const_iterator>(pos, &value, (&value)+1, true);
     }
     iterator insert(const_iterator pos, size_type count, const T& value) {
-        if(pos>end() or pos<begin()) {
+        if(pos>end() || pos<begin()) {
             throw_out_of_bounds_exception_if_can();
             return end();
         }

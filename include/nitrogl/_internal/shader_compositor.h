@@ -96,7 +96,7 @@ namespace nitrogl {
                 // copy null-terminated array into storage and then write to sources
                 unsigned ix = 0;
                 const auto available = N-len_storage();
-                for (; (ix < available) and *arr; ++ix, *(head_storage++)=*(arr++)) {
+                for (; (ix < available) && *arr; ++ix, *(head_storage++)=*(arr++)) {
                 }
                 write_char_array_pointer(head_storage-ix, ix);
                 return {head_storage-ix, ix};
@@ -105,7 +105,7 @@ namespace nitrogl {
                 // range does not contain null-term
                 unsigned ix = 0;
                 const auto available = N-len_storage();
-                for (; (ix < available) and begin<end; ++ix, *(head_storage++)=*(begin++)) {
+                for (; (ix < available) && begin<end; ++ix, *(head_storage++)=*(begin++)) {
                 }
                 write_char_array_pointer(head_storage-ix, ix);
                 return {head_storage-ix, ix};
@@ -135,7 +135,7 @@ namespace nitrogl {
         template<unsigned N, unsigned M>
         static void _internal_composite(sampler_t * sampler, sources_buffer<N, M> & buffer) {
             // if the sampler is nullptr or was already visited, then we don't need to write it
-            if(sampler==nullptr or sampler->traversal_info().visited) return;
+            if(sampler==nullptr || sampler->traversal_info().visited) return;
             // otherwise, recurse bottom-up
             const auto sub_samplers_count = sampler->sub_samplers_count();
             for (int ix = 0; ix < sub_samplers_count; ++ix)
@@ -227,8 +227,8 @@ namespace nitrogl {
                     auto & race = races[ix];
                     if(!race.enabled) continue;
                     if(!race.handled) {
-                        if(arg_min==-1 or
-                            races[arg_min].next==nullptr or
+                        if(arg_min==-1 ||
+                            races[arg_min].next==nullptr ||
                             race.next<races[arg_min].next)
                             arg_min=ix;
                     }
