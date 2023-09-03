@@ -4,17 +4,20 @@
 #define GL_SILENCE_DEPRECATION
 #define NITROGL_USE_STD_MATH
 #define NITROGL_DEBUG_MODE
+#define GL_GLEXT_PROTOTYPES
 
 #include <iostream>
 #include <chrono>
 //#include <glad/glad.h>
-#include <OpenGL/gl3.h>
-#include <OpenGL/gl3ext.h>
+//#include <OpenGL/gl3.h>
+//#include <OpenGL/gl3ext.h>
 #include <SDL.h>
+#include <SDL_opengl.h>
+#include <SDL_opengl_glext.h>
 
 template<class on_init_callback>
 void example_init(const on_init_callback &on_init) {
-    std::cout << "nitro{gl} Exampler init\n";
+    std::cout << "nitro{gl} Example init\n";
     SDL_Window * window;
 
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
