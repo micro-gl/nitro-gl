@@ -14,6 +14,7 @@
 
 #ifdef LRU_CACHE_ALLOW_PRINT
 #include <iostream>
+#include <string>
 #endif
 
 namespace microc {
