@@ -155,8 +155,8 @@ namespace microc {
                                    const allocator_type & allocator = allocator_type()) :
                             _items(nullptr), _mru_list(-1), _free_list(-1), _mru_size(0),
                             _max_size(compute_max_items(load_factor)), _allocator(allocator) {
-            constexpr bool correcto = (size_of_mw_bytes==4 and (size_bits>=1 and size_bits<=10)) or
-                    (size_of_mw_bytes==8 and (size_bits>=1 and size_bits<=20));
+            constexpr bool correcto = (size_of_mw_bytes==4 && (size_bits>=1 && size_bits<=10)) ||
+                    (size_of_mw_bytes==8 && (size_bits>=1 && size_bits<=20));
             static_assert(correcto, "fail");
             _items = _allocator.allocate(items_count);
             // set linked list
@@ -234,7 +234,7 @@ namespace microc {
             int delta = _mru_size - _max_size;
             if(delta<=0) return -1;
             // now, let's move nodes from active lru to free list
-            for(; delta and _mru_list != -1; --delta) {
+            for(; delta && _mru_list != -1; --delta) {
                 const auto pos = _items[_mru_list].prev(); // tail is LRU
                 auto & node = _items[pos];
                 internal_remove_key_node(node, pos);
