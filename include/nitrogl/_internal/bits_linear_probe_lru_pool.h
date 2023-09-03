@@ -10,15 +10,16 @@
 ========================================================================================*/
 #pragma once
 
-namespace microc {
-#define LRU_PRINT_SEQ 0
-#define LRU_PRINT_ORDER_MRU 1
-#define LRU_PRINT_ORDER_FREE_LIST 2
 #define LRU_CACHE_ALLOW_PRINT
 
 #ifdef LRU_CACHE_ALLOW_PRINT
 #include <iostream>
 #endif
+
+namespace microc {
+#define LRU_PRINT_SEQ 0
+#define LRU_PRINT_ORDER_MRU 1
+#define LRU_PRINT_ORDER_FREE_LIST 2
     /**
      * LRU Cache and pool for integer values with constrained bits:
      * 1. upto 10 bits per value for 32 bits keys

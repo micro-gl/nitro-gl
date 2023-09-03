@@ -1,4 +1,3 @@
-#include "src/example.h"
 #include <nitrogl/traits.h>
 #include <nitrogl/_internal/bits_robin_lru_cache.h>
 #include <nitrogl/_internal/bits_robin_lru_pool.h>
@@ -7,8 +6,8 @@
 using namespace nitrogl;
 
 struct TT {
-//    uint32_t a; //4
-    uint8_t b; // 1
+    unsigned int a; //4
+    unsigned char b; // 1
 };
 
 void test_cache_linear_probe() {
@@ -107,11 +106,8 @@ void test_cache_robin_hood() {
 
 int main() {
 
-    auto on_init = [](SDL_Window *, void *) {
-//        test_cache_linear_probe();
-        test_cache_robin_hood();
-    };
-
-    example_init(on_init);
+//    test_cache_linear_probe();
+    test_cache_robin_hood();
+    return 0;
 }
 

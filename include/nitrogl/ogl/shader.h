@@ -132,7 +132,7 @@ namespace nitrogl {
             return compile_status;
         }
         GLint info_log(char * log_buffer = nullptr, GLint log_buffer_size=0) const {
-            if(!log_buffer or !glIsShader(_id)) return 0;
+            if(!log_buffer || !glIsShader(_id)) return 0;
             // Shader copied log length
             GLint copied_length = 0;
             // copy info log
