@@ -204,7 +204,7 @@ namespace nitrogl {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t); glCheckError();
             glTexImage2D(GL_TEXTURE_2D, 0, _internalformat, _width, _height, 0,
                          format, type, data); glCheckError();
-            const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
+            const bool requires_mip_maps = filter_min!=GL_NEAREST && filter_min!=GL_LINEAR;
             if(requires_mip_maps) { glGenerateMipmap(GL_TEXTURE_2D); glCheckError(); }
             return true;
         }
@@ -228,7 +228,7 @@ namespace nitrogl {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s); glCheckError();
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t); glCheckError();
             glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, format, type, pixels); glCheckError();
-            const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
+            const bool requires_mip_maps = filter_min!=GL_NEAREST && filter_min!=GL_LINEAR;
             if(requires_mip_maps) { glGenerateMipmap(GL_TEXTURE_2D); glCheckError(); }
             return true;
         }
@@ -243,7 +243,7 @@ namespace nitrogl {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter_mag); glCheckError();
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_s); glCheckError();
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_t); glCheckError();
-            const bool requires_mip_maps = filter_min!=GL_NEAREST and filter_min!=GL_LINEAR;
+            const bool requires_mip_maps = filter_min!=GL_NEAREST && filter_min!=GL_LINEAR;
             if(requires_mip_maps) { glGenerateMipmap(GL_TEXTURE_2D); glCheckError(); }
         }
         bool is_premul_alpha() const { return _is_pre_mul_alpha; }

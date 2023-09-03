@@ -79,7 +79,7 @@ namespace nitrogl {
             del();
         }
 
-        void create() { if(!_id and _type!=type::unknown) { _id = glCreateShader(type2enum(_type)); glCheckError(); } }
+        void create() { if(!_id && _type!=type::unknown) { _id = glCreateShader(type2enum(_type)); glCheckError(); } }
         bool wasCreated() const { return _id; }
         /**
          * @param sources array of char arrays, each is a source code for shader

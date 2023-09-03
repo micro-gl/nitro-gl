@@ -18,6 +18,7 @@ namespace microc {
 
 #ifdef LRU_CACHE_ALLOW_PRINT
 #include <iostream>
+#include <string>
 #endif
     /**
      * LRU Cache and pool for integer values with constrained bits:

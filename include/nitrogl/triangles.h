@@ -110,7 +110,7 @@ namespace nitrogl {
                              const index size_vertices,
                             const index *indices,
                             const index size_indices) {
-            const bool has_indices = indices!=nullptr and size_indices!=0;
+            const bool has_indices = indices!=nullptr && size_indices!=0;
             const auto & ref_base = has_indices ? vertices[indices[0]] : vertices[0];
             rectf rect{ ref_base.x, ref_base.y, ref_base.x, ref_base.y };
             const auto size = has_indices ? size_indices : size_vertices;
@@ -137,7 +137,7 @@ namespace nitrogl {
                                           const index *indices,
                                           const index size_indices,
                                           index x_idx, index y_idx, index window_size) {
-            const bool has_indices = indices!=nullptr and size_indices!=0;
+            const bool has_indices = indices!=nullptr && size_indices!=0;
             const auto & ref_base = has_indices ? attribs[indices[0]] : attribs[0];
             rectf rect{ attribs[x_idx], attribs[y_idx], attribs[x_idx], attribs[y_idx] };
             const auto size = !has_indices ? size_attribs : size_indices;
