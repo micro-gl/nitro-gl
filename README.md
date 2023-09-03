@@ -3,6 +3,10 @@
 </div>
 
 # nitro{gl}
+[![mac-os](https://github.com/micro-gl/nitro-gl/actions/workflows/compile_macos.yml/badge.svg?branch=main)](https://github.com/micro-gl/nitro-gl/actions/workflows/compile_macos.yml)
+[![ubuntu](https://github.com/micro-gl/nitro-gl/actions/workflows/compile_ubuntu.yml/badge.svg?branch=main)](https://github.com/micro-gl/nitro-gl/actions/workflows/compile_ubuntu.yml)
+[![windows](https://github.com/micro-gl/nitro-gl/actions/workflows/compile_windows.yml/badge.svg)](https://github.com/micro-gl/nitro-gl/actions/workflows/compile_windows.yml)
+
 **Headers** only **`C++11`** **OpenGL** Vector Graphics library, that can run on all **OpenGL/ES** version.
  
 Efficiently transforms a tree of shaders and samplers into a single shader at runtime.
