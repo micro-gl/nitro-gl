@@ -41,7 +41,7 @@ namespace microc {
 
     public:
         explicit iterative_murmur() : _state(0), _len(0) {
-            constexpr bool _32_or_64 = sizeof(mw)==4 or sizeof(mw)==8;
+            constexpr bool _32_or_64 = sizeof(mw)==4 || sizeof(mw)==8;
             constexpr bool _is_unsigned = is_same<mw, unsigned long long>::value or
                             is_same<mw, unsigned long>::value or
                             is_same<mw, unsigned int>::value;
