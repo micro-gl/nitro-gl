@@ -11,6 +11,8 @@
 //#include <glad/glad.h>
 //#include <OpenGL/gl3.h>
 //#include <OpenGL/gl3ext.h>
+#include <GL/glew.h>
+
 #include <SDL.h>
 #include <SDL_opengl.h>
 #include <SDL_opengl_glext.h>
@@ -55,6 +57,18 @@ void example_init(const on_init_callback &on_init) {
 
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
+    if( context == NULL ) {
+        printf( "OpenGL context could not be created! SDL Error: %s\n", SDL_GetError() );
+        return;
+    }
+
+    //Initialize GLEW
+    glewExperimental = GL_TRUE;
+    GLenum glewError = glewInit();
+    if( glewError != GLEW_OK )
+    {
+        printf( "Error initializing GLEW! %s\n", glewGetErrorString( glewError ) );
+    }
 //     Setup our function pointers
 //    gladLoadGLLoader(SDL_GL_GetProcAddress);
 
