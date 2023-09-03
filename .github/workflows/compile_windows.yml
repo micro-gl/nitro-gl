@@ -1,4 +1,4 @@
-name: compile
+name: windows
 on:
   pull_request:
   push:

@@ -4,7 +4,7 @@
 
 # nitro{gl}
 **Headers** only **`C++11`** **OpenGL** Vector Graphics library, that can run on all **OpenGL/ES** version.
-
+ 
 Efficiently transforms a tree of shaders and samplers into a single shader at runtime.
 
 Coming soon, Check out our website at [micro-gl.github.io/docs/nitrogl](https://micro-gl.github.io/docs/nitrogl)
@@ -49,6 +49,7 @@ files you need with relative path in your source files.
 ## Running Examples
 First make sure you have 
  - [SDL2](https://www.libsdl.org/) installed at your system.  
+ - [GLEW](https://glew.sourceforge.net/) installed at your system.  
  - [cmake](https://cmake.org/download/) installed at your system.
 
 There are two ways:

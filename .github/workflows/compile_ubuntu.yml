@@ -1,4 +1,4 @@
-name: compile
+name: ubuntu
 on:
   pull_request:
   push:

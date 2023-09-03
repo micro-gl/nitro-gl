@@ -1,4 +1,4 @@
-name: compile
+name: mac-os
 on:
   pull_request:
   push:
