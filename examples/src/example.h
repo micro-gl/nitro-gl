@@ -1,5 +1,6 @@
 #pragma once
 
+#define SDL_MAIN_HANDLED
 #define GL_SILENCE_DEPRECATION
 #define NITROGL_USE_STD_MATH
 #define NITROGL_DEBUG_MODE

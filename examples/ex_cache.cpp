@@ -108,8 +108,6 @@ void test_cache_robin_hood() {
 int main() {
 
     auto on_init = [](SDL_Window *, void *) {
-        glCheckError();
-
 //        test_cache_linear_probe();
         test_cache_robin_hood();
     };

@@ -49,6 +49,8 @@ namespace nitrogl {
                     return nitrogl::triangles::indices::TRIANGLES_STRIP;
                     break;
                 }
+                default:
+                    return nitrogl::triangles::indices::TRIANGLES;
             }
         }
 

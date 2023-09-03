@@ -24,7 +24,7 @@ namespace nitrogl {
      */
     struct arc_sampler : public multi_sampler<2> {
         using base = multi_sampler<2>;
-        const char * name() const override { return "rounded_rect_sampler"; }
+        const char * name() const override { return "arc_sampler"; }
         const char * uniforms() const override {
             return R"(
 {
@@ -96,7 +96,11 @@ namespace nitrogl {
     // source-over compositing stroke over circle
     /////////////
     vec4 col = __internal_porter_duff(1.0, 1.0-col_src.a, col_src, col_base);
-    return vec4(col.rgb/col.a, col.a); // un-multiply alpha
+    col.rgb /= col.a;
+    return clamp(col, 0.0, 1.0);
+//    return vec4( col.a, col.a, col.a, 1.0);
+//    return vec4(col.rgb, col.a); // un-multiply alpha
+//    return vec4(col_base.rgb, col_base.a); // un-multiply alpha
 }
 )";
         }

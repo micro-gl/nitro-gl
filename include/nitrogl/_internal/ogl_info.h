@@ -43,6 +43,8 @@ namespace nitrogl {
             #define NITROGL_OPENGL_GLSL_VERSION "#version 310 es"
         #elif (NITROGL_OPENGL_MAJOR_VERSION==3) and (NITROGL_OPENGL_MINOR_VERSION==2)
             #define NITROGL_OPENGL_GLSL_VERSION "#version 320 es"
+        #else
+            #define NITROGL_OPENGL_GLSL_VERSION "#version 300 es"
         #endif
     #else
         #if (NITROGL_OPENGL_MAJOR_VERSION==2) and (NITROGL_OPENGL_MINOR_VERSION==0)

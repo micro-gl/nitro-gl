@@ -1,3 +1,7 @@
+#define NITROGL_OPENGL_MAJOR_VERSION 4
+#define NITROGL_OPENGL_MINOR_VERSION 1
+//#define NITROGL_OPEN_GL_ES
+
 #include "src/example.h"
 #include "src/Resources.h"
 #include <nitrogl/samplers/texture_sampler.h>
@@ -10,11 +14,11 @@ int main() {
     auto on_init = [](SDL_Window *, void *) {
         auto tex = gl_texture(500,500);
 
-        canvas canva(500,500);
+        canvas canva(500,500, false);
         auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
         auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
         auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true));
-        color_sampler sampler_color(1.0,0.0,0.0,1.0/2);
+        color_sampler sampler_color(1.0,0.0,0.0,1.0);
 
         auto render = [&]() {
             static float t = 0;

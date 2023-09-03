@@ -89,7 +89,8 @@ namespace nitrogl {
     // source-over compositing stroke over fill
     /////////////
     vec4 col = __internal_porter_duff(1.0, 1.0-col_src.a, col_src, col_base);
-    return vec4(col.rgb/col.a, col.a); // un-multiply alpha
+    col.rgb /= col.a;
+    return clamp(col, 0.0, 1.0);
 }
 )";
         }

@@ -27,7 +27,6 @@ if(DEFINED SDL2_FOUND)
     set(INCLUDES  ${SDL2_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
     set(SOURCES
             ex_create_numbers_db.cpp
-            ex_1.cpp
             ex_cache.cpp
 
             ex_draw_triangles.cpp

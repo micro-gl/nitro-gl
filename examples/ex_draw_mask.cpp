@@ -1,3 +1,7 @@
+#define NITROGL_OPENGL_MAJOR_VERSION 4
+#define NITROGL_OPENGL_MINOR_VERSION 1
+//#define NITROGL_OPEN_GL_ES
+
 #include "src/example.h"
 #include "src/Resources.h"
 #include <nitrogl/samplers/texture_sampler.h>
