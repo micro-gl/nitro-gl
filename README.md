@@ -13,6 +13,13 @@ Efficiently transforms a tree of shaders and samplers into a single shader at ru
 
 Coming soon, Check out our website at [micro-gl.github.io/docs/nitrogl](https://micro-gl.github.io/docs/nitrogl)
 
+<div align='center'>
+<img src='intro_1.png' style='opacity: 0.75; max-height: 200'/>
+</div>
+<div align='center'>
+<img src='intro_2.png' style='opacity: 0.75; max-height: 200'/>
+</div>
+
 ## Installing `nitro{gl}`
 `nitrogl` is a headers only library, which gives the following install possibilities:
 1. Using `cmake` to invoke the `install` target, that will copy everything in your system via
