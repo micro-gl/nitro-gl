@@ -20,6 +20,75 @@ Coming soon, Check out our website at [micro-gl.github.io/docs/nitrogl](https://
 <img src='intro_2.png' style='opacity: 0.75; max-height: 200'/>
 </div>
 
+## Example
+
+```cpp
+#define NITROGL_OPENGL_MAJOR_VERSION 4
+#define NITROGL_OPENGL_MINOR_VERSION 1
+//#define NITROGL_OPEN_GL_ES
+
+#include "src/example.h"
+#include "src/Resources.h"
+#include <nitrogl/samplers/texture_sampler.h>
+#include <nitrogl/samplers/color_sampler.h>
+#include <nitrogl/canvas.h>
+
+using namespace nitrogl;
+
+//using path_t = path<std::vector>;
+using path_t = nitrogl::path<dynamic_array>;
+
+float t = 0.0f;
+
+path_t path_star() {
+  path_t path{};
+  path.lineTo({150, 150})
+  .quadraticCurveTo({450, 0}, {450, 150})
+  .lineTo({200,450})
+  .lineTo({300,50})
+  .lineTo({400,450})
+  .closePath();
+  return path;
+}
+
+int main() {
+
+  auto on_init = [](SDL_Window *, void *) {
+    auto tex = gl_texture(100, 200);
+
+    canvas canva(600, 600);
+
+    auto tex_sampler_1 = texture_sampler(Resources::loadTexture("assets/images/test.png", true));
+    auto tex_sampler_2 = texture_sampler(Resources::loadTexture("assets/images/test.png", false));
+    auto tex_sampler_3 = texture_sampler(Resources::loadTexture("assets/images/uv_256.png", true), true);
+
+    color_sampler sampler_color(1.0, 0.0, 0.0, 0.5f);
+
+    // paths
+    auto path = path_star();
+    using il = std::initializer_list<int>;
+
+    auto render = [&]() {
+      canva.clear(1.0, 1.0, 1.0, 1.0);
+      canva.drawPathStroke(
+        sampler_color,
+        path,
+        12.0f,
+        microtess::stroke_cap::round,
+        microtess::stroke_line_join::round,
+        5, il{0}, 0,
+        mat3f::identity(),
+        mat3f::identity()
+      );
+    };
+
+    example_run<true>(canva, render);
+  };
+
+  example_init(on_init);
+}
+```
+
 ## Installing `nitro{gl}`
 `nitrogl` is a headers only library, which gives the following install possibilities:
 1. Using `cmake` to invoke the `install` target, that will copy everything in your system via
