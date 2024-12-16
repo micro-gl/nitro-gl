@@ -38,8 +38,6 @@ using namespace nitrogl;
 //using path_t = path<std::vector>;
 using path_t = nitrogl::path<dynamic_array>;
 
-float t = 0.0f;
-
 path_t path_star() {
   path_t path{};
   path.lineTo({150, 150})
@@ -53,6 +51,7 @@ path_t path_star() {
 
 int main() {
 
+  // This can only run AFTER OpenGL has initilized !!!
   auto on_init = [](SDL_Window *, void *) {
     auto tex = gl_texture(100, 200);
 
