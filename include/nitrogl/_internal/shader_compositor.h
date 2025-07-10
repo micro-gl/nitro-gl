@@ -113,7 +113,7 @@ namespace nitrogl {
             write_storage_info_t write_char_to_storage_and_buffers(char v) {
                 *(head_storage++) = v;
                 *(head_sources++) = head_storage-1;
-                *(lengths++) = 1;
+                *(head_lengths++) = 1;
                 return { head_storage-1, 1 };
             }
 

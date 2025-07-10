@@ -14,6 +14,8 @@ set(CMAKE_CXX_FLAGS_RELEASE " -fno-rtti -fno-unwind-tables \
 #-nostdlib
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+include_directories("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1")
+include_directories("/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include")
 
 find_package(OpenGL)
 #find_package(GLFW3)
