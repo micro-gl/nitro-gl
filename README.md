@@ -9,7 +9,7 @@
 
 **Headers** only **`C++11`** **OpenGL** Vector Graphics library, that can run on all **OpenGL/ES** version.
  
-Efficiently transforms a tree of shaders and samplers into a single shader at runtime.
+Efficiently fuses a graph of shaders and samplers into a single shader at runtime with caching.
 
 Coming soon, Check out our website at [micro-gl.github.io/docs/nitrogl](https://micro-gl.github.io/docs/nitrogl)
 
